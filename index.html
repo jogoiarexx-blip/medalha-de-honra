@@ -263,6 +263,14 @@ button{font:inherit;color:inherit}
 }
 @media (max-width:900px){.disg{top:auto;bottom:calc(122px + env(safe-area-inset-bottom,0px));min-width:170px}.tankchip{top:auto;bottom:calc(122px + env(safe-area-inset-bottom,0px));width:170px}.radio{top:auto;bottom:calc(112px + env(safe-area-inset-bottom,0px));max-width:min(340px,46vw)}}
 .threat i{overflow:hidden}
+/* polimento: celular e menu */
+#ops{overflow-y:auto} #ops .menu-col{width:min(1060px,100%)}
+#ops .oplist{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));max-width:none;gap:10px;padding-bottom:12px}
+.opcamp{grid-column:1/-1;font-size:13px;letter-spacing:.2em;text-transform:uppercase;color:var(--amber);margin:10px 0 0;border-bottom:1px solid var(--line);padding-bottom:6px}
+.opcard .opt{display:block} #ops .opcard .opt{font-size:21px} #ops .opcard .opn{font-size:40px} .opcard.done{border-left:3px solid var(--olive)}
+.tsmall button[hidden]{display:none}
+@media (max-height:520px){ .tsmall{top:calc(124px + env(safe-area-inset-top,0px));flex-wrap:wrap;justify-content:flex-end;max-width:56vw;gap:6px} .tsmall button{width:42px;height:42px;font-size:11px} }
+.is-touch .disg{left:calc(18px + env(safe-area-inset-left,0px));right:auto;top:auto;bottom:calc(128px + env(safe-area-inset-bottom,0px));min-width:170px}
 </style>
 </head>
 <body>
@@ -438,6 +446,7 @@ button{font:inherit;color:inherit}
         <kbd>T</kbd><span>Arremessar uma pedra para atrair um guarda</span>
         <kbd>G · X</kbd><span>Granada, quando houver (raio de ~6 m; quem a vê foge)</span>
         <kbd>4</kbd><span>Panzerfaust: antitanque, um disparo por tubo (R pega o próximo)</span>
+        <kbd>6</kbd><span>Besta silenciosa, quando houver (o virote cai com a distância; E recupera)</span>
         <kbd>5</kbd><span>Fuzil com luneta, quando houver (botão direito olha pela luneta)</span>
         <kbd>H</kbd><span>Guardar / sacar a arma (sob disfarce, arma à mostra chama atenção)</span>
         <kbd>M</kbd><span>Abrir a planta do lugar, quando você tiver uma</span>
@@ -679,6 +688,8 @@ const AudioSys={
     if(kind==='medina'){ noise('bandpass',520,.5,.022); noise('highpass',3800,.4,.005); noise('lowpass',160,.7,.02); }
     if(kind==='night'){ noise('lowpass',650,.5,.018); const o=c.createOscillator(); o.frequency.value=4300; const og=c.createGain(); og.gain.value=0; const lfo=c.createOscillator(); lfo.type='square'; lfo.frequency.value=21; const lg=c.createGain(); lg.gain.value=.005; const sl=c.createOscillator(); sl.frequency.value=.4; const sg=c.createGain(); sg.gain.value=.005; lfo.connect(lg); lg.connect(og.gain); sl.connect(sg); sg.connect(og.gain); o.connect(og); og.connect(out); o.start(); lfo.start(); sl.start(); nodes.push(o,lfo,sl); }
     if(kind==='dawn'){ noise('bandpass',340,.9,.035); noise('highpass',2800,.5,.006); noise('lowpass',120,.7,.03); }
+    if(kind==='forest'){ noise('lowpass',180,.5,.03); noise('highpass',4600,.4,.006); noise('bandpass',700,.6,.008); }
+    if(kind==='harbor'){ noise('lowpass',360,.6,.05); noise('bandpass',1100,.5,.01); noise('highpass',4200,.3,.003); }
     if(kind==='desert'){ noise('bandpass',260,.6,.042); noise('lowpass',90,.7,.03); noise('highpass',5200,.3,.004); }
     this.amb=nodes;
   },
@@ -1505,7 +1516,7 @@ class Enemy extends Actor{
   constructor(def){
     const r=mulberry32(def.id.split('').reduce((a,c)=>a+c.charCodeAt(0),0));
     const tro=!!(def.tropical||(G&&G.level&&G.level.tropical));
-    super(def,{uniform:tro?(def.officer?0x8a7a54:0x9c8a5e):def.officer?0x3a3e36:0x4a5040,pants:tro?(def.officer?0x6e6248:0x857452):def.officer?0x2b2d29:0x3f4537,skin:pick(SKINS,r),hair:pick(HAIRS,r),helmet:!!def.helmet,helmetColor:tro?0x9a8a64:0,capColor:tro?0xa08e62:0,cap:def.officer?'officer':(def.helmet?null:'field'),weapon:def.weapon,boots:true,lantern:!!def.lantern});
+    super(def,Object.assign({uniform:tro?(def.officer?0x8a7a54:0x9c8a5e):def.officer?0x3a3e36:0x4a5040,pants:tro?(def.officer?0x6e6248:0x857452):def.officer?0x2b2d29:0x3f4537,skin:pick(SKINS,r),hair:pick(HAIRS,r),helmet:!!def.helmet,helmetColor:tro?0x9a8a64:0,capColor:tro?0xa08e62:0,cap:def.officer?'officer':(def.helmet?null:'field'),weapon:def.weapon,boots:true,lantern:!!def.lantern},(def.faction==='it'&&typeof IT_LOOK!=='undefined')?IT_LOOK:{},def.look||{}));
     this.isEnemy=true; this.type=def.weapon; this.ew=EW[def.weapon]; this.officer=!!def.officer;
     this.hasWeapon=true; this.mag=this.ew.mag; this.reloadT=0; this.shotCD=0; this.burstLeft=0;
     this.helmetState=def.helmet?'ATTACHED':'NONE'; this.helmetDur=CFG.helmet.durability; this.hasCap=!!this.h.cap;
@@ -1558,7 +1569,7 @@ class Enemy extends Actor{
       if(this.state==='COMBAT'){
         this.coverT-=dt; if(this.coverT<=0){ this.coverT=rnd(3,4.5); this.pickCover(); }
         if(this.nades) this.nadeThink();
-        if(this.officer && !G.alarm && !G.radioDead && !this.radioTried && this.hasWeapon && dP>5){ this.state='RADIO'; this.radioTried=true; this.radioT=0; this.setPath(G.level.radio.x,G.level.radio.z); G.radioMsg('RÁDIO',G.level.radioRun,'warn'); }
+        if(this.officer && !this.def.faction && !G.alarm && !G.radioDead && !this.radioTried && this.hasWeapon && dP>5){ this.state='RADIO'; this.radioTried=true; this.radioT=0; this.setPath(G.level.radio.x,G.level.radio.z); G.radioMsg('RÁDIO',G.level.radioRun,'warn'); }
       }
     } else if(this.state!=='DISARMED' && this.state!=='RECOVER'){
       if(pv>0){ this.awareness+=pv*dt*1.8*D().perception+(dP<2.6?1:0); }
@@ -1593,7 +1604,7 @@ class Enemy extends Actor{
   }
   alertNearby(){
     for(const e of G.enemies){
-      if(e===this||e.dead) continue; const d=this.pos.distanceTo(e.pos);
+      if(e===this||e.dead||(e.def.faction||'')!==(this.def.faction||'')) continue; const d=this.pos.distanceTo(e.pos);
       if((d<9&&Math.abs(e.pos.y-this.pos.y)<2) || (d<22 && !segFirst(this.pos.x,this.pos.y+1.5,this.pos.z,e.pos.x,e.pos.y+1.5,e.pos.z))) e.enterCombat(this.lastKnown.x,this.lastKnown.z,true);
     }
   }
@@ -1923,7 +1934,7 @@ function buildViewmodels(){
     B(g,.05,.07,.08,.004,-.085,.035,skin,-.2); B(g,.062,.062,.32,.03,-.13,.22,sleeve,-.25); B(g,.045,.06,.07,-.03,-.09,.01,skin,-.2); B(g,.06,.06,.3,-.065,-.14,.2,sleeve,-.3);
     const mag=B(g,.026,.09,.034,0,-.11,.035,gun); mag.visible=false; const muzzle=new T.Object3D(); muzzle.position.set(0,0,-.31); g.add(muzzle);
     VM.models.silenced={g,mag,muzzle,hip:V3(.15,-.16,-.5),ads:V3(0,-.031,-.56),magHome:mag.position.clone()}; }
-  buildVM04(B,{gun,grip,sleeve,skin}); buildVM08(B,{gun,grip,sleeve,skin});
+  buildVM04(B,{gun,grip,sleeve,skin}); buildVM08(B,{gun,grip,sleeve,skin}); buildVM12(B,{gun,grip,sleeve,skin});
   for(const k in VM.models){ VM.models[k].g.visible=false; VM.root.add(VM.models[k].g); }
   { const g=new T.Group(); const gl=new T.Mesh(new T.BoxGeometry(.06,.075,.06),new T.MeshBasicMaterial({color:0xffd590})); g.add(gl);
     B(g,.078,.014,.078,0,.045,0,gun); B(g,.078,.014,.078,0,-.045,0,gun); for(const [x,z] of [[-.034,-.034],[.034,-.034],[-.034,.034],[.034,.034]]) B(g,.008,.09,.008,x,0,z,gun);
@@ -1943,6 +1954,7 @@ function currentSpread(){
 function playerFire(){
   const P=G.player, w=WEAPONS[P.cur], a=P.ammo[P.cur];
   G.lastFireT=simTime;
+  if(w.bolt){ a.mag--; fireBolt12(); return; }
   if(w.rocket){ a.mag--; fireRocket(); return; }
   a.mag--; G.shotId++; G.stats.shots++;
   const rng=mulberry32(G.shotId*7919+G.seed);
@@ -2060,7 +2072,7 @@ let matricesFresh=false; function ensureMatrices(){ if(!matricesFresh){ scene.up
 function computeDamage(base,dist,falloff,mult){ const [s,e,mn]=falloff; let f=1; if(dist>s) f=dist>=e?mn:lerp(1,mn,(dist-s)/(e-s)); return base*f*mult; }
 function resolveShot(o){
   ensureMatrices();
-  raycaster.set(o.origin,o.dir); raycaster.far=200;
+  raycaster.set(o.origin,o.dir); raycaster.far=o.far||200;
   const hits=raycaster.intersectObjects(W.shootables,false);
   const damaged=new Set(), equipHit=new Set(); let end=o.origin.clone().addScaledVector(o.dir,120), hitChar=null;
   const isPlayer=o.shooter==='player';
@@ -2088,8 +2100,9 @@ function resolveShot(o){
       damaged.add(ch); hitChar=ch; end=h.point;
       const mult=REGIONS[ud.region]?REGIONS[ud.region].m:1;
       let dmg=base*mult; if(isPlayer&&ch.isAlly) dmg*=.5;
-      const headshot=ch.isEnemy&&(ud.region==='head'||ud.region==='neck'); if(headshot) dmg=Math.max(dmg,ch.hp+1);
-      let furtive=false; if(isPlayer&&o.weapon.silent&&ch.isEnemy&&!headshot&&ch.state!=='COMBAT'&&ch.state!=='RADIO'&&h.distance<30&&(ud.region==='chest'||ud.region==='abdomen'||ud.region==='pelvis')&&dmg<ch.hp){ dmg=ch.hp+1; furtive=true; }
+      const armorHit=!!ud.armor; if(armorHit){ dmg=base*.16; AudioSys.play('clank',h.point,1); FX.burst(h.point,7,0xffe2a0,3.4,.18,2,1); if(isPlayer){ hitMarker('equip'); limbTag('ARMADURA'); } if(ch.isEnemy&&!ch.dead){ ch.staggerT=Math.max(ch.staggerT,.3); } }
+      const headshot=!armorHit&&ch.isEnemy&&(ud.region==='head'||ud.region==='neck'); if(headshot) dmg=Math.max(dmg,ch.hp+1);
+      let furtive=false; if(isPlayer&&o.weapon.silent&&ch.isEnemy&&!headshot&&!armorHit&&ch.state!=='COMBAT'&&ch.state!=='RADIO'&&h.distance<30&&(ud.region==='chest'||ud.region==='abdomen'||ud.region==='pelvis')&&dmg<ch.hp){ dmg=ch.hp+1; furtive=true; }
       const killed=ch.takeDamage({dmg,region:ud.region,dir:o.dir,point:h.point,shooter:o.shooter});
       AudioSys.play('body',h.point,.8);
       if(isPlayer && ch.isEnemy){ G.stats.hits++; if(ud.region==='head'||ud.region==='neck') G.stats.heads++; hitMarker(killed?(headshot?'kill head':'kill'):'body'); if(headshot) headTag(); logShot(o,ch,REGIONS[ud.region].n,base,dmg,killed?'neutralizado':''); }
@@ -2399,6 +2412,7 @@ function showResults(){
   const P=G.player; camp.carry={from:G.levelId,weapons:[...P.weapons],ammo:JSON.parse(JSON.stringify(P.ammo)),cur:P.cur,hp:P.hp};
   store.set('sdp_campaign',camp);
   const nx=LEVEL_ORDER[LEVEL_ORDER.indexOf(G.levelId)+1]; APP.nextLevel=nx||null; $('#bNext').hidden=!nx;
+  if(!nx){ const doneN=LEVEL_ORDER.filter(id=>camp.done[id]).length; $('#rText').textContent+=' — Fim das operações disponíveis ('+doneN+'/'+LEVEL_ORDER.length+' concluídas). O arquivo da Rede Lampião aguarda novas missões.'; }
   UI.show('results');
 }
 
@@ -2748,11 +2762,11 @@ function chair(x,z,ry,mat){
 function skyDome(seed,stops,moon,clouds){
   const sky=new T.Mesh(new T.SphereGeometry(200,20,10),new T.MeshBasicMaterial({side:T.BackSide,fog:false,depthWrite:false,map:textTex(1024,512,(g,w,h)=>{
     const gr=g.createLinearGradient(0,0,0,h); stops.forEach(([p,c])=>gr.addColorStop(p,c)); g.fillStyle=gr; g.fillRect(0,0,w,h);
-    const R=mulberry32(seed); for(let i=0;i<420;i++){ const a=.15+R()*.6; g.fillStyle=`rgba(255,255,255,${a*a})`; const s=R()<.06?2:1; g.fillRect(R()*w,R()*h*.44,s,s); }
+    const R=mulberry32(seed); const night=parseInt(stops[0][1].slice(1,3),16)<0x40; for(let i=0;i<(night?420:0);i++){ const a=.15+R()*.6; g.fillStyle=`rgba(255,255,255,${a*a})`; const s=R()<.06?2:1; g.fillRect(R()*w,R()*h*.44,s,s); }
     if(moon){ const [mx,my,r]=moon; const rg=g.createRadialGradient(mx,my,0,mx,my,r*7); rg.addColorStop(0,'rgba(230,226,205,.35)'); rg.addColorStop(1,'rgba(230,226,205,0)'); g.fillStyle=rg; g.fillRect(mx-r*7,my-r*7,r*14,r*14); g.fillStyle='#ece7d4'; g.beginPath(); g.arc(mx,my,r,0,Math.PI*2); g.fill(); g.fillStyle='rgba(150,145,130,.35)'; g.beginPath(); g.arc(mx-r*.3,my-r*.2,r*.28,0,Math.PI*2); g.fill(); }
-    for(let i=0;i<clouds;i++){ g.fillStyle=`rgba(${34+R()*20|0},${40+R()*20|0},${52+R()*20|0},${.05+R()*.08})`; g.beginPath(); g.ellipse(R()*w,h*.38+R()*h*.1,80+R()*160,6+R()*10,0,0,Math.PI*2); g.fill(); }
+    for(let i=0;i<clouds;i++){ g.fillStyle=night?`rgba(${34+R()*20|0},${40+R()*20|0},${52+R()*20|0},${.05+R()*.08})`:`rgba(255,250,240,${.1+R()*.14})`; g.beginPath(); g.ellipse(R()*w,h*.38+R()*h*.1,80+R()*160,6+R()*10,0,0,Math.PI*2); g.fill(); }
   })}));
-  sky.material.map.magFilter=T.LinearFilter; sky.renderOrder=-1; scene.add(sky); return sky;
+  sky.material.map.magFilter=T.LinearFilter; sky.renderOrder=-1; sky.frustumCulled=false; sky.onBeforeRender=function(r,sc,c){ this.position.set(c.position.x,0,c.position.z); this.updateMatrixWorld(); }; scene.add(sky); return sky;
 }
 /* garoa (fase 1) e névoa rasteira (fases 2 e 3) */
 function makeRain(){
@@ -2879,13 +2893,13 @@ function toggleCamera(){
 function updateSearchlight(dt){
   const S=G.sl; if(!S) return; const L=S.lamp;
   if(L.broken){ S.lit=false; return; }
-  S.t+=dt; S.light.target.position.set(Math.sin(S.t*.32)*17,0,21+Math.cos(S.t*.21)*9); S.light.target.updateMatrixWorld();
+  S.t+=dt; if(S.path) S.light.target.position.copy(S.path(S.t)); else S.light.target.position.set(Math.sin(S.t*.32)*17,0,21+Math.cos(S.t*.21)*9); S.light.target.updateMatrixWorld();
   if(S.beam) S.beam.lookAt(S.light.target.position);
   const P=G.player, lp=S.light.position, tp=V3(P.pos.x,P.pos.y+1.1,P.pos.z), dir=V3().subVectors(S.light.target.position,lp).normalize(), v=V3().subVectors(tp,lp), d=v.length(); v.divideScalar(d);
   S.lit=!P.dead && Math.acos(clamp(v.dot(dir),-1,1))<.19 && d<46 && !segFirst(lp.x,lp.y,lp.z,tp.x,tp.y,tp.z);
   S.litT=S.lit?S.litT+dt:Math.max(0,S.litT-dt*.5); S.cd-=dt;
   if(S.litT>1.1&&S.cd<=0){ S.cd=8; let best=null,bd=36; for(const e of G.enemies){ if(e.dead||e.asleep||e.state==='COMBAT'||e.state==='RADIO') continue; const dd=e.pos.distanceTo(P.pos); if(dd<bd){ bd=dd; best=e; } }
-    G.radioMsg('RÁDIO','Do telhado: “Movimento no jardim!”','warn'); if(best){ best.alertLevel=1; best.awareness=Math.max(best.awareness,.65); best.toInvestigate(P.pos.x,P.pos.z); } }
+    G.radioMsg('RÁDIO',S.msg||'Do telhado: “Movimento no jardim!”','warn'); if(best){ best.alertLevel=1; best.awareness=Math.max(best.awareness,.65); best.toInvestigate(P.pos.x,P.pos.z); } }
 }
 
 /* =========================================================
@@ -4447,12 +4461,12 @@ Enemy.prototype.disguiseThink=function(pv,dP,dt){
   const add=(far,v,w)=>{ if(far) ff+=v; else fn+=v; if(v>top){ top=v; why=w; } };
   if(pv>0){
     const zl=G.level.zoneAt(P.pos.x,P.pos.z,P.pos.y);
-    if(zl>G.cred&&!G.escort) add(0,.5,'área fora do seu passe');
+    if(zl>G.cred&&!G.escort&&this.def.faction!=='it') add(0,.5,'área fora do seu passe');
     const mv=Math.hypot(P.vx,P.vz);
     if(P.sprinting) add(0,.2,'correndo'); else if(P.crouch>.5&&mv>.4) add(0,.14,'andando agachada');
     if(!P.holster) add(1,simTime-(G.drawT||-99)<1.5?1.1:.55,'arma à mostra');
-    if(G.camMode){ const facing=Math.abs(angDiff(this.yaw+this.headYaw,Math.atan2(P.pos.x-this.pos.x,P.pos.z-this.pos.z)))<.75; add(1,facing?1.3:.35,'câmera na mão'); }
-    if(simTime-(G.photoT||-99)<1&&dP<14) add(1,1.8,'fotografando');
+    if(G.camMode){ const facing=Math.abs(angDiff(this.yaw+this.headYaw,Math.atan2(P.pos.x-this.pos.x,P.pos.z-this.pos.z)))<.75; add(1,(facing?1.3:.35)*(G.level.camPublic&&zl===0?.1:1),'câmera na mão'); }
+    if(simTime-(G.photoT||-99)<1&&dP<14) add(1,1.8*(G.level.camPublic&&zl===0?.15:1),'fotografando');
     const calm=this.state==='IDLE'||this.state==='PATROL';
     if(dP<2.1&&calm&&this!==G.inspector){ this.closeT=(this.closeT||0)+dt; if(this.closeT>4.5) add(0,.25,'colada nele'); } else this.closeT=0;
     for(const c of G.enemies){ if(c.dead&&!c.gone&&Math.hypot(c.pos.x-P.pos.x,c.pos.z-P.pos.z)<4.5){ add(1,.9,'perto de um corpo'); break; } }
@@ -4460,12 +4474,12 @@ Enemy.prototype.disguiseThink=function(pv,dP,dt){
   }
   const vouched=simTime-(this.clearedT||-99)<30||simTime-(this.vouchT||-99)<20; if(vouched) fn=0;
   const near=clamp(1.35-dP/13,0,1.2), far=dP<30?Math.max(near,.3):0, pk=D().perception;
-  const gain=(fn*near+ff*far)*pk;
+  const gain=(fn*near+ff*far)*pk*(this.def.faction==='it'?.4:1)*(this.bribed?0:1);
   if(gain>0){ this.sus=Math.min(1.2,(this.sus||0)+gain*dt); this.susWhy=why; }
   else this.sus=Math.max(0,(this.sus||0)-.24*dt);
-  if(this.sus>=1&&this===G.inspector) this.sus=.95;
+  if(this.sus>=1&&(this===G.inspector||this.def.faction==='it')) this.sus=.95;
   if(this.sus>=1){ blowDisguise(this,curInteract&&curInteract.susWhy&&holdT>0?curInteract.susWhy:'suspeita'); return; }
-  if(this.sus>=.62&&this.state!=='INSPECT'&&!G.inspector&&simTime-(this.clearedT||-99)>25&&this.hasWeapon) this.startInspect();
+  if(this.sus>=.62&&this.def.faction!=='it'&&this.state!=='INSPECT'&&!G.inspector&&simTime-(this.clearedT||-99)>25&&this.hasWeapon) this.startInspect();
 };
 Enemy.prototype.startInspect=function(){
   this.wake(); this.releaseCover(); this.state='INSPECT'; this.inspectT=0; this.waitT2=0; this.reached=false; this.repathT=0; this.aimTarget=.35; this.path=null; G.inspector=this;
@@ -4499,7 +4513,7 @@ function updateHUD06(dt){
   let m=0, mw=''; for(const e of G.enemies) if(!e.dead&&(e.sus||0)>m){ m=e.sus; mw=e.susWhy||''; }
   if(!G.disguise.blown&&!G.inspector&&m>.22){ st='suspeita'; cls='warn'; }
   el.className='disg '+cls; $('#disgState').textContent=st;
-  $('#disgSub').textContent=(st==='suspeita'&&mw?'Desconfiam: '+mw+' · ':'')+'Credencial '+(G.cred>=2?'vermelha':'branca')+(P.holster?' · arma guardada (H)':' · arma à mostra');
+  $('#disgSub').textContent=(st==='suspeita'&&mw?'Desconfiam: '+mw+' · ':'')+'Credencial '+(G.level.credNames?G.level.credNames[G.cred]:(G.cred>=2?'vermelha':'branca'))+(P.holster?' · arma guardada (H)':' · arma à mostra');
   for(const e of G.enemies){ if(e.dead||G.disguise.blown){ if(e.mark) e.mark.visible=false; continue; } susMark(e,e.state==='INSPECT'?'x':(e.sus>.25?'q':null)); }
 }
 
@@ -5280,7 +5294,7 @@ function update07(dt){
   if(F.power!==false){ F.genT=(F.genT||0)-dt; if(F.genT<=0){ F.genT=.42; if(Math.hypot(P.pos.x+13.5,P.pos.z-2.2)<16) AudioSys.play('engine',V3(-13.5,1,2.2),.22); } }
 }
 function updateHUD07(dt){
-  const el=$('#convChip'); if(!G||G.levelId!=='07'||!G.refs.trucks){ if(el) el.hidden=true; return; } el.hidden=false; const R=G.refs, F=G.flags;
+  const el=$('#convChip'); if(G&&(G.levelId==='11'||G.levelId==='14')) return; if(!G||G.levelId!=='07'||!G.refs.trucks){ if(el) el.hidden=true; return; } { const lb=el.querySelector('.lbl'); if(lb&&lb.firstChild&&lb.firstChild.nodeValue!=='Comboio · ') lb.firstChild.nodeValue='Comboio · '; } el.hidden=false; const R=G.refs, F=G.flags;
   const cls=t=>t.state==='WRECK'?'wreck':t.state==='BURNING'?'burn':(t.state==='DRIVING'||t.state==='STARTING')?'mov':(t.engDead||t.tiresOut||t.driverDead||t.state==='STOPPED')?'dis':t.charge?'chg':'';
   const sig=R.trucks.map(t=>cls(t)+(t.leak?'L':'')).join(',')+'|'+(F.charges||0)+'|'+(F.depart?1:0);
   if(el.dataset.sig===sig) return; el.dataset.sig=sig;
@@ -5366,7 +5380,7 @@ function restartLevel(){ if(!G) return; const id=G.levelId, d=G.diff, keep=setti
 function clearInspect(e,line){
   e.sus=0; e.clearedT=simTime; e.waitT2=0; e.closeT=0; e.awareness=0; e.alertLevel=0; e.susWhy=''; G.inspector=null; G.escort=null; e.aimTarget=0; e.toReturn();
   const P=G.player; for(const o of G.enemies){ if(o===e||o.dead) continue; o.closeT=0; if(Math.hypot(o.pos.x-P.pos.x,o.pos.z-P.pos.z)<18){ o.sus=(o.sus||0)*.4; o.vouchT=simTime; } } G.stats.inspections=(G.stats.inspections||0)+1;
-  G.radioMsg('SENTINELA',line||(G.cred>=2?'“Passe vermelho, carimbo do comandante… Certo. Pode seguir.”':'“Intérprete da Intendência, assinado pelo major… Certo. Pode seguir.”'));
+  G.radioMsg('SENTINELA',line||(G.level.clearLine?G.level.clearLine():G.cred>=2?'“Passe vermelho, carimbo do comandante… Certo. Pode seguir.”':'“Intérprete da Intendência, assinado pelo major… Certo. Pode seguir.”'));
 }
 function showPapers(e){
   if(!e||e.dead||!disguiseOn()||G.papers) return; const P=G.player;
@@ -5377,7 +5391,7 @@ function showPapers(e){
 }
 function papersCard(on,ok){
   const el=$('#papersCard'); if(!el) return;
-  if(on){ const red=G.cred>=2; el.className='papers'+(red?' red':''); el.innerHTML='<div class="pc-h">PASSIERSCHEIN · Nr. 0417</div><div class="pc-n">MOREL, Élise</div><div class="pc-r">Dolmetscherin — Intendantur Tunis</div>'
+  if(on){ const red=G.cred>=2; el.className='papers'+(red?' red':''); el.innerHTML=G.level.papersHTML?G.level.papersHTML(red):'<div class="pc-h">PASSIERSCHEIN · Nr. 0417</div><div class="pc-n">MOREL, Élise</div><div class="pc-r">Dolmetscherin — Intendantur Tunis</div>'
       +'<div class="pc-z">'+(red?'Zutritt: <b>Hof · Stab · Turm · Treibstofflager</b>':'Zutritt: <b>Hof · Stab · Kantine</b>')+'</div><div class="pc-s">gez. Maj. A. Kessel</div>'+(red?'<div class="pc-red">SPERRGEBIET</div>':'')+'<div class="pc-stamp">INTENDANTUR<br>TUNIS</div>';
     el.hidden=false; void el.offsetWidth; el.classList.add('show'); }
   else { const hide=()=>{ el.classList.remove('show'); setTimeout(()=>{ if(!G||!G.papers) el.hidden=true; },300); };
@@ -5720,6 +5734,7 @@ addEventListener('keydown',e=>{
     case 'Digit3': input.selectPressed='silenced'; break;
     case 'Digit4': input.selectPressed='pzf'; break;
     case 'Digit5': input.selectPressed='rifle'; break;
+    case 'Digit6': input.selectPressed='xbow'; break;
     case 'KeyX': throwGrenade(); break;
     case 'KeyH': toggleHolster(); break;
     case 'KeyV': toggleCamera(); break;
@@ -5793,7 +5808,7 @@ function pollGamepad(dt){
 /* toque */
 const touchState={move:null,look:null,fire:false,use:false};
 function setupTouch(){
-  APP.touch=true; APP.noLock=true;
+  APP.touch=true; APP.noLock=true; document.body.classList.add('is-touch');
   const stick=$('#tStick'), mz=$('#tMove'), lz=$('#tLook');
   mz.addEventListener('pointerdown',e=>{ touchState.move={id:e.pointerId,x:e.clientX,y:e.clientY}; stick.style.display='block'; const r=mz.getBoundingClientRect(); stick.style.left=(e.clientX-r.left-55)+'px'; stick.style.top=(e.clientY-r.top-55)+'px'; mz.setPointerCapture(e.pointerId); });
   mz.addEventListener('pointermove',e=>{ const m=touchState.move; if(!m||m.id!==e.pointerId) return; let dx=e.clientX-m.x, dy=e.clientY-m.y; const l=Math.hypot(dx,dy); if(l>50){ dx*=50/l; dy*=50/l; } stick.firstElementChild.style.transform=`translate(${dx}px,${dy}px)`; m.ax=dx/50; m.ay=dy/50; });
@@ -5963,7 +5978,7 @@ function updateHUD(dt){
   const A=G.ally, ac=$('#allyChip'); ac.hidden=!(A&&(A.joined||A.downed));
   if(!ac.hidden){ ac.classList.toggle('down',A.downed); $('#allyText').textContent=A.downed?`${A.nmT} no chão · ${Math.ceil(A.downT)} s`:`${A.nmT} · ${A.mode==='FOLLOW'?'seguindo':'aguardando'}`; $('#allyHp').style.width=(A.hp/A.maxHp*100)+'%'; ac.classList.toggle('is-faded',preset==='cinematic'&&!A.downed&&!tab); }
   for(const d of dmgArcs) if(d.busy){ const rel=angDiff(-P.yaw,d.bearing); d.el.style.transform=`rotate(${rel}rad)`; }
-  drawCompass(); updateRadio(dt); updateHUD04(dt); updateHUD06(dt); updateHUD07(dt);
+  drawCompass(); updateRadio(dt); updateHUD04(dt); updateHUD06(dt); updateHUD07(dt); updateTouchButtons();
 }
 
 /* =========================================================
@@ -6006,7 +6021,7 @@ function simStep(dt){
   if(G.ally) G.ally.update(dt);
   matricesFresh=false;
   updatePlayer(dt);
-  updateProps(dt); updateNades(dt); updateRockets(dt); updateDoors(dt); updatePickups(); updateMission(dt); updateInteraction(dt);
+  updateProps(dt); updateNades(dt); updateRockets(dt); updateBolts(dt); updateDoors(dt); updatePickups(); updateMission(dt); updateInteraction(dt);
   edgeReset();
 }
 function updateCamera(dt){
@@ -6075,10 +6090,1277 @@ function goMenu(){
   $('#recordLine').textContent=n?`Operações concluídas: ${n} de ${LEVEL_ORDER.length}.`:'';
   UI.show('menu');
 }
+function updateTouchButtons(){
+  if(!APP.touch||!G||G._tbFor===G.levelId+'|'+!!G.ally+'|'+!!G.disguise) return; G._tbFor=G.levelId+'|'+!!G.ally+'|'+!!G.disguise; const L=G.level, P=G.player;
+  const show={cam:!!(L.loadout&&L.loadout.camera),lamp:(L.baseLight||1)<.55,stone:true,nade:!!L.grenades,holster:!!G.disguise,map:true,ally:!!G.ally,journal:true,pause:true};
+  for(const b of document.querySelectorAll('.tsmall button')){ const k=b.dataset.t; b.hidden=show[k]===false; }
+}
+
+/* =========================================================
+   OPERAÇÃO 9 — Porto de Chania, Creta (12/05/1943, 09h)
+   jornalista suíça, duas facções (alemães e italianos),
+   permissão de circulação, mapa de rotas, embarque para Cnossos
+   ========================================================= */
+let M9=null;
+function mats09(){
+  tex05(); const HQ=MAT_HQ; const L=(o,ex)=>HQ?new T.MeshPhongMaterial(Object.assign({shininess:8,specular:0x111111},o,ex||{})):new T.MeshLambertMaterial(o);
+  if(!TEX.water9) TEX.water9=canvasTex(128,128,(g,w,h)=>{ const R=mulberry32(909); g.fillStyle='#2a5a6a'; g.fillRect(0,0,w,h); for(let i=0;i<260;i++){ g.fillStyle=R()<.5?`rgba(160,210,220,${R()*.22})`:`rgba(10,40,60,${R()*.2})`; g.fillRect(R()*w,R()*h,4+R()*18,1+R()*2); } },10);
+  if(!TEX.stone9) TEX.stone9=canvasTex(128,128,(g,w,h)=>{ const R=mulberry32(919); g.fillStyle='#c8b490'; g.fillRect(0,0,w,h); for(let y=0;y<h;y+=16){ for(let x=(y/16)%2?-12:0;x<w;x+=24){ const v=R()*22|0; g.fillStyle=`rgba(${176+v},${160+v},${134+v},.6)`; g.fillRect(x+1,y+1,22,14); } g.fillStyle='rgba(60,50,40,.35)'; g.fillRect(0,y,w,1); } },3);
+  const col=c=>L({map:TEX.lime5,color:c});
+  return {water:new T.MeshPhongMaterial({map:TEX.water9,color:0x6aa8b8,shininess:80,specular:0x88aabb,transparent:true,opacity:.92}),stone:L({map:TEX.stone9}),quay:L({map:TEX.stone9,color:0xb8a888}),
+    ochre:col(0xe0b070),rose:col(0xe0a090),cream:col(0xece0c4),blue:col(0x9ab4c4),white:col(0xf0ece0),shutter:L({color:0x3a6a5a}),shutterB:L({color:0x4a5a8a}),tile:L({color:0xa85a3a}),
+    hull:L({color:0x8a8a86}),hullW:L({color:0xd8d0c0}),hullB:L({color:0x3a5a8a}),dark:L({color:0x2a2a28}),awn:L({color:0xb84a3a}),awnS:L({color:0x2a5a8a}),wood:L({color:0x7a5a3a})};
+}
+const ENEMY_DEFS_09=[
+  {id:'kd',x:-36.2,z:-21.4,yaw:Math.PI-.5,weapon:'rifle',helmet:true},
+  {id:'kc',x:-34,z:-15.6,yaw:Math.PI,weapon:'pistol',fixed:true},
+  {id:'ko',x:-36,z:-9.6,weapon:'pistol',officer:true,patrol:[[-36,-9.6],[-29,-9.6],[-29,-11],[-36,-11]]},
+  {id:'mg',x:35,z:-34.6,yaw:Math.PI,weapon:'rifle',helmet:true},
+  {id:'hk',x:35,z:-46,weapon:'pistol',officer:true,patrol:[[35,-46],[35,-41],[37.6,-41],[35,-46]]},
+  {id:'mb',x:42,z:-50,weapon:'smg',helmet:true,patrol:[[39.4,-56],[39.4,-38]]},
+  {id:'dg',x:40,z:-21.6,yaw:Math.PI,weapon:'rifle',helmet:true},
+  {id:'di',x:46,z:-10,weapon:'smg',patrol:[[46,-10],[34,-10],[34,-15],[46,-15]]},
+  {id:'pg',x:42,z:2.4,yaw:Math.PI,weapon:'rifle',helmet:true},
+  {id:'pm',x:33,z:6,weapon:'rifle',patrol:[[33,6],[54,6],[54,22],[33,22]]},
+  {id:'fp1',x:-50,z:-27,weapon:'rifle',helmet:true,patrol:[[-50,-27],[20,-27],[24,-28.4],[-50,-27]]},
+  {id:'fp2',x:-10,z:-2,weapon:'smg',patrol:[[-58,-2],[50,-2]]},
+  {id:'it1',x:.4,z:-25.4,yaw:Math.PI,weapon:'pistol',officer:true,faction:'it',fixed:true},
+  {id:'it2',x:-2.2,z:-26.8,yaw:2.4,weapon:'rifle',faction:'it'},
+  {id:'it3',x:27.4,z:14,yaw:-Math.PI/2,weapon:'rifle',faction:'it',fixed:true},
+  {id:'it4',x:12,z:-28.6,weapon:'rifle',faction:'it',patrol:[[12,-28.6],[26,-28.6]]},
+];
+const IT_LOOK={uniform:0x6e6c52,pants:0x5c5a44,helmetColor:0x5e5c46,capColor:0x6a684e};
+function zone09(x,z){
+  if(x>-42&&x<-26&&z>-20&&z<-13) return 1;
+  if(x>-42&&x<-26&&z>=-13&&z<-6) return 2;
+  if(x>28.5&&x<44&&z<-35) return 2;
+  if(x>26&&x<54&&z>-20&&z<-4) return 2;
+  if(x>30&&x<56&&z>4&&z<24) return 2;
+  return 0;
+}
+function light09(x,z){ if(x>-42&&x<-26&&z>-20&&z<-6) return .55; if(x>26&&x<54&&z>-20&&z<-4) return .45; if(x>31&&x<39&&z>-52&&z<-44) return .55; return .9; }
+function buildLevel09(){
+  M5=mats05(); M6=mats06(); M9=mats09(); const M=M9;
+  scene.background=new T.Color(0xc8dcec); scene.fog=new T.FogExp2(0xc8d8e4,.006);
+  skyDome(909,[[0,'#4a86c4'],[.3,'#7aaad4'],[.45,'#c4d8e8'],[.5,'#e8eef0'],[.52,'#9ab8c8'],[1,'#4a6a7a']],null,10);
+  scene.add(new T.HemisphereLight(0xd8e8f8,0x9a8a70,.7));
+  const sun=new T.DirectionalLight(0xfff4e0,1.0); sun.target.position.set(0,0,-10); sun.position.set(-30,70,40); scene.add(sun); scene.add(sun.target); scene.add(new T.AmbientLight(0x6a6a7a,.3));
+  // ---- mar e cais ----
+  const water=new T.Mesh(new T.PlaneGeometry(220,90),M.water); water.rotation.x=-Math.PI/2; water.position.set(0,-.7,-77); scene.add(water);
+  floorPlane(140,62,-2,-1,M.quay,'stone',0);
+  addBlock(-70,70,-33.4,-32,.01,{mat:M.stone,surf:'stone',seg:4,solid:false}); addSolidOnly(-70,28.5,-33,-32.6,1.2); addSolidOnly(44,70,-33,-32.6,1.2);
+  { const q=new T.Mesh(BOX(140,.8,.6),M.stone); q.position.set(0,-.4,-32.3); scene.add(q); }
+  for(let x=-64;x<=26;x+=7){ addMesh(new T.CylinderGeometry(.2,.26,.55,8),M.dark,x,.27,-31.8,'metal'); addSolidOnly(x-.25,x+.25,-32.05,-31.55,.55,0,true); }
+  // molhe com a capitania
+  floorPlane(15.5,30,36.25,-47,M.quay,'stone',.01);
+  { const q=new T.Mesh(BOX(15.5,.8,30),M.stone); q.position.set(36.25,-.42,-47); scene.add(q); }
+  addSolidOnly(28.2,28.5,-62,-33,1.2); addSolidOnly(44,44.3,-62,-33,1.2); addSolidOnly(28.2,44.3,-62.3,-62,1.2);
+  const wl=(axis,c0,c1,a0,a1,h,ops,mat)=>wallOpen(axis,c0,c1,a0,a1,h,ops,mat,{inner:{}});
+  wl('x',-52,-51.8,31,39,3.4,[],M.white); wl('x',-44.2,-44,31,39,3.4,[{c:35,w:1.2},{c:32.6,w:1,sill:1,top:2.2},{c:37.4,w:1,sill:1,top:2.2}],M.white); wl('z',31,31.2,-51.8,-44.2,3.4,[{c:-48,w:1,sill:1,top:2.2}],M.white); wl('z',38.8,39,-51.8,-44.2,3.4,[],M.white);
+  addBlock(30.8,39.2,-52.2,-43.8,.25,{y0:3.4,mat:M.tile,bottom:MAT.ceil,surf:'stone',seg:2});
+  makeDoor('hk',{x:35,z:-44.1,w:1.2,d:.1,h:2.3,mat:M.shutter,offset:V3(-1.15,0,0),npc:true,nav:true});
+  addBlock(35.6,38.4,-51.6,-50.8,.78,{mat:M.wood,surf:'wood',cover:true,seg:1}); addBlock(31.4,32.2,-50,-46,1.8,{mat:MAT.cabinet,surf:'metal',seg:1});
+  const mapBoard=poster(35,1.8,-51.76,0,3.2,1.8,(g,w,h)=>{ g.fillStyle='#d8ccae'; g.fillRect(0,0,w,h); g.strokeStyle='#5a7a9a'; g.lineWidth=2; g.beginPath(); g.moveTo(10,90); for(let x=10;x<w-10;x+=20) g.lineTo(x,80+Math.sin(x*.05)*20); g.stroke(); g.fillStyle='#c8a870'; g.beginPath(); g.moveTo(30,95); g.quadraticCurveTo(w*.5,40,w-30,95); g.quadraticCurveTo(w*.5,140,30,95); g.fill(); g.fillStyle='#8a1a10'; for(const [x,y] of [[60,92],[110,70],[170,66],[230,74],[280,90]]){ g.beginPath(); g.arc(x,y,5,0,7); g.fill(); } g.strokeStyle='#8a1a10'; g.setLineDash([6,4]); g.beginPath(); g.moveTo(60,92); g.lineTo(170,66); g.lineTo(230,74); g.stroke(); g.setLineDash([]); g.fillStyle='#222'; g.font='bold 14px serif'; g.fillText('KRETA — Küstenbatterien u. Nachschubwege',12,20); g.font='11px serif'; g.fillText('Chania',48,110); g.fillText('Heraklion / Knossos',200,118); });
+  bulb('H1',35,3.15,-48,6); W.lamps[W.lamps.length-1].base=.6; W.lamps[W.lamps.length-1].light.intensity=.6;
+  // lancha torpedeira atracada
+  { const g=new T.Group(); g.position.set(46.4,-.3,-48); scene.add(g); const hull=new T.Mesh(BOX(4,1.8,26),M.hull); hull.position.y=.4; g.add(hull); const bow=new T.Mesh(new T.ConeGeometry(2,5,4),M.hull); bow.rotation.x=-Math.PI/2; bow.rotation.y=Math.PI/4; bow.scale.set(1,1,.45); bow.position.set(0,.4,-15.5); g.add(bow);
+    const br=new T.Mesh(BOX(2.4,1.6,4),M.hull); br.position.set(0,2,-2); g.add(br); for(const s of [-1,1]){ const t=new T.Mesh(new T.CylinderGeometry(.28,.28,6,10),M.dark); t.rotation.x=Math.PI/2; t.position.set(s*1.3,1.5,-8); g.add(t); } const gun=new T.Mesh(new T.CylinderGeometry(.06,.06,1.6,8),M.dark); gun.rotation.x=Math.PI/2; gun.position.set(0,2,4); g.add(gun);
+    const flag=new T.Mesh(BOX(.02,.5,.8),hm(0xb02a20)); flag.position.set(0,3.2,10); g.add(flag); }
+  // barcos de pesca
+  for(const [x,z,r,m] of [[-56,-37,.2,M.hullB],[-40,-38,-.3,M.hullW],[-20,-37.4,.1,M.hullB],[8,-38,.4,M.hullW]]){ const g=new T.Group(); g.position.set(x,-.45,z); g.rotation.y=r; const h=new T.Mesh(BOX(2.4,1,7),m); g.add(h); const c=new T.Mesh(BOX(1.4,1.1,1.8),M.white); c.position.set(0,.9,-.6); g.add(c); const ms=new T.Mesh(new T.CylinderGeometry(.05,.05,4,6),M.wood); ms.position.set(0,2.4,1.6); g.add(ms); scene.add(g); }
+  // ---- casario ----
+  const house=(x0,x1,z0,z1,h,mat,sh)=>{ addBlock(x0,x1,z0,z1,h,{mat,surf:'stone',top:M.tile,seg:3,cover:false}); const R=mulberry32(Math.round(x0*13+z0*7));
+    for(let y=1.4;y<h-.8;y+=2.6) for(let x=x0+1.2;x<x1-.8;x+=2.4){ if(R()<.2) continue; const m=new T.Mesh(BOX(.9,1.3,.08),R()<.5?sh:M.dark); m.position.set(x,y+.4,z0-.03); scene.add(m); if(z1<0){} } };
+  house(-68,-54,-22,-6,7.6,M.ochre,M.shutter); house(-52,-46,-22,-8,6.4,M.rose,M.shutterB); house(-22,-12.4,-22,-8,6.8,M.cream,M.shutter); house(4,14,-22,-8,7.2,M.blue,M.shutterB); house(16,24,-22,-8,6,M.ochre,M.shutter);
+  house(-68,-50,2,20,6,M.cream,M.shutterB); house(-46,-34,4,20,7,M.rose,M.shutter); house(-30,-18,4,20,6.4,M.ochre,M.shutterB); house(-14,-4,4,20,6.8,M.white,M.shutter); house(0,12,4,20,6,M.blue,M.shutter); house(14,22.6,4,20,7.4,M.cream,M.shutterB);
+  // beco do mercado negro (entre -12.4 e -4) e café
+  addBlock(-4,4,-22,-8,6.2,{mat:M.white,surf:'stone',top:M.tile,seg:3});
+  { const a=new T.Mesh(BOX(7,.06,4),M.awn); a.position.set(0,2.7,-24.1); a.rotation.x=.25; scene.add(a); for(const x of [-3.4,3.4]) addMesh(BOX(.07,2.6,.07),M.dark,x,1.3,-26,'metal'); }
+  for(const [x,z] of [[-2.6,-25],[1.6,-25.8],[3,-24.2],[-1.2,-28]]){ addMesh(new T.CylinderGeometry(.45,.45,.05,12),M.white,x,.74,z,'wood'); addMesh(new T.CylinderGeometry(.05,.05,.72,6),M.dark,x,.37,z,'metal'); addSolidOnly(x-.4,x+.4,z-.4,z+.4,.76,0,true); }
+  poster(0,3.3,-22.06,Math.PI,3.4,.6,(g,w,h)=>{ g.fillStyle='#2a5a8a'; g.fillRect(0,0,w,h); g.fillStyle='#f0e8d0'; g.font='bold 26px serif'; g.textAlign='center'; g.fillText('ΚΑΦΕΝΕΙΟΝ  Ο  ΛΙΜΗΝ',w/2,40); });
+  // Kommandantur (palazzo veneziano)
+  wl('x',-20,-19.8,-42,-26,4,[{c:-34,w:1.6},{c:-39,w:1.2,sill:1,top:2.4},{c:-29,w:1.2,sill:1,top:2.4}],M.cream); wl('x',-6.2,-6,-42,-26,4,[{c:-38,w:1.2}],M.cream);
+  wl('z',-42,-41.8,-19.8,-6.2,4,[],M.cream); wl('z',-26.2,-26,-19.8,-6.2,4,[{c:-10,w:1.2,sill:1,top:2.4}],M.cream);
+  addBlock(-42,-30,-13.1,-12.9,4,{mat:M.cream,surf:'stone',seg:2});
+  addBlock(-42.2,-25.8,-20.2,-5.8,.3,{y0:4,mat:M.tile,bottom:MAT.ceil,surf:'stone',seg:3});
+  makeDoor('kfront',{x:-34,z:-19.9,w:1.6,d:.1,h:2.5,mat:M.shutter,offset:V3(1.55,0,0),npc:true,nav:true});
+  makeDoor('kback',{x:-38,z:-6.1,w:1.2,d:.1,h:2.3,mat:M.wood,offset:V3(1.15,0,0),npc:true,nav:true});
+  addBlock(-37,-31,-16.8,-16,1,{mat:M.wood,surf:'wood',cover:true,seg:1}); poster(-34,2.6,-13.16,Math.PI,1.2,1.4,(g,w,h)=>{ g.fillStyle='#d8ccb0'; g.fillRect(0,0,w,h); g.fillStyle='#8a1a10'; g.fillRect(0,0,w,40); g.fillStyle='#f0e8d0'; g.font='bold 20px serif'; g.textAlign='center'; g.fillText('BEKANNTMACHUNG',w/2,28); g.fillStyle='#222'; g.font='12px serif'; ['Ausgangssperre 21.00 Uhr','Passierscheine nur','mit Zustimmung des','ital. Verbindungsoffiziers'].forEach((s,i)=>g.fillText(s,w/2,70+i*20)); });
+  for(const x of [-40.6,-27.4]) addBlock(x-.3,x+.3,-19.6,-14,.45,{mat:M.wood,surf:'wood',seg:1});
+  // escritório dos fundos: porta interna (abertura em x -29) e mesa do carimbo
+  addBlock(-28.8,-26.2,-13.1,-12.9,4,{mat:M.cream,surf:'stone',seg:1}); addBlock(-30,-28.8,-13.1,-12.9,1.6,{y0:2.4,mat:M.cream,surf:'stone',seg:1});
+  addBlock(-40.6,-37.6,-9,-8,.78,{mat:M.wood,surf:'wood',cover:true,seg:1}); const stamp9=addMesh(BOX(.12,.14,.12),hm(0x3a2a1a),-39.2,.85,-8.5,'wood'); addBlock(-41.6,-41,-12,-7.4,1.9,{mat:MAT.cabinet,surf:'metal',seg:1});
+  bulb('K1',-34,3.7,-16.5,7); bulb('K2',-36,3.7,-9.5,6);
+  // depósito (arsenal veneziano)
+  wl('x',-20,-19.8,26,54,6,[{c:40,w:3}],M.stone); wl('x',-4.2,-4,26,54,6,[{c:30,w:1.2}],M.stone); wl('z',26,26.2,-19.8,-4.2,6,[],M.stone); wl('z',53.8,54,-19.8,-4.2,6,[],M.stone);
+  for(let x=31;x<54;x+=6) addBlock(x-.4,x+.4,-19.8,-4.2,.6,{y0:5.4,mat:M.stone,surf:'stone',seg:2,solid:false});
+  addBlock(25.8,54.2,-20.2,-3.8,.4,{y0:6,mat:M.tile,bottom:M.stone,surf:'stone',seg:4});
+  makeDoor('dep',{x:30,z:-4.1,w:1.2,d:.1,h:2.3,mat:M.wood,offset:V3(1.15,0,0),npc:true,nav:true});
+  for(const [x,z] of [[30,-17],[32,-17],[30,-15.6],[44,-17.4],[46,-17.4],[48.6,-17.4],[50,-8],[50,-6.6],[36,-8],[37.4,-8]]) crate(x,z,1.2,1.15);
+  drums(28,30,-8.6,-6.2,1.8,M6.drum); addBlock(44,46.6,-7.6,-6.8,.78,{mat:M.wood,surf:'wood',cover:true,seg:1}); const clip=addMesh(BOX(.3,.02,.42),hm(0xe8e0c8),45.3,.8,-7.2,null);
+  bulb('D1',40,5.6,-12,9); bulb('D2',45,5.6,-7,6);
+  // pátio de viaturas
+  addBlock(30,30.4,4,10.6,3,{mat:M.stone,surf:'stone',seg:2}); addBlock(30,30.4,12.4,24,3,{mat:M.stone,surf:'stone',seg:2}); addBlock(30,40.6,23.6,24,3,{mat:M.stone,surf:'stone',seg:2}); addBlock(43.4,56,23.6,24,3,{mat:M.stone,surf:'stone',seg:2}); addBlock(55.6,56,4,24,3,{mat:M.stone,surf:'stone',seg:2});
+  addBlock(30,40.6,3.8,4.2,3,{mat:M.stone,surf:'stone',seg:2}); addBlock(43.4,56,3.8,4.2,3,{mat:M.stone,surf:'stone',seg:2});
+  makeDoor('itgate',{x:30.2,z:11.5,w:.12,d:1.8,h:2.4,mat:M.wood,offset:V3(0,0,1.7),locked:true,npc:true,nav:true});
+  truck04(37,9); truck04(37,19); truck04(49,15);
+  for(const z of [14.6,15.4]) addMesh(BOX(.8,.75,.7),MAT.crate,46.4,1.75,z,'wood');
+  addMesh(BOX(.08,1.6,.08),M.wood,44.6,.8,12.2,'wood'); poster(44.6,1.5,12.16,Math.PI,1.4,.45,(g,w,h)=>{ g.fillStyle='#e8dcc0'; g.fillRect(0,0,w,h); g.fillStyle='#1a1a1a'; g.font='bold 24px sans-serif'; g.textAlign='center'; g.fillText('LKW 3 — KNOSSOS',w/2,32); });
+  crate(52,8,1.2,1.1); crate(52,9.3,1,1); sandbags(40.4,43.6,2.6,3.4);
+  // feira e figurantes
+  const stall=(x,z,c)=>{ addBlock(x-1,x+1,z-.5,z+.5,.85,{mat:M.wood,surf:'wood',cover:true,seg:1}); const a=new T.Mesh(BOX(2.2,.05,1.4),c); a.position.set(x,2.2,z); scene.add(a); for(const s of [-1,1]) addMesh(BOX(.06,2.2,.06),M.wood,x+s,1.1,z+.5,'wood'); };
+  stall(-24,-27.6,M.awnS); stall(-30,-27.6,M.awn); stall(-8.2,-14.4,M.awn);
+  const civs=[]; for(const [id,x,z,yaw,lk] of [['c_sell',-8.2,-13.4,Math.PI,{uniform:0x3a3a40,pants:0x2a2a2a,skin:0xb88a64,hair:0xdcdcdc,cap:'field',capColor:0x1a1a1a}],['c_f1',-24,-26.8,Math.PI,{uniform:0x5a4a3a,pants:0x2a2a2a,skin:0xc49a74,hair:0x1a1410,cap:null}],['c_f2',-30,-26.8,Math.PI,{uniform:0x2a2a2a,pants:0x2a2a2a,skin:0xc49a74,hair:0x3a2a1a,cap:null}],['c_fish',-46,-31,0.2,{uniform:0x2a3a5a,pants:0x3a3a3a,skin:0xa87a54,hair:0x1a1a1a,cap:'beret'}]]){
+    const a=new Actor({id,x,z,yaw},Object.assign({weapon:null,boots:true},lk)); removeShootables(a.h.hitMeshes); civs.push(a); }
+  // navegação
+  const N=[];
+  for(let x=-66;x<=54;x+=3.2) for(let z=-30.8;z<=-22.9;z+=2.6) N.push({x,z});
+  for(let x=-66;x<=56;x+=3.2) N.push({x,z:-23.1});
+  for(const x of [-53,-44,15,25]) for(let z=-23;z<=-4;z+=2.4) N.push({x,z});
+  for(let x=-66;x<=54;x+=3.2) for(let z=-5;z<=1.7;z+=2.2) N.push({x,z});
+  for(let x=29.6;x<=43;x+=2.4) for(let z=-60;z<=-33.5;z+=2.6) N.push({x,z});
+  for(let x=-40.6;x<=-27.4;x+=2.2) for(let z=-18.6;z<=-7.4;z+=1.9) N.push({x,z});
+  for(let x=27.6;x<=52.6;x+=2.4) for(let z=-18.6;z<=-5.4;z+=2.2) N.push({x,z});
+  for(let x=31.6;x<=54.4;x+=2.4) for(let z=5.6;z<=22.4;z+=2.2) N.push({x,z});
+  for(let x=-11.6;x<=-4.8;x+=1.7) for(let z=-21;z<=-9;z+=2) N.push({x,z});
+  for(let x=23.8;x<=28.6;x+=2.4) for(let z=3;z<=23;z+=2.5) N.push({x,z});
+  N.push({x:-34,z:-21},{x:-34,z:-18.6},{x:-29.4,z:-13},{x:-29.4,z:-11.6},{x:-29.4,z:-14.4},{x:-38,z:-5},{x:-38,z:-7.4},{x:40,z:-21},{x:40,z:-18.6},{x:30,z:-3},{x:30,z:-5.4},{x:42,z:3},{x:42,z:5.4},{x:31.6,z:11.6},{x:35,z:-43},{x:35,z:-45.4},{x:35,z:-48},{x:33,z:-49},{x:37,z:-49});
+  W.nav.nodes=N.filter(n=>!insideSolid(n.x,n.z,.4)); W.nav.link=4.4; buildNav();
+  G.cred=1; G.disguise={blown:false};
+  return {sun,water,mapBoard,stamp9,clip,civs};
+}
+function objectives09(){ return [
+  {id:'pass',text:'Consiga um Passierschein (permissão de circulação) na Kommandantur',state:'active',marker:{x:-34,z:-17}},
+  {id:'map',text:'Fotografe o mapa de rotas na capitania, no fim do molhe',state:'active',marker:{x:35,z:-50}},
+  {id:'sched',text:'Encontre a programação dos caminhões no depósito do arsenal',state:'active',marker:{x:45.3,z:-7.2}},
+  {id:'board',text:'Esconda-se no caminhão 3, que vai para Cnossos',state:'hidden',marker:{x:45.4,z:15}},
+  {id:'eboat',text:'Opcional: fotografe a lancha torpedeira atracada no molhe',state:'active',optional:true},
+  {id:'cover9',text:'Opcional: termine sem perder o disfarce',state:'active',optional:true,autoDone:true},
+]; }
+function interact09(R){
+  const I=W.interactables, F=()=>G.flags;
+  for(const [id,x,z] of [['kfront',-34,-19.9],['kback',-38,-6.1],['dep',30,-4.1],['hk',35,-44.1]]) I.push(doorInteract(id,V3(x,1.2,z)));
+  I.push({id:'seller',pt:()=>V3(-8.2,1.3,-14.2),r:2.4,label:()=>F().cigs||F().cigUsed?null:'Comprar um maço de Papastratos no mercado negro',
+    use:()=>{ F().cigs=true; AudioSys.play('pickup'); pickupMsg('Cigarros Papastratos (um maço)'); G.radioMsg('VENDEDOR','“Último maço, kyría. Os italianos pagam o dobro — mas a senhora é jornalista, né?”'); }});
+  I.push({id:'tenente',pt:()=>V3(.4,1.4,-25.4),r:2.6,label:()=>{ if(F().visto||!disguiseOn()) return null; return F().cigs?'Oferecer os cigarros ao tenente Bellandi e pedir o visto':'Pedir o visto ao tenente Bellandi (oficial de ligação italiano)'; },
+    use:()=>{ if(!F().cigs){ G.radioMsg('TEN. BELLANDI','“Un visto, signorina? Com este calor, minha caneta só funciona com um bom maço de Papastratos…”'); if(!F().tipCig){ F().tipCig=true; setTimeout(()=>{ if(G&&G.levelId==='09'&&!G.ending) G.radioMsg('ÉLISE','Tem um velho vendendo coisas no beco atrás do café.','tip'); },3000); } return; }
+      F().cigs=false; F().cigUsed='ten'; F().visto=true; AudioSys.play('stamp'); pickupMsg('Visto do oficial de ligação italiano'); G.radioMsg('TEN. BELLANDI','“Grazie! Pronto — Bellandi, Ufficiale di collegamento. Os alemães vão odiar, mas não podem recusar.”'); const o=obj('pass'); o.text='Leve o visto ao escrivão da Kommandantur e peça o Passierschein'; refreshObjectiveUI(); cp09(); }});
+  I.push({id:'clerk',pt:()=>V3(-34,1.4,-16.4),r:2.6,hold:()=>F().visto?1.6:0,label:()=>{ if(G.cred>=2||!disguiseOn()) return null; return F().visto?'Pedir o Passierschein ao escrivão (segure)':'Pedir um Passierschein ao escrivão'; },
+    use:()=>{ if(!F().visto){ G.radioMsg('ESCRIVÃO','“Jornalista suíça? Sem o visto do oficial de ligação italiano, nada de Passierschein. Regra nova. O tenente está no café do cais.”'); const o=obj('pass'); o.text='Consiga o visto do tenente italiano (café do cais) — ou carimbe um passe nos fundos da Kommandantur'; refreshObjectiveUI(); return; }
+      G.cred=2; F().pass=true; AudioSys.play('stamp'); pickupMsg('Passierschein Kreta — acesso ao porto militar'); complete('pass'); G.radioMsg('ESCRIVÃO','“Passierschein Nr. 2231. Porto, molhe e depósito. Não perca, Fräulein.”'); cp09(); }});
+  I.push({id:'stamp9',pt:()=>V3(-39.2,.95,-8.5),r:2,hold:()=>2.4,sus:2.2,susWhy:'credencial',label:()=>G.cred>=2?null:'Carimbar um Passierschein em branco (segure — se alguém vir, acabou)',
+    use:()=>{ G.cred=2; F().pass=true; F().forged=true; AudioSys.play('stamp'); pickupMsg('Passierschein carimbado por você mesma'); complete('pass'); cp09(); }});
+  I.push({id:'itsentry',pt:()=>V3(27.4,1.4,14),r:2.6,label:()=>{ const e=G.enemies.find(x=>x.id==='it3'); if(!e||e.dead||F().bribed||!disguiseOn()) return null; return F().cigs?'Oferecer os cigarros ao sentinela italiano':'Sentinela italiano no portão lateral'; },
+    use:()=>{ const e=G.enemies.find(x=>x.id==='it3'); if(!F().cigs){ G.radioMsg('SENTINELA ITALIANO','“Chiuso, signorina. Só com ordem — ou com alguma coisa para fumar…”'); return; }
+      F().cigs=false; F().cigUsed='it'; F().bribed=true; e.bribed=true; const d=W.doors.itgate; d.state='CLOSED'; openDoor(d,null); AudioSys.play('unlock'); G.radioMsg('SENTINELA ITALIANO','“Papastratos! Eu não vi nada, eh. Os alemães lá dentro também não precisam ver.”'); cp09(); }});
+  I.push({id:'sched',pt:()=>V3(45.3,.9,-7.2),r:2.2,hold:()=>1.4,sus:1.2,susWhy:'credencial',label:()=>F().sched?null:'Ler a programação dos caminhões (segure)',
+    use:()=>{ F().sched=true; R.clip.visible=false; AudioSys.play('pickup'); complete('sched'); openDoc('sched09'); activate('board'); F().departT=0; G.radioMsg('ÉLISE','LKW 3 — Knossos, saída às 11h30. Caixotes “arqueológicos”. Preciso estar naquela carroceria.','warn'); cp09(); }});
+  I.push({id:'board9',pt:()=>V3(45.6,1.5,15),r:2.6,hold:()=>2,label:()=>obj('board').state==='active'?'Esconder-se entre os caixotes do caminhão 3 (segure)':null,sus:2,susWhy:'suspeita',
+    use:()=>missionComplete()});
+}
+function photos09(){
+  W.photo.push({id:'map9',label:'Mapa de rotas e baterias costeiras',pos:V3(35,1.8,-51.7),normal:V3(0,0,1),max:5,obj:'map',size:1.2,msg:'Baterias costeiras de Chania a Heraklion e a estrada de abastecimento até Cnossos. Londres vai querer isto inteiro.'});
+  W.photo.push({id:'eboat',label:'Lancha torpedeira (S-Boot)',pos:V3(46.4,1.8,-48),normal:V3(-1,0,0),max:24,obj:'eboat',size:3.5,msg:'S-Boot da 21ª flotilha, atracado em Chania. A Marinha Real paga bem por isto.'});
+}
+DOCS.sched09={title:'Fahrbefehl — Transportkolonne Chania',sub:'prancheta do depósito, 12.5.1943',body:`LKW 1  Souda — Munition        09.40
+LKW 2  Rethymno — Verpflegung    10.15
+LKW 3  KNOSSOS — Baumaterial /
+       "archäologische Kisten"    11.30
+       Begleitung: 2 Mann, Feldgend.
+       Ziel: Villa Ariadne (Stab)
+
+Abfahrt nur mit gest. Fahrbefehl.`,pencil:'Caixotes “arqueológicos” para a Villa Ariadne — o QG alemão em Cnossos.'};
+DOCS.planta09={title:'Porto de Chania',sub:'Croqui da Rede — deixado no caíque',map:'09',body:'',pencil:'Alemães mandam na cidade; italianos fazem a ligação e fecham os olhos por cigarros.'};
+function drawMap09(g,w,h){
+  g.fillStyle='#e8dcc0'; g.fillRect(0,0,w,h); const S=w/140, X=x=>(x+70)*S, Z=z=>(z+64)*S;
+  g.fillStyle='#9ab8c8'; g.fillRect(0,0,w,Z(-32.6)); g.fillRect(X(28.5),Z(-62),(44-28.5)*S,0); g.fillStyle='#d8ccb0'; g.fillRect(X(28.5),Z(-62),15.5*S,30*S);
+  const rect=(x0,x1,z0,z1,fill,stroke)=>{ g.fillStyle=fill; g.fillRect(X(x0),Z(z0),(x1-x0)*S,(z1-z0)*S); if(stroke){ g.strokeStyle=stroke; g.lineWidth=2; g.strokeRect(X(x0),Z(z0),(x1-x0)*S,(z1-z0)*S); } };
+  for(const [a,b,c,d] of [[-68,-54,-22,-6],[-52,-46,-22,-8],[-22,-12.4,-22,-8],[-4,4,-22,-8],[4,14,-22,-8],[16,24,-22,-8],[-68,-50,2,20],[-46,-34,4,20],[-30,-18,4,20],[-14,-4,4,20],[0,12,4,20],[14,22.6,4,20]]) rect(a,b,c,d,'#c8b490',null);
+  rect(-42,-26,-20,-6,'#b8a07a','#4a3a22'); rect(26,54,-20,-4,'#b8a07a','#4a3a22'); rect(30,56,4,24,'#d0c4a4','#4a3a22'); rect(31,39,-52,-44,'#b8a07a','#4a3a22');
+  g.fillStyle='#2a2418'; g.textAlign='center'; const t=(s,x,z,f)=>{ g.font=f||'12px serif'; g.fillText(s,X(x),Z(z)); };
+  t('KOMMANDANTUR',-34,-14,'bold 11px serif'); t('frente · fundos',-34,-9,'italic 10px serif'); t('ARSENAL (depósito)',40,-12,'bold 11px serif'); t('VIATURAS',43,12,'bold 11px serif'); t('LKW 3',48.5,19,'10px serif'); t('capitania',35,-56,'11px serif');
+  t('café',-7,-27,'italic 11px serif'); t('mercado negro',-9,-14,'italic 10px serif'); t('portão (italiano)',23,9,'italic 10px serif'); t('S-Boot',47,-60,'italic 10px serif'); t('CAIS',-30,-29,'bold 12px serif'); t('rua',-30,-1,'italic 11px serif'); t('caíque',-56,-40,'italic 10px serif');
+}
+function update09(dt){
+  const P=G.player, F=G.flags, R=G.refs;
+  inspectTick(dt);
+  if(!F.i1&&G.introT>.8){ F.i1=true; G.radioMsg('ÉLISE','Claire Vautrin, Gazette de Lausanne. Uma jornalista suíça pode fotografar o cais à vontade — o porto militar, não.','tip'); }
+  if(!F.i2&&G.introT>9){ F.i2=true; G.radioMsg('DICA','Os italianos (farda verde-cinza) desconfiam menos e não chamam os alemães. Alemães pedem documentos. Arma guardada (H).','tip'); }
+  if(TEX.water9) TEX.water9.offset.set((simTime*.004)%1,(simTime*.007)%1);
+  for(const c of R.civs){ c.animate&&c.animate(dt); }
+  if(obj('board').state==='active'){ const total=G.diff==='recruta'?360:G.diff==='veterano'?220:280; F.departT=(F.departT||0)+dt; const left=Math.max(0,total-F.departT);
+    G.progress={label:'LKW 3 parte para Cnossos em '+Math.floor(left/60)+':'+String(Math.floor(left%60)).padStart(2,'0'),v:1-F.departT/total};
+    if(left<=0&&!G.ending){ missionFail('O caminhão partiu','O LKW 3 saiu para Cnossos sem você. Os caixotes “arqueológicos” chegam à Villa Ariadne sem testemunha.'); } }
+  else if(!G.ending) G.progress=null;
+  if(G.disguise.blown&&obj('cover9').state==='active') failObjective('cover9');
+}
+function cp09(){ checkpoint(); }
+function restore09(s){ const F=G.flags, R=G.refs; G.cred=F.pass?2:1; G.disguise={blown:!!F.blown}; if(F.sched) R.clip.visible=false; if(F.bribed){ const e=G.enemies.find(x=>x.id==='it3'); if(e) e.bribed=true; } }
+LEVELS['09']={id:'09',num:9,op:'Operação 9',name:'A Matéria do Porto',place:'Chania, Creta ocupada',prev:'08',
+  loadout:{weapons:['silenced','pistol'],ammo:{silenced:{mag:6,reserve:12},pistol:{mag:8,reserve:16}},cur:'silenced',camera:true},baseLight:.9,lightFn:light09,shadows:true,bloomTh:.9,zoneAt:zone09,camPublic:true,
+  credNames:['','imprensa','imprensa + Passierschein'],
+  papersHTML:red=>'<div class="pc-h">'+(red?'PASSIERSCHEIN KRETA · Nr. 2231':'PRESSEAUSWEIS · CH')+'</div><div class="pc-n">VAUTRIN, Claire</div><div class="pc-r">Korrespondentin — Gazette de Lausanne</div><div class="pc-z">'+(red?'Zutritt: <b>Hafen · Mole · Arsenal · Fahrbereitschaft</b>':'Zutritt: <b>Stadt · Kai · Kommandantur (Vorraum)</b>')+'</div><div class="pc-s">'+(red?'gez. Ortskommandant · visto: Ten. Bellandi':'Schweizer Presse — neutral')+'</div>'+(red?'<div class="pc-red">HAFEN</div>':'')+'<div class="pc-stamp">'+(red?'ORTSKDTR.<br>CHANIA':'PRESSE<br>BERN')+'</div>',
+  clearLine:()=>G.cred>=2?'“Passierschein do porto… em ordem. Pode seguir, Fräulein.”':'“Imprensa suíça. Fique longe do porto militar, Fräulein.”',
+  build:()=>{ const r=buildLevel09(); photos09(); return r; },enemies:ENEMY_DEFS_09,ally:null,start:{x:-60,z:-28,yaw:-Math.PI/2},startDocs:['planta09'],drawMap:drawMap09,
+  reinf:[{id:'n1',x:-36,z:-2,weapon:'smg',helmet:true},{id:'n2',x:-32,z:-2.4,weapon:'rifle',helmet:true},{id:'n3',x:40,z:-1,weapon:'rifle',helmet:true}],
+  radio:{x:-36,z:-10.6,fx:-41.2,fz:-10},radioRun:'O oficial corre para o telefone da Kommandantur!',alarmPos:V3(-41,1.4,-10),alarmText:'Alarme no porto de Chania! A Feldgendarmerie fecha as ruas.',alarmObjective:null,
+  alarmYes:'O porto deu o alarme. ',alarmNo:'',deathText:'A Feldgendarmerie de Chania cercou a jornalista suíça.',
+  objectives:objectives09,interact:interact09,pickups:()=>{ addPickup('c_med1',-58,-24,'med',30,.1); addPickup('c_pis1',-39,-8.5,'pistol',8,.82); addPickup('c_med2',45.6,-7.4,'med',30,.82); addPickup('c_sil1',33,-50.2,'silenced',6,.1); G.player.holster=true; },
+  update:update09,restore:restore09,
+  onBlown:()=>{ G.radioMsg('ÉLISE','Descobriram a jornalista. Agora é correr até o caminhão 3 — ou nada.','warn'); },
+  resultTitle:'A matéria do porto',outro:['ÉLISE','Escuro, cheiro de lona e serragem. Os caixotes “arqueológicos” chacoalham a cada curva. Daqui a três horas, Cnossos.'],menuCam:{cx:-30,cz:-44,y:6,tx:0,tz:-20},ambient:'harbor',mist:null,
+  briefing:{meta:'CRETA — 12 DE MAIO DE 1943 — 09h00',paras:['Fim da África. Londres manda Élise para Creta como Claire Vautrin, correspondente suíça. A Rede quer duas coisas: o mapa das baterias costeiras e a pista dos caixotes “arqueológicos” que os alemães levam de Chania para a Villa Ariadne, em Cnossos.','No porto mandam os alemães, mas os italianos cuidam da ligação — e fecham os olhos por cigarros. Jornalista pode fotografar o cais; o porto militar exige Passierschein. Consiga o passe (com o visto italiano ou carimbando um você mesma), fotografe o mapa na capitania, leia a programação no arsenal e entre no caminhão para Cnossos.'],list:['Passierschein: visto do tenente italiano ou carimbo nos fundos','Mapa de rotas na capitania (molhe)','Programação no arsenal; esconder-se no caminhão 3']}};
+LEVEL_ORDER.push('09');
+
+
+/* =========================================================
+   OPERAÇÃO 10 — Cnossos (12/05/1943, 23h)
+   ruínas em plataforma, armazéns de jarros, holofote,
+   provas do saque, sabotagem do goniômetro e carga-relógio
+   ========================================================= */
+const Y10=1.6;
+const ENEMY_DEFS_10=[
+  {id:'u1',x:4,z:44,weapon:'rifle',helmet:true,patrol:[[4,45.6],[14,36],[4,45.6]]},
+  {id:'u2',x:9,z:47,weapon:'rifle',patrol:[[9,47.4],[17,40],[9,47.4]]},
+  {id:'u3',x:-6,z:34,yaw:2.4,weapon:'rifle',helmet:true},
+  {id:'u4',x:12,z:30.4,yaw:Math.PI,weapon:'pistol',officer:true},
+  {id:'s1',x:-2,z:20.6,yaw:0,weapon:'rifle',helmet:true},
+  {id:'c1',x:-10,z:-12,weapon:'rifle',helmet:true,lantern:true,patrol:[[-10,-12],[10,-12],[10,10],[-10,10]]},
+  {id:'c2',x:-8,z:0,weapon:'smg',patrol:[[-8,0],[12,0]]},
+  {id:'m1',x:-15,z:-22,weapon:'rifle',lantern:true,patrol:[[-15,-22],[-15,6]]},
+  {id:'m2',x:-17.4,z:-9,yaw:Math.PI/2,weapon:'smg',helmet:true},
+  {id:'m3',x:-26,z:.6,yaw:0,weapon:'rifle',sleep:true},
+  {id:'kso',x:-9,z:-20.6,weapon:'pistol',officer:true,patrol:[[-9,-20.6],[-6,-20.6],[-6,-18],[-9,-18]]},
+  {id:'ks2',x:-7,z:-14.4,yaw:0,weapon:'rifle',helmet:true},
+  {id:'sl1',x:0,z:-35.4,yaw:0,weapon:'rifle',helmet:true,fixed:true},
+  {id:'e1',x:16,z:-12,weapon:'rifle',helmet:true,patrol:[[16,-12],[27,-12],[27,10],[16,10]]},
+  {id:'v1',x:43.4,z:-1,yaw:-Math.PI/2,weapon:'smg'},
+  {id:'v2',x:52,z:6,yaw:0,weapon:'rifle',sleep:true},
+  {id:'n1',x:-6,z:-32,weapon:'rifle',helmet:true,patrol:[[-6,-32],[6,-32]]},
+];
+function light10(x,z){
+  let l=.24; const R=G.refs;
+  if(x>-13&&x<-4&&z>-24&&z<-16) l=.5;
+  if(x>-36&&x<-16.6&&z>-24&&z<8) l=.14;
+  if(R&&R.braziers) for(const b of R.braziers){ const d=Math.hypot(x-b[0],z-b[1]); if(d<6) l=Math.max(l,.75*(1-d/6)+.2); }
+  return l;
+}
+function buildLevel10(){
+  M5=mats05(); M6=mats06(); if(!M9) M9=mats09(); const M=M6, Q=M9;
+  scene.background=new T.Color(0x0e1420); scene.fog=new T.FogExp2(0x0e1420,.02);
+  skyDome(1010,[[0,'#03060e'],[.3,'#0a1224'],[.45,'#18203a'],[.5,'#262a3a'],[.53,'#14141a'],[1,'#0a0a0a']],[620,120,14],6);
+  scene.add(new T.HemisphereLight(0x4a5a80,0x1a1814,.38));
+  const sun=new T.DirectionalLight(0x8a9ad0,.3); sun.position.set(-30,60,-20); sun.target.position.set(0,0,0); scene.add(sun); scene.add(sun.target); scene.add(new T.AmbientLight(0x20263a,.22));
+  floorPlane(190,170,10,4,M.sand,'stone',0); floorPlane(50,30,4,38,M.road,'stone',.01);
+  const rock=(x0,x1,z0,z1,h)=>addBlock(x0,x1,z0,z1,h,{mat:M.rock,surf:'stone',top:M.rock,seg:4});
+  rock(-80,96,-82,-74,6); rock(-80,96,74,82,6); rock(-80,-72,-74,74,6); rock(88,96,-74,74,6);
+  rock(66,88,-74,-50,5); rock(66,72,-50,-30,4); rock(48,66,-74,-56,4);
+  for(let i=0;i<40;i++){ const R=mulberry32(1000+i); const x=-60+R()*140, z=-60+R()*120; if(x>-40&&x<62&&z>-40&&z<52) continue; const t=new T.Mesh(new T.ConeGeometry(.9+R()*.6,3+R()*2.4,7),hm(0x1e2a1e)); t.position.set(x,1.6,z); scene.add(t); }
+  for(const [x,z] of [[-30,30],[-34,40],[24,46],[30,40],[-44,-10],[-46,12],[60,30],[70,10]]) palm(x,z,5.4);
+  // ---- plataforma do palácio ----
+  addWalk(-36,30,-28,22,Y10,{mat:M.lime,top:M.tiles,seg:4});
+  stairSteps('z',22,1,-5,1,Y10-.2,7,M.lime,M.lime); stairSteps('x',30,1,-6,-1,Y10-.2,7,M.lime,M.lime); stairSteps('z',-28,-1,7,12,Y10-.2,7,M.lime,M.lime);
+  const pw=(x0,x1,z0,z1,h,mat,cover)=>addBlock(x0,x1,z0,z1,h,{y0:Y10,mat:mat||M.adobe,surf:'stone',top:M.lime,seg:2,cover:!!cover});
+  const red=new T.MeshLambertMaterial({color:0x8a2a1a}), blk=new T.MeshLambertMaterial({color:0x1a1614});
+  const column=(x,z,h)=>{ const c=new T.Mesh(new T.CylinderGeometry(.42,.3,h,12),red); c.position.set(x,Y10+h/2,z); c.userData.mat='stone'; scene.add(c); W.shootables.push(c); const cap=new T.Mesh(new T.CylinderGeometry(.55,.55,.3,12),blk); cap.position.set(x,Y10+h+.15,z); scene.add(cap); W.shootables.push(cap); cap.userData.mat='stone'; addSolidOnly(x-.42,x+.42,z-.42,z+.42,h+.3,Y10,true); };
+  // armazéns do oeste (corredores com jarros)
+  pw(-36,-35.4,-24,8,3.2); pw(-36,-13,-24.6,-24,3.2);
+  const jar=new T.LatheGeometry([[0,0],[.3,.05],[.42,.5],[.46,.9],[.36,1.3],[.22,1.45],[.24,1.55],[0,1.55]].map(p=>new T.Vector2(p[0],p[1])),10);
+  const jarMat=new T.MeshLambertMaterial({color:0x9a6a44}); const jars=[]; const mags=[];
+  for(let k=0;k<10;k++){ const z0=-24+k*3.2; pw(-35.4,-16.6,z0,z0+1.2,3.2); const zc=z0+2.2; mags.push(zc);
+    if(k<9) for(let x=-34.4;x<-17.6;x+=1.15){ if(k===3||k===4){ if(x>-30) continue; } for(const s of [-1,1]){ if(((x*7+k*3+s)|0)%5===0) continue; jars.push([x,zc+s*.72]); } } }
+  pw(-35.4,-16.6,8,8.6,3.2);
+  const jm=instanced(jar,jarMat,jars.map(([x,z])=>[x,Y10,z,.72,.8,.72,x*3])); if(jm){ jm.userData.mat='stone'; W.shootables.push(jm); }
+  for(const [x,z] of jars) addSolidOnly(x-.3,x+.3,z-.3,z+.3,1.25,Y10,true);
+  pw(-13.6,-13,-24,-7.2,3.2); pw(-13.6,-13,-4.8,2.8,3.2); pw(-13.6,-13,5.2,8.6,3.2);
+  // munição nos armazéns 3 e 4
+  const AM1=new T.MeshLambertMaterial({color:0x4a5038}), AM2=new T.MeshLambertMaterial({color:0x3e4430}); const ammo=[]; for(const k of [3,4]){ const zc=mags[k]; for(let x=-29;x<-18;x+=1.25){ ammo.push([x,zc-.62]); ammo.push([x,zc+.62]); } }
+  for(const [x,z] of ammo){ addMesh(BOX(1,.5,.36),AM1,x,Y10+.25,z,'wood'); addMesh(BOX(.9,.4,.34),AM2,x,Y10+.7,z,'wood'); addSolidOnly(x-.5,x+.5,z-.18,z+.18,.9,Y10,true); }
+  poster(-28,Y10+1.8,mags[4]-1.0,0,1,.4,(g,w,h)=>{ g.fillStyle='#d8ccb0'; g.fillRect(0,0,w,h); g.fillStyle='#8a1a10'; g.font='bold 22px sans-serif'; g.textAlign='center'; g.fillText('MUNITION 8,8',w/2,30); });
+  // sala do trono / escritório do Kunstschutz
+  pw(-13,-4,-24.6,-24,3.2); pw(-13,-12.4,-24,-16,3.2); pw(-4.6,-4,-24,-16,3.2); pw(-13,-9.6,-16.6,-16,3.2); pw(-7.4,-4,-16.6,-16,3.2); 
+  addBlock(-9.6,-7.4,-16.6,-16,.8,{y0:Y10+2.4,mat:M.adobe,surf:'stone',seg:1});
+  addBlock(-13.2,-3.8,-24.8,-15.8,.25,{y0:Y10+3.2,mat:MAT.roof,bottom:MAT.ceil,surf:'stone',seg:2});
+  addBlock(-12.4,-11.6,-21.6,-19.2,.5,{y0:Y10,mat:M.lime,surf:'stone',seg:1}); addBlock(-12.4,-12,-21,-19.8,1.3,{y0:Y10+.5,mat:M.lime,surf:'stone',seg:1});
+  addBlock(-8,-5.6,-23.4,-22.4,.78,{y0:Y10,mat:M.wood,surf:'wood',cover:true,seg:1}); const ledger=addMesh(BOX(.34,.06,.26),hm(0x5a2a1a),-6.8,Y10+.82,-22.9,'cloth');
+  crate(-11,-17.6,1.1,1.05,Y10); const bull=addMesh(BOX(.28,.22,.34),hm(0x3a3634),-10.8,Y10+1.2,-22.6,'stone'); addBlock(-11.4,-10.2,-23.2,-22,1,{y0:Y10,mat:M.wood,surf:'wood',seg:1});
+  for(const [x,y] of [[-7.4,2.2],[-5.6,1.4]]) addMesh(BOX(.9,.7,.02),hm(0x8a2a1a),x,Y10+y,-23.96,null);
+  poster(-9,Y10+1.9,-23.95,0,1.6,1,(g,w,h)=>{ g.fillStyle='#e0d4b8'; g.fillRect(0,0,w,h); g.fillStyle='#1a1a1a'; g.font='bold 16px serif'; g.textAlign='center'; g.fillText('KUNSTSCHUTZ',w/2,26); g.font='12px serif'; ['Kreta — Abt. Knossos','Abtransport nach Berlin','über Chania / Piräus'].forEach((s,i)=>g.fillText(s,w/2,52+i*18)); });
+  bulb('O1',-8.5,Y10+2.9,-20,6); W.lamps[W.lamps.length-1].base=.7; W.lamps[W.lamps.length-1].light.intensity=.7;
+  // pátio central: colunas e ruínas baixas
+  for(const [x,z,h] of [[-10,-14,2.6],[-6,-14,2.6],[4,-14,2.6],[8,-14,2.6],[12,-6,2.2],[12,2,2.4],[-10,6,1.4],[2,12,2.6]]) column(x,z,h);
+  for(const [a,b,c,d,h] of [[14,24,-24,-23.4,2.4],[14,14.6,-23.4,-14,1.8],[18,26,-6,-5.4,1.2],[16,16.6,0,10,1.4],[20,28,14,14.6,1.6],[24,24.6,-20,-10,2],[-12,-2,16,16.6,1.2],[4,12,16,16.6,1.4],[2,8,-26,-25.4,1.6]]) pw(a,b,c,d,h,null,h<1.7);
+  // escadaria leste e área baixa com o furgão goniômetro
+  const van=new T.Group(); van.position.set(46,0,-4); scene.add(van); { const b=new T.Mesh(BOX(2.3,2.4,5.6),hm(0x4a5040)); b.position.y=1.5; van.add(b); const c=new T.Mesh(BOX(2.2,1.6,1.6),hm(0x4a5040)); c.position.set(0,1.1,3.4); van.add(c);
+    const loop=new T.Mesh(new T.TorusGeometry(.6,.05,6,16),hm(0x222222)); loop.position.set(0,3.4,-.6); van.add(loop); const pole=new T.Mesh(new T.CylinderGeometry(.04,.04,.7,6),hm(0x222222)); pole.position.set(0,2.95,-.6); van.add(pole);
+    for(const [a,b] of [[-1.1,-1.8],[1.1,-1.8],[-1.1,2.6],[1.1,2.6]]){ const w=new T.Mesh(new T.CylinderGeometry(.42,.42,.26,10),MAT.tire); w.rotation.z=Math.PI/2; w.position.set(a,.42,b); van.add(w); } van.loop=loop; }
+  addSolidOnly(44.8,47.2,-6.8,1.2,2.8,0,true); addMesh(BOX(.5,.5,.05),hm(0x9a9a8a),44.83,1.3,-5.6,null);
+  addBlock(49,50.6,-9,-7.6,1.1,{mat:MAT.stove,surf:'metal',cover:true,seg:1}); tent(48,56,3,9,2.8,new T.MeshLambertMaterial({color:0x5a5a48,side:T.DoubleSide}));
+  // pátio sul (chegada): caminhão, tenda do Kunstschutz, braseiros
+  truck04(4,40); for(const [x,z] of [[0,41.4],[0,39],[-.4,43]]) crate(x,z,1,1);
+  tent(10,18,33,41,3,new T.MeshLambertMaterial({color:0x6a6450,side:T.DoubleSide})); for(const [x,z] of [[12,35],[13.4,35],[12,36.4],[16,35],[16,36.4]]) crate(x,z,1.15,1.1);
+  poster(14,1.4,33.95,Math.PI,1.6,.6,(g,w,h)=>{ g.fillStyle='#c8b48a'; g.fillRect(0,0,w,h); g.fillStyle='#1a1a1a'; g.font='bold 18px sans-serif'; g.textAlign='center'; g.fillText('KUNSTSCHUTZ — BERLIN',w/2,26); g.font='12px sans-serif'; g.fillText('Vorsicht! Antiken — Knossos',w/2,46); });
+  const braziers=[]; for(const [x,z] of [[-4,32],[18,30],[40,-10]]){ addMesh(new T.CylinderGeometry(.35,.25,.8,8),MAT.darkMetal,x,.4,z,'metal'); addSolidOnly(x-.35,x+.35,z-.35,z+.35,.8,0,true); const l=new T.PointLight(0xff8a3a,1.2,9,1.8); l.position.set(x,1.3,z); scene.add(l); braziers.push([x,z,l]); }
+  // torre do holofote ao norte
+  { const s=addWalk(-1.4,1.4,-36.8,-34,4.6,{mat:M.wood,top:M.wood,seg:1}); s.mesh.visible=false; for(const [a,b] of [[-1.3,-36.7],[1.3,-36.7],[-1.3,-34.1],[1.3,-34.1]]) addMesh(BOX(.18,4.6,.18),M.wood,a,2.3,b,'wood'); addMesh(BOX(2.9,.16,2.9),M.wood,0,4.55,-35.4,'wood'); }
+  const spot=new T.SpotLight(0xdde6ff,3,58,.17,.45,1.1); spot.position.set(0,5.6,-34.6); scene.add(spot); scene.add(spot.target);
+  addMesh(BOX(.7,.5,.8),MAT.darkMetal,0,5.6,-34.9,'metal'); const lens=addMesh(new T.CylinderGeometry(.24,.24,.05,14),MAT.bulb,0,5.6,-34.48,'glass'); lens.rotation.x=Math.PI/2;
+  let beam=null; if(MAT_HQ){ const len=46, rad=Math.tan(.17)*len; const bg=new T.ConeGeometry(rad,len,20,1,true); bg.translate(0,-len/2,0); bg.rotateX(-Math.PI/2); beam=new T.Mesh(bg,MAT.beamCold); beam.position.copy(spot.position); scene.add(beam); }
+  const SL={id:'SL10',x:0,z:-34.6,r:0,light:spot,lantern:lens,broken:false,base:3,ph:0,cone:beam}; lens.userData.breakable=true; lens.userData.lamp=SL; W.lamps.push(SL);
+  G.sl={light:spot,beam,lamp:SL,t:0,lit:false,litT:0,cd:0,msg:'Da torre: “Movimento nas ruínas!”',path:t=>V3(Math.sin(t*.27)*18,Y10,-6+Math.cos(t*.19)*15)};
+  // guia na ravina
+  const guide=new Actor({id:'manolis',x:62,z:-46,yaw:Math.PI*.8},{uniform:0x1a1a1a,pants:0x2a2a2a,skin:0xb08060,hair:0x1a1410,cap:'beret',capColor:0x111111,weapon:'rifle',boots:true}); removeShootables(guide.h.hitMeshes);
+  // navegação
+  const N=[];
+  for(let x=-34;x<=28;x+=2.6) for(let z=-26;z<=20;z+=2.6) N.push({x,z});
+  for(const zc of mags) for(let x=-34;x<=-17.4;x+=1.6) N.push({x,z:zc});
+  for(let x=-12;x<=-5;x+=1.4) for(let z=-23;z<=-17;z+=1.5) N.push({x,z});
+  for(let k=0;k<7;k++){ N.push({x:-2,z:22.2+k*.36+.18}); N.push({x:30.2+k*.36+.18,z:-3.5}); N.push({x:9.5,z:-28.2-k*.36-.18}); }
+  for(let x=-60;x<=84;x+=4.2) for(let z=-66;z<=66;z+=4.2){ if(x>-37&&x<31&&z>-29&&z<23) continue; N.push({x,z}); }
+  for(const zc of mags){ N.push({x:-15.2,z:zc},{x:-16.2,z:zc}); }
+  for(const [x,z] of [[43.2,-8],[43.2,-4],[43.2,0],[48.6,-4],[46,-8.6],[46,2.6]]) N.push({x,z});
+  N.push({x:-8.5,z:-15},{x:-8.5,z:-17.2},{x:-2,z:25.4},{x:33.6,z:-3.5},{x:9.5,z:-31.2});
+  W.nav.nodes=N.filter(n=>!insideSolid(n.x,n.z,.4)); W.nav.link=4.4; buildNav();
+  return {sun,ledger,bull,braziers,mags,van,guide,spot};
+}
+function objectives10(){ return [
+  {id:'evid',text:'Reúna provas do saque (0/3)',state:'active',marker:{x:-8.5,z:-20}},
+  {id:'van',text:'Sabote o furgão goniômetro na área leste, ao pé da escadaria',state:'active',marker:{x:46,z:-4}},
+  {id:'charge',text:'Arme a carga-relógio no armazém de munição (oeste)',state:'active',marker:{x:-22,z:-9}},
+  {id:'escape',text:'Fuja até Manolis na ravina do Kairatos, a nordeste',state:'hidden',marker:{x:62,z:-46}},
+  {id:'allEvid',text:'Opcional: reúna as quatro provas',state:'active',optional:true},
+  {id:'quietVan',text:'Opcional: sabote o furgão sem soar o alarme',state:'active',optional:true},
+]; }
+function evid10(id,txt){
+  const F=G.flags; if(F['ev_'+id]) return; F['ev_'+id]=true; F.evN=(F.evN||0)+1; const o=obj('evid'); o.text='Reúna provas do saque ('+Math.min(3,F.evN)+'/3)';
+  pickupMsg('Prova '+F.evN+'/4 — '+txt);
+  if(F.evN>=3&&o.state==='active'){ complete('evid'); G.radioMsg('ÉLISE','Provas suficientes: Berlin está esvaziando Cnossos pelo porto de Chania.'); }
+  if(F.evN>=4) complete('allEvid'); refreshObjectiveUI(); cp10();
+}
+function interact10(R){
+  const I=W.interactables, F=()=>G.flags;
+  I.push({id:'ledger',pt:()=>V3(-6.8,Y10+.9,-22.9),r:2.2,hold:()=>1,label:()=>F().ev_ledger?null:'Ler o livro-razão do Kunstschutz (segure)',use:()=>{ R.ledger.visible=false; openDoc('ledger10'); evid10('ledger','livro-razão do Kunstschutz'); }});
+  I.push({id:'bull',pt:()=>V3(-10.8,Y10+1.2,-22.6),r:2.2,label:()=>F().ev_bull?null:'Pegar a cabeça de touro em pedra (peça roubada)',use:()=>{ R.bull.visible=false; AudioSys.play('pickup'); evid10('bull','cabeça de touro em pedra, minoica'); }});
+  I.push({id:'van',pt:()=>V3(44.7,1.3,-5.6),r:2.3,hold:()=>G.diff==='veterano'?4.4:3.4,label:()=>F().vanDone?null:'Arrancar as válvulas do goniômetro (segure)',
+    use:()=>{ F().vanDone=true; AudioSys.play('clank'); AudioSys.play('glass',V3(46,1.5,-4),.6); complete('van'); if(!G.alarm) complete('quietVan'); G.radioMsg('ÉLISE','Sem válvulas, esse furgão não acha rádio nenhum. Os andartes vão poder transmitir de novo.'); cp10(); }});
+  I.push({id:'charge10',pt:()=>V3(-22,Y10+.9,R.mags[4]),r:2.4,hold:()=>G.diff==='veterano'?4:3,label:()=>F().armed?null:'Armar a carga-relógio nos caixotes de munição (segure)',
+    use:()=>{ F().armed=true; F().boomLeft=G.diff==='recruta'?100:G.diff==='veterano'?60:80; complete('charge'); activate('escape'); AudioSys.play('unlock'); pickupMsg('Carga-relógio armada');
+      G.radioMsg('ÉLISE','Lápis de tempo quebrado. Tenho pouco mais de um minuto para sair dessa colina.','warn'); cp10(); }});
+  I.push({id:'manolis',pt:()=>V3(62,1.5,-46),r:3,skip:true,label:()=>obj('escape').state==='active'?(F().boomed?'Seguir Manolis pela ravina':'Manolis: “Espere a explosão, depois descemos.”'):null,locked:()=>!F().boomed,use:()=>{ if(F().boomed) missionComplete(); }});
+}
+function photos10(){
+  W.photo.push({id:'crates10',label:'Caixotes “Kunstschutz — Berlin”',pos:V3(14,1.2,35.4),normal:V3(0,0,-1),max:9,obj:null,size:1.4,msg:'Antiguidades encaixotadas para Berlim, com o carimbo do Kunstschutz.',after:()=>evid10('crates','foto dos caixotes para Berlim')});
+  W.photo.push({id:'ammo10',label:'Munição guardada nos armazéns minoicos',pos:V3(-21,Y10+.7,-9),normal:V3(1,0,0),max:10,obj:null,size:1.6,msg:'Munição de 8,8 empilhada entre os jarros de 3.500 anos.',after:()=>evid10('ammo','foto da munição nos armazéns')});
+}
+DOCS.ledger10={title:'Kunstschutz — Abt. Knossos',sub:'livro-razão, abril–maio de 1943',body:`Kiste 41  Stierkopf (Stein)        → Berlin
+Kiste 42  Siegelsteine, 38 Stück   → Berlin
+Kiste 43  Fresko-Fragmente         → Berlin
+Kiste 44  "Baumaterial" (Munition) → W-Magazine
+
+Transport: LKW Chania — Piräus — Berlin
+gez. Sonderführer R.`,pencil:'Caixotes de antiguidades para Berlim; os “de material de construção” são munição escondida nos armazéns do palácio.'};
+DOCS.planta10={title:'Cnossos',sub:'esboço do arqueólogo da Rede',map:'10',body:'',pencil:'Plataforma do palácio: armazéns a oeste, sala do trono ao norte do pátio, escadaria a leste.'};
+function drawMap10(g,w,h){
+  g.fillStyle='#1e2430'; g.fillRect(0,0,w,h); g.fillStyle='#e8dcc0'; g.fillRect(4,4,w-8,h-8); const S=(w-8)/130, X=x=>4+(x+50)*S, Z=z=>4+(z+50)*S;
+  const rect=(x0,x1,z0,z1,fill,stroke)=>{ g.fillStyle=fill; g.fillRect(X(x0),Z(z0),(x1-x0)*S,(z1-z0)*S); if(stroke){ g.strokeStyle=stroke; g.lineWidth=2; g.strokeRect(X(x0),Z(z0),(x1-x0)*S,(z1-z0)*S); } };
+  rect(-36,30,-28,22,'#d4c4a0','#6a5232'); for(let k=0;k<10;k++) rect(-35.4,-16.6,-24+k*3.2,-24+k*3.2+1.2,'#8a7a5a',null); rect(-13,-4,-24,-16,'#b8a07a','#4a3a22');
+  rect(30,60,-20,20,'#cbb894',null); rect(-20,24,25,50,'#cbb894',null); rect(66,88,-74,-30,'#7a7060',null);
+  g.fillStyle='#2a2418'; g.textAlign='center'; const t=(s,x,z,f)=>{ g.font=f||'11px serif'; g.fillText(s,X(x),Z(z)); };
+  t('ARMAZÉNS',-26,-26,'bold 11px serif'); t('munição (3–4)',-26,-12,'italic 10px serif'); t('sala do trono',-8.5,-25,'10px serif'); t('PÁTIO CENTRAL',0,-2,'bold 11px serif'); t('escadaria',34,-8,'italic 10px serif');
+  t('goniômetro',46,4,'10px serif'); t('chegada · caminhão',4,48,'10px serif'); t('Kunstschutz',14,32,'italic 10px serif'); t('holofote',0,-39,'italic 10px serif'); t('ravina do Kairatos',70,-26,'bold 11px serif'); t('Manolis',62,-50,'italic 10px serif');
+}
+function update10(dt){
+  const P=G.player, F=G.flags, R=G.refs;
+  updateSearchlight(dt);
+  if(!F.i1&&G.introT>.8){ F.i1=true; G.radioMsg('ÉLISE','Cnossos. Os caixotes vão para a tenda do Kunstschutz — e a munição sobe para o palácio. Saio da carroceria quando os carregadores virarem as costas.','tip'); }
+  if(!F.i2&&G.introT>9){ F.i2=true; G.radioMsg('DICA','O holofote da torre norte varre o pátio e os armazéns. Na luz dele, alguém vem conferir. A lente se quebra com um tiro.','tip'); }
+  for(const b of R.braziers){ b[2].intensity=1.05+Math.sin(simTime*9+b[0])*.12+Math.random()*.1; if(Math.random()<dt*6) FX.puff(V3(b[0],1,b[1]),1,0xff8a30,.4,.4,V3(0,1,0),.7); }
+  if(R.van&&!F.vanDone) R.van.loop.rotation.y+=dt*.6;
+  if(F.armed&&!F.boomed){ F.boomLeft-=dt; G.progress={label:'Carga-relógio: '+Math.max(0,Math.ceil(F.boomLeft))+' s',v:F.boomLeft/(G.diff==='recruta'?100:G.diff==='veterano'?60:80)};
+    if(F.boomLeft<=0){ F.boomed=true; G.progress=null; boom10(); } }
+  if(F.boomed&&F.chain){ F.chainT=(F.chainT||0)+dt; while(F.chain.length&&F.chain[0].t<=F.chainT){ const c=F.chain.shift(); explode(V3(c.x,Y10+.8,c.z),{r:6,dmgE:300,dmgP:120,src:'player',kind:'shell'}); FX.puff(V3(c.x,Y10+3,c.z),3,0xffa040,2.4,1,V3(0,3,0),.9); } }
+  if(F.boomed&&!F.boomMsg&&F.chainT>3){ F.boomMsg=true; G.radioMsg('MANOLIS','Panagía mou! Vem, kyría — pela ravina, agora!'); }
+}
+function boom10(){
+  const F=G.flags, R=G.refs; AudioSys.play('fireball',V3(-24,2,-8),2);
+  F.chain=[]; let t=0; for(const k of [3,4]) for(let x=-29;x<-18;x+=2.5){ F.chain.push({t,x,z:R.mags[k]}); t+=.22; }
+  for(let k=0;k<6;k++) FX.puff(V3(-24+rnd(-4,4),Y10+2+k*1.5,R.mags[4]-2+rnd(-2,2)),3,k<3?0xffd070:0xff6a20,3.6,1.2+k*.3,V3(0,4+k,0),.95);
+  FX.puff(V3(-24,Y10+10,-8),10,0x221e1c,5,8,V3(0,3,0),.7); scorchMark(V3(-24,Y10+.02,-8),5);
+  if(settings.shake) G.player.shake=Math.min(1.8,G.player.shake+1.4); if(!G.alarm) raiseAlarm(); cp10();
+}
+function cp10(){ checkpoint(); }
+function restore10(s){ const F=G.flags, R=G.refs; if(F.ev_ledger) R.ledger.visible=false; if(F.ev_bull) R.bull.visible=false; if(F.armed&&!F.boomed) F.boomLeft=Math.max(F.boomLeft||0,25); if(F.boomed){ F.chain=null; scorchMark(V3(-24,Y10+.02,-8),5); } }
+LEVELS['10']={id:'10',num:10,op:'Operação 10',name:'O Que Há em Cnossos',place:'Palácio de Cnossos, Creta',prev:'09',
+  loadout:{weapons:['silenced','pistol'],ammo:{silenced:{mag:6,reserve:18},pistol:{mag:8,reserve:16}},cur:'silenced',camera:true},baseLight:.24,lightFn:light10,shadows:false,bloomTh:.75,grenades:true,
+  build:()=>{ const r=buildLevel10(); photos10(); return r; },enemies:ENEMY_DEFS_10,ally:null,start:{x:1.4,z:44,yaw:-.3},startDocs:['planta10'],drawMap:drawMap10,
+  reinf:[{id:'n1',x:40,z:20,weapon:'smg',helmet:true},{id:'n2',x:42,z:22,weapon:'rifle',helmet:true,nades:1},{id:'n3',x:-2,z:48,weapon:'rifle',helmet:true}],
+  radio:{x:43.6,z:-7.6,fx:46,fz:-5.6},radioRun:'O oficial corre para o rádio do furgão!',alarmPos:V3(46,1.4,-4),alarmText:'Alarme em Cnossos! Lanternas em todo o palácio.',alarmObjective:'quietVan',
+  alarmYes:'Cnossos acordou antes da hora. ',alarmLate:'O palácio só acordou com a explosão. ',alarmNo:'',alarmOk:()=>!!(G&&G.flags.boomed&&!G.flags.alarmEarly10),
+  deathText:'A guarnição de Cnossos fechou as saídas do palácio.',
+  objectives:objectives10,interact:interact10,pickups:()=>{ addPickup('k_med1',12.4,37.6,'med',30,.1); addPickup('k_sil1',-10,-18.4,'silenced',6,Y10+.05); addPickup('k_nade1',47.6,-8.3,'nade',2,1.15); addPickup('k_med2',22,0,'med',35,Y10+.05); addPickup('k_pis1',-33,mags10mid(),'pistol',8,Y10+.05); G.player.nades=G.player.nades||0; },
+  update:(dt)=>{ if(G.alarm&&!G.flags.boomed) G.flags.alarmEarly10=true; update10(dt); },restore:restore10,
+  resultTitle:'O que há em Cnossos',outro:['MANOLIS','Atrás de nós, a colina inteira acende. Amanhã os alemães vão dizer que foi um raio. Os velhos da aldeia vão saber que não foi.'],menuCam:{cx:-40,cz:40,y:8,tx:0,tz:0},ambient:'dawn',mist:{n:12,x0:-40,x1:60,z0:-40,z1:50,color:0x2a3248},
+  briefing:{meta:'CRETA — 12 DE MAIO DE 1943 — 23h00',paras:['O caminhão de Chania para no pátio sul do palácio de Cnossos. A Rede suspeitava: o Kunstschutz — o “serviço de proteção da arte” alemão — encaixota antiguidades para Berlim, e os caixotes de “material de construção” escondem munição nos armazéns de jarros do palácio.','À noite, só lanternas, braseiros e o holofote da torre norte. Reúna provas do saque, arranque as válvulas do furgão goniômetro que caça os rádios dos andartes e arme a carga-relógio na munição. Depois, corra até Manolis na ravina do Kairatos.'],list:['Três provas: livro-razão, peça roubada, fotos dos caixotes e da munição','Sabotar o furgão goniômetro (leste)','Carga-relógio nos armazéns; fuga pela ravina']}};
+function mags10mid(){ return -24+6*3.2+2.2; }
+LEVEL_ORDER.push('10');
+
+
+/* =========================================================
+   OPERAÇÃO 11 — Labirinto (bateria costeira, 13/05/1943, 05h30)
+   trincheiras em labirinto, três canhões com dano contextual,
+   HUD de baterias, aliado Manolis, evacuação pela enseada
+   ========================================================= */
+const Y11=4;
+const ENEMY_DEFS_11=[
+  {id:'a1',x:-40,z:8.4,yaw:Math.PI,weapon:'rifle',helmet:true},{id:'a2',x:-37,z:6.6,yaw:-2.4,weapon:'rifle'},
+  {id:'b1',x:0,z:6.4,yaw:Math.PI,weapon:'rifle',helmet:true},{id:'b2',x:3,z:4.4,yaw:2.6,weapon:'smg'},
+  {id:'c1',x:40,z:8.4,yaw:Math.PI,weapon:'rifle',helmet:true},{id:'c2',x:43,z:6.6,yaw:-2.6,weapon:'rifle'},
+  {id:'hq',x:-1.6,z:26,weapon:'pistol',officer:true,patrol:[[-1.6,26],[2.6,26],[2.6,22.6],[-1.6,22.6]]},
+  {id:'ro',x:3.2,z:25.4,yaw:Math.PI/2,weapon:'pistol'},
+  {id:'mgb',x:0,z:21.2,yaw:Math.PI,weapon:'smg',helmet:true,fixed:true,mg:true},
+  {id:'t1',x:-20,z:30,weapon:'rifle',helmet:true,patrol:[[-28,30],[-12,30],[-12,40],[-28,40]]},
+  {id:'t2',x:20,z:30,weapon:'smg',helmet:true,patrol:[[12,30],[28,30],[28,40],[12,40]]},
+  {id:'t3',x:0,z:46,weapon:'rifle',lantern:true,patrol:[[-16,46],[16,46]]},
+  {id:'g1',x:-3,z:58,yaw:0,weapon:'rifle',helmet:true},{id:'g2',x:3.4,z:56.6,yaw:.4,weapon:'rifle',helmet:true},
+  {id:'cp',x:53.4,z:-4,yaw:0,weapon:'rifle',helmet:true},
+];
+function light11(x,z){ const k=G.flags.dawn11||0; let l=.34+k*.25; if(x>-6&&x<6&&z>20&&z<29) l=.42; return l; }
+function buildLevel11(){
+  M5=mats05(); M6=mats06(); if(!M9) M9=mats09(); const M=M6, Q=M9;
+  scene.background=new T.Color(0x2a3448); scene.fog=new T.FogExp2(0x3a4458,.011);
+  skyDome(1111,[[0,'#141c34'],[.3,'#2a3a5c'],[.43,'#8a7a8a'],[.49,'#e0a070'],[.52,'#6a5a5a'],[1,'#2a2420']],null,8);
+  scene.add(new T.HemisphereLight(0x8a9ac0,0x3a3028,.5));
+  const sun=new T.DirectionalLight(0xffc89a,.55); sun.position.set(60,24,-30); sun.target.position.set(0,0,20); scene.add(sun); scene.add(sun.target); scene.add(new T.AmbientLight(0x3a3a4a,.28));
+  // mar e enseada
+  const water=new T.Mesh(new T.PlaneGeometry(260,120),Q.water); water.rotation.x=-Math.PI/2; water.position.set(0,-.5,-90); scene.add(water);
+  floorPlane(200,160,0,30,M.sand,'stone',0);
+  // plataforma da bateria no alto do penhasco
+  addWalk(-66,64,-10,62,Y11,{mat:M.rock,top:M.dune,seg:5});
+  stairSteps('z',-10,-1,56,59,Y11-.2,19,M.rock,M.rock);
+  stairSteps('z',62,1,-2,2,Y11-.2,19,M.rock,M.rock);
+  const rock=(x0,x1,z0,z1,h,y0)=>addBlock(x0,x1,z0,z1,h,{y0:y0||0,mat:M.rock,surf:'stone',top:M.rock,seg:4});
+  rock(-90,-66,-40,90,9); rock(64,90,-40,90,9);
+  addSolidOnly(-66,56,-10.4,-10,6,Y11); addSolidOnly(59,64,-10.4,-10,6,Y11); addSolidOnly(-66,-2,62,62.4,6,Y11); addSolidOnly(2,64,62,62.4,6,Y11); rock(-90,90,90,98,9); rock(-66,40,-24,-10,3); rock(40,52,-24,-14,2.4);
+  addSolidOnly(-90,90,-41,-40.6,4);
+  const sb=(x0,x1,z0,z1,h)=>addBlock(x0,x1,z0,z1,h||1.7,{y0:Y11,mat:MAT.sandbag,surf:'sandbag',cover:true,seg:1});
+  // trincheiras (labirinto) — paredes de sacos de areia
+  const walls=[[-50,-30,14,15],[-26,-6,14,15],[6,26,14,15],[30,50,14,15],[-50,-49,15,30],[-34,-33,18,34],[-20,-19,15,26],[19,20,15,26],[33,34,18,34],[49,50,15,30],
+    [-44,-20,34,35],[20,44,34,35],[-8,8,38,39],[-30,-10,50,51],[10,30,50,51],[-10,-9,39,50],[9,10,39,50],[-50,-36,42,43],[36,50,42,43],[-60,-50,24,25],[50,60,24,25]];
+  for(const [a,b,c,d] of walls) sb(a,b,c,d,1.7);
+  // canhões
+  const guns=[]; for(const [i,x,z] of [[0,-40,4],[1,0,2],[2,40,4]]){
+    for(let a=0;a<14;a++){ const t=a/14*Math.PI*2; if(Math.abs(angDiff(t,0))<.55) continue; const bx=x+Math.sin(t)*5, bz=z+Math.cos(t)*5; addBlock(bx-.7,bx+.7,bz-.7,bz+.7,1.3,{y0:Y11,mat:M5.lime||M.lime,surf:'stone',seg:1,cover:true}); }
+    const g=new T.Group(); g.position.set(x,Y11,z); scene.add(g);
+    const base=new T.Mesh(new T.CylinderGeometry(1.5,1.7,.6,14),hm(0x5a5e52)); base.position.y=.3; g.add(base);
+    const shield=new T.Mesh(BOX(3,1.9,.2),hm(0x6a6e60)); shield.position.set(0,1.5,-.9); g.add(shield);
+    const cradle=new T.Group(); cradle.position.set(0,1.6,0); g.add(cradle); const br=new T.Mesh(new T.CylinderGeometry(.16,.2,6.4,12),hm(0x4a4e44)); br.rotation.x=Math.PI/2; br.position.z=-3.2; cradle.add(br); const brc=new T.Mesh(BOX(.8,.8,1.4),hm(0x3a3e36)); brc.position.z=.5; cradle.add(brc); cradle.rotation.x=.12;
+    for(const m of [base,shield,br,brc]){ m.userData.mat='metal'; W.shootables.push(m); }
+    addSolidOnly(x-1.7,x+1.7,z-1.7,z+1.7,2.4,Y11,true);
+    const sx=x+(i===1?-3.6:3.4), sz=z+3; const stk=[]; for(let k=0;k<6;k++) stk.push([sx+(k%3)*.36-.36,Y11+.4+Math.floor(k/3)*.5,sz,.3,.8,.3,0]); const sm=instanced(new T.CylinderGeometry(.5,.5,1,8),hm(0xb08a3a),stk);
+    const stack={x:sx,z:sz,hp:90,state:'OK',im:sm}; addSolidOnly(sx-.7,sx+.7,sz-.3,sz+.3,1.3,Y11,true);
+    const gun={i,x,z,g,cradle,br,state:'OK',fuse:0,stack,fireT:4+i*3.5,flashT:0};
+    if(sm){ sm.userData.mat='metal'; sm.userData.zoneHit=(h,o)=>{ if(stack.state!=='OK') return; stack.hp-=computeDamage(o.weapon.dmg,h.distance,o.weapon.falloff,1); AudioSys.play('clank',h.point,.7); if(o.shooter==='player'){ hitMarker('equip'); limbTag(stack.hp<=0?'MUNIÇÃO · pegou fogo':'MUNIÇÃO'); } if(stack.hp<=0){ stack.state='BURN'; stack.t=1.6; AudioSys.play('flare',h.point,.8); } }; W.shootables.push(sm); }
+    guns.push(gun); }
+  // abrigo de comando
+  const cw=(x0,x1,z0,z1,h,y)=>addBlock(x0,x1,z0,z1,h,{y0:Y11+(y||0),mat:M.lime,surf:'stone',seg:2});
+  cw(-6,-5.6,20,29,3); cw(5.6,6,20,29,3); cw(-6,-1.4,20,20.4,3); cw(1.4,6,20,20.4,3); cw(-1.4,1.4,20,20.4,1.2); cw(-1.4,1.4,20,20.4,1,2);
+  cw(-6,-1,28.6,29,3); cw(1,6,28.6,29,3); cw(-1,1,28.6,29,.6,2.4);
+  addBlock(-6.4,6.4,19.6,29.4,.6,{y0:Y11+3,mat:M.lime,bottom:MAT.ceil,surf:'stone',seg:2});
+  addBlock(2,5.2,23,23.8,.78,{y0:Y11,mat:M.wood,surf:'wood',cover:true,seg:1}); const radio11=addMesh(BOX(.5,.45,.4),hm(0x3a3e34),4,Y11+1,23.4,'metal');
+  addMesh(new T.CylinderGeometry(.06,.06,1.8,6),MAT.darkMetal,-3,Y11+3.9,24,'metal'); addMesh(BOX(2.4,.14,.2),MAT.darkMetal,-3,Y11+4.8,24,'metal');
+  bulb('B11',2,Y11+2.7,24,6); W.lamps[W.lamps.length-1].base=.7; W.lamps[W.lamps.length-1].light.intensity=.7;
+  // portão sul e barracão
+  addBlock(-12,-4,60,60.6,2.6,{y0:Y11,mat:M.lime,surf:'stone',seg:2}); addBlock(4,12,60,60.6,2.6,{y0:Y11,mat:M.lime,surf:'stone',seg:2});
+  addBlock(40,54,44,54,3,{y0:Y11,mat:M.wood,surf:'wood',top:MAT.roof,seg:2});
+  for(const [x,z] of [[-24,22],[24,22],[-6,44],[6,44],[-44,30],[44,30]]) crate(x,z,1.1,1.05,Y11);
+  // enseada e lancha
+  floorPlane(20,26,52,-23,M.dune,'stone',.01);
+  const mtb=new T.Group(); mtb.position.set(52,-.3,-46); mtb.rotation.y=.4; scene.add(mtb); { const h=new T.Mesh(BOX(4.2,1.8,20),hm(0x7a8288)); h.position.y=.5; mtb.add(h); const b=new T.Mesh(BOX(2.6,1.8,4),hm(0x6a7278)); b.position.set(0,2.2,-1); mtb.add(b); const f=new T.Mesh(BOX(.02,.6,.9),hm(0x1a2a6a)); f.position.set(0,3.6,7); mtb.add(f); }
+  const dinghy=new T.Mesh(BOX(1.6,.6,3.4),hm(0x3a3a2e)); dinghy.position.set(52,.3,-30); dinghy.rotation.y=.3; scene.add(dinghy);
+  // navegação
+  const N=[];
+  for(let x=-62;x<=60;x+=2.6) for(let z=-8;z<=59;z+=2.6) N.push({x,z});
+  for(let k=0;k<19;k++){ N.push({x:57.5,z:-10.2-k*.36-.18}); N.push({x:0,z:62.2+k*.36+.18}); }
+  for(let x=44;x<=62;x+=2.6) for(let z=-34;z<=-18;z+=2.6) N.push({x,z});
+  for(let x=-20;x<=20;x+=3) for(let z=70;z<=86;z+=3) N.push({x,z});
+  N.push({x:57.5,z:-17.6},{x:57.5,z:-8.6},{x:0,z:69.4},{x:0,z:60.6},{x:0,z:29.8},{x:0,z:27.6},{x:-3,z:24},{x:3,z:26},{x:-1.6,z:26},{x:0,z:21.6});
+  W.nav.nodes=N.filter(n=>!insideSolid(n.x,n.z,.4)); W.nav.link=3.8; buildNav();
+  return {sun,guns,radio11,mtb,dinghy};
+}
+function gunDestroy11(g){
+  if(g.state==='DEAD') return; g.state='DEAD'; const p=V3(g.x,Y11+1.6,g.z);
+  explode(p,{r:7,dmgE:320,dmgP:120,src:'player',kind:'shell'}); AudioSys.play('fireball',p,1.4);
+  for(let k=0;k<4;k++) FX.puff(V3(g.x+rnd(-1,1),Y11+1.5+k,g.z+rnd(-1,1)),2,k<2?0xffb050:0x5a2a10,2.4-k*.2,.9+k*.3,V3(0,2.6+k,0),.9);
+  FX.puff(V3(g.x,Y11+4,g.z),5,0x222020,2.6,5,V3(0,2,0),.6); g.cradle.rotation.x=-.35; g.br.position.z=-2.6; g.br.material=hm(0x1c1a18); scorchMark(V3(g.x,Y11+.02,g.z),3.6);
+  if(g.stack.state==='OK'){ g.stack.state='BURN'; g.stack.t=.5; }
+  G.flags['gun'+g.i]=true; const n=G.refs.guns.filter(x=>x.state==='DEAD').length; const o=obj('guns'); o.text='Neutralize os canhões costeiros ('+n+'/3)'; refreshObjectiveUI();
+  pickupMsg('Canhão '+(g.i+1)+' neutralizado'); if(settings.shake) G.player.shake=Math.min(1.6,G.player.shake+.9);
+  if(n>=3){ complete('guns'); activate('cove'); if(!G.flags.convoyLate) complete('convoy'); G.radioMsg('MANOLIS','Os três calaram! Agora para a enseada — a lancha inglesa não espera o sol.','warn'); }
+  cp11();
+}
+function onExplode11(pos,o){
+  const R=G.refs; if(!R||!R.guns) return; const r=o.r||5;
+  for(const g of R.guns){ const st=g.stack; if(st.state==='OK'){ const d=Math.hypot(st.x-pos.x,st.z-pos.z); if(d<r*.8){ st.state='BURN'; st.t=.4+Math.random()*.4; } }
+    if(g.state!=='DEAD'){ const d=Math.hypot(g.x-pos.x,g.z-pos.z); if(o.kind==='nade'&&d<2.4) { g.fuse=.05; g.state='ARMED'; } } }
+}
+function updateGuns11(dt){
+  const R=G.refs, F=G.flags, P=G.player;
+  for(const g of R.guns){
+    const st=g.stack; if(st.state==='BURN'){ st.t-=dt; if(Math.random()<dt*16) FX.puff(V3(st.x,Y11+1.4,st.z),1,0xff8a30,.6,.4,V3(0,1.4,0),.8); if(st.t<=0){ st.state='GONE'; if(st.im) st.im.visible=false; explode(V3(st.x,Y11+.8,st.z),{r:6,dmgE:260,dmgP:110,src:'player',kind:'shell'}); AudioSys.play('fireball',V3(st.x,Y11+1,st.z),1.1); if(Math.hypot(st.x-g.x,st.z-g.z)<6) gunDestroy11(g); } }
+    if(g.state==='ARMED'){ g.fuse-=dt; if(Math.random()<dt*8) FX.burst(V3(g.x,Y11+2,g.z+.6),1,0xffe0a0,1,.3,3); if(g.fuse<=0) gunDestroy11(g); }
+    if(g.state==='OK'){ g.fireT-=dt; const crew=G.enemies.filter(e=>!e.dead&&e.def.gun===g.i&&e.state!=='COMBAT').length; if(g.fireT<=0&&crew>0){ g.fireT=11+Math.random()*4; const tip=V3(g.x,Y11+2.2,g.z-6.6); FX.puff(tip,3,0xffd080,1.6,.25,V3(0,.5,-3),.9); FX.puff(tip,4,0x6a6a6a,2.2,3,V3(0,1,-2),.5); AudioSys.play('tankfire',tip,1.2); g.flashT=.12; g.br.position.z=-2.6; if(settings.shake&&Math.hypot(P.pos.x-g.x,P.pos.z-g.z)<30) P.shake=Math.min(1.2,P.shake+.4); emitNoise(tip,8,'lure',null); }
+      if(g.br.position.z>-3.2) g.br.position.z=Math.max(-3.2,g.br.position.z-dt*1.8); }
+  }
+}
+function objectives11(){ return [
+  {id:'guns',text:'Neutralize os canhões costeiros (0/3)',state:'active',marker:{x:0,z:2}},
+  {id:'cove',text:'Desça para a enseada e embarque no bote da lancha inglesa',state:'hidden',marker:{x:52,z:-30}},
+  {id:'convoy',text:'Opcional: cale os canhões antes de o comboio passar',state:'active',optional:true},
+  {id:'quiet11',text:'Opcional: neutralize o primeiro canhão sem soar o alarme',state:'active',optional:true},
+]; }
+function interact11(R){
+  const I=W.interactables, F=()=>G.flags;
+  R.guns.forEach(g=>{
+    I.push({id:'gc'+g.i,pt:()=>V3(g.x,Y11+1.6,g.z+1.4),r:2.4,skip:true,hold:()=>G.diff==='veterano'?3.6:2.8,
+      label:()=>g.state!=='OK'?null:(F().charges11>0?'Prender carga-relógio na culatra do canhão '+(g.i+1)+' (segure)':(G.player.nades>0?'Enfiar uma granada no cano do canhão '+(g.i+1)+' (segure)':'Canhão '+(g.i+1)+' — precisa de carga ou granada')),
+      locked:()=>!(F().charges11>0||G.player.nades>0),
+      use:()=>{ if(g.state!=='OK') return; if(F().charges11>0){ F().charges11--; g.fuse=8; pickupMsg('Carga presa — 8 s'); } else if(G.player.nades>0){ G.player.nades--; g.fuse=3.2; pickupMsg('Granada no cano — 3 s'); } else return; g.state='ARMED'; AudioSys.play('unlock'); if(!G.alarm&&obj('quiet11').state==='active') complete('quiet11'); }});
+  });
+  I.push({id:'dinghy',pt:()=>V3(52,.8,-30),r:3,skip:true,label:()=>{ if(obj('cove').state!=='active') return null; const A=G.ally; if(A&&!A.dead&&A.downed) return 'Manolis está caído — reanime-o'; return 'Embarcar no bote'; },
+    locked:()=>{ const A=G.ally; return !!(A&&A.downed); }, use:()=>{ if(obj('cove').state==='active') missionComplete(); }});
+  I.push({id:'man11',pt:()=>{ const A=G.ally; return V3(A.pos.x,A.pos.y+1.1,A.pos.z); },r:2.4,skip:true,label:()=>G.ally&&G.ally.downed?'Reanimar Manolis':null,hold:()=>1.6,use:()=>G.ally.revive()});
+}
+function update11(dt){
+  const P=G.player, F=G.flags, R=G.refs, A=G.ally;
+  if(!F.allyInit&&A){ F.allyInit=true; A.joined=true; A.mode='FOLLOW'; A.hidden=false; }
+  if(F.charges11===undefined) F.charges11=2;
+  if(!F.mgSet){ F.mgSet=true; for(const e of G.enemies) if(e.def.mg){ e.ew=EW.mg; e.mag=EW.mg.mag; } }
+  if(!F.i1&&G.introT>.8){ F.i1=true; G.radioMsg('MANOLIS','A bateria fica além das trincheiras. Três canhões de costa — o comboio inglês passa diante deles ao nascer do sol. Tenho duas cargas da Rede; o resto, granadas.','tip'); }
+  if(!F.i2&&G.introT>10){ F.i2=true; G.radioMsg('DICA','Bala não estraga canhão. Carga ou granada na culatra — ou acerte a munição empilhada ao lado e deixe ela fazer o serviço. G: Manolis segue/espera.','tip'); }
+  F.convT=(F.convT||0)+dt; const total=G.diff==='recruta'?600:G.diff==='veterano'?360:480; F.dawn11=clamp(F.convT/total,0,1);
+  if(obj('guns').state==='active'){ const left=Math.max(0,total-F.convT); G.progress={label:'Comboio diante da bateria em '+Math.floor(left/60)+':'+String(Math.floor(left%60)).padStart(2,'0'),v:1-F.convT/total}; if(left<=0&&!F.convoyLate){ F.convoyLate=true; failObjective('convoy'); G.radioMsg('MANOLIS','O comboio está passando… e os canhões ainda atiram. Rápido!','warn'); } }
+  else G.progress=null;
+  updateGuns11(dt);
+  const cs=$('#convChip'); if(cs&&G.levelId==='11'){ cs.hidden=false; const sig=R.guns.map(g=>g.state).join()+'|'+F.charges11; if(cs.dataset.sig!==sig){ cs.dataset.sig=sig; const lb=cs.querySelector('.lbl'); if(lb&&lb.firstChild) lb.firstChild.nodeValue='Baterias · '; cs.className='disg conv'+(R.guns.every(g=>g.state==='DEAD')?' ok':''); $('#convState').textContent=R.guns.filter(g=>g.state!=='DEAD').length+' ativas'; $('#convRow').innerHTML=R.guns.map(g=>'<span class="trk '+(g.state==='DEAD'?'wreck':g.state==='ARMED'?'burn':'')+'">C'+(g.i+1)+'</span>').join(''); $('#convSub').textContent='Cargas: '+F.charges11+' · granadas: '+(P.nades||0); } }
+  if(obj('cove').state==='active'&&!F.coveMsg&&P.pos.z<-12){ F.coveMsg=true; G.radioMsg('LANCHA','“Tocha, bote na praia. Dois minutos e vamos embora.”'); }
+}
+function cp11(){ checkpoint(); }
+function restore11(s){ const F=G.flags, R=G.refs; for(const g of R.guns) if(F['gun'+g.i]){ g.state='DEAD'; g.cradle.rotation.x=-.35; g.br.material=hm(0x1c1a18); g.stack.state='GONE'; if(g.stack.im) g.stack.im.visible=false; } F.mgSet=false; }
+function drawMap11(g,w,h){
+  g.fillStyle='#e8dcc0'; g.fillRect(0,0,w,h); const S=w/140, X=x=>(x+70)*S, Z=z=>(z+30)*S;
+  g.fillStyle='#9ab8c8'; g.fillRect(0,0,w,Z(-24)); g.fillStyle='#d8c8a4'; g.fillRect(X(-66),Z(-10),130*S,72*S); g.fillStyle='#e0d0a8'; g.fillRect(X(42),Z(-34),20*S,24*S);
+  g.fillStyle='#8a7a5a'; for(const [a,b,c,d] of [[-50,-30,14,15],[-26,-6,14,15],[6,26,14,15],[30,50,14,15],[-50,-49,15,30],[-34,-33,18,34],[-20,-19,15,26],[19,20,15,26],[33,34,18,34],[49,50,15,30],[-44,-20,34,35],[20,44,34,35],[-8,8,38,39],[-30,-10,50,51],[10,30,50,51],[-10,-9,39,50],[9,10,39,50],[-50,-36,42,43],[36,50,42,43],[-60,-50,24,25],[50,60,24,25]]) g.fillRect(X(a),Z(c),(b-a)*S,Math.max(2,(d-c)*S));
+  g.fillStyle='#8a2a1a'; for(const [x,z] of [[-40,4],[0,2],[40,4]]){ g.beginPath(); g.arc(X(x),Z(z),5*S,0,7); g.fill(); }
+  g.fillStyle='#4a3a22'; g.fillRect(X(-6),Z(20),12*S,9*S);
+  g.fillStyle='#2a2418'; g.textAlign='center'; const t=(s,x,z,f)=>{ g.font=f||'11px serif'; g.fillText(s,X(x),Z(z)); };
+  t('C1',-40,-2,'bold 12px serif'); t('C2',0,-4,'bold 12px serif'); t('C3',40,-2,'bold 12px serif'); t('comando',0,32,'10px serif'); t('trincheiras',-30,24,'italic 10px serif'); t('portão',0,64,'10px serif'); t('enseada',52,-26,'italic 11px serif'); t('lancha',52,-28+ -8,'italic 10px serif'); t('trilha do penhasco',58,-12,'italic 9px serif');
+}
+DOCS.planta11={title:'Bateria de Ammoudara',sub:'croqui dos andartes',map:'11',body:'',pencil:'Três canhões de 15 cm voltados para o mar. Trincheiras em zigue-zague entre o portão e as peças. Trilha do penhasco a leste desce até a enseada.'};
+LEVELS['11']={id:'11',num:11,op:'Operação 11',name:'Labirinto',place:'Bateria costeira, oeste de Heraklion',prev:'10',
+  loadout:{weapons:['silenced','pistol','smg'],ammo:{silenced:{mag:6,reserve:12},pistol:{mag:8,reserve:16},smg:{mag:32,reserve:64}},cur:'smg',camera:false},baseLight:.4,lightFn:light11,shadows:true,bloomTh:.8,grenades:true,onExplode:onExplode11,
+  build:buildLevel11,enemies:ENEMY_DEFS_11.map(d=>Object.assign({},d,{gun:d.id[0]==='a'?0:d.id[0]==='b'?1:d.id[0]==='c'&&d.id!=='cp'?2:undefined})),
+  ally:{id:'man',x:3,z:72,yaw:Math.PI,name:'MANOLIS',title:'Manolis',hp:150,range:45,dmg:38,look:{uniform:0x1a1a1a,pants:0x2a2a2a,skin:0xb08060,hair:0x1a1410,cap:'beret',capColor:0x111111,weapon:'rifle'},failTitle:'Manolis não resistiu',failText:'Manolis ficou caído tempo demais nas trincheiras.'},
+  start:{x:0,z:76,yaw:0},startDocs:['planta11'],drawMap:drawMap11,
+  reinf:[{id:'n1',x:46,z:42,weapon:'smg',helmet:true,nades:1},{id:'n2',x:48,z:42,weapon:'rifle',helmet:true},{id:'n3',x:44,z:41,weapon:'rifle',helmet:true},{id:'n4',x:50,z:41,weapon:'smg',helmet:true}],
+  radio:{x:4,z:22.6,fx:4,fz:23.4},radioRun:'O operador corre para o rádio do abrigo de comando!',alarmPos:V3(4,Y11+1.2,23.4),alarmText:'Alarme na bateria! O barracão despeja soldados nas trincheiras.',alarmObjective:null,
+  alarmYes:'A bateria deu o alarme. ',alarmNo:'',deathText:'A guarnição da bateria fechou as trincheiras.',
+  objectives:objectives11,interact:interact11,pickups:()=>{ addPickup('l_nade1',-24,23.2,'nade',2,Y11+1.1); addPickup('l_nade2',24,23.2,'nade',2,Y11+1.1); addPickup('l_med1',-6,45.2,'med',35,Y11+1.1); addPickup('l_smg1',6,45.2,'smg',32,Y11+1.1); addPickup('l_med2',3,24.6,'med',30,Y11+.85); addPickup('l_nade3',-44,31.2,'nade',1,Y11+1.1); addPickup('l_med3',50,-20,'med',40,.1); G.player.nades=Math.max(G.player.nades||0,1); },
+  update:update11,restore:restore11,
+  resultTitle:'Fim da campanha de Creta',outro:['ÉLISE','Da lancha, a bateria é só fumaça sobre o penhasco. O comboio passa inteiro. Manolis fica na praia acenando — a ilha é dele. A minha próxima parada, dizem, é um castelo na Vestfália.'],menuCam:{cx:30,cz:-30,y:10,tx:0,tz:10},ambient:'harbor',mist:{n:10,x0:-60,x1:60,z0:-30,z1:60,color:0x6a7088},
+  briefing:{meta:'CRETA — 13 DE MAIO DE 1943 — 05h30',paras:['A fuga de Cnossos terminou numa cabana de pastores com Manolis e uma mensagem de Londres: ao nascer do sol, um comboio aliado passa ao largo de Heraklion — bem diante de uma bateria costeira de três canhões de 15 cm.','A bateria é um labirinto de trincheiras de sacos de areia no alto do penhasco. Bala não estraga canhão: use as duas cargas da Rede, granadas na culatra ou a munição empilhada ao lado de cada peça. Depois, a trilha do penhasco leva à enseada, onde uma lancha inglesa espera.'],list:['Neutralizar os três canhões (carga, granada ou munição)','Manolis acompanha (G: segue/espera; reanime se cair)','Descer à enseada e embarcar no bote']}};
+LEVEL_ORDER.push('11');
+
+
+/* =========================================================
+   OPERAÇÃO 12 — Subida a Schwarzfels (Vestfália, 03/06/1943, 01h)
+   besta silenciosa com virote físico, ferramentas, rádio,
+   teleférico até o castelo
+   ========================================================= */
+WEAPONS.xbow={id:'xbow',name:'Besta de caça',cat:'Besta silenciosa',mode:'VIROTE',auto:false,bolt:true,silent:true,rpm:30,dmg:120,mag:1,reserveMax:16,reload:{out:.15,in:1.5,end:1.8},spreadHip:1.5,spreadADS:.06,bloom:.3,recoil:.5,recoilX:.1,adsTime:.24,noise:1,falloff:[35,90,.8],fovADS:42,ammoName:'virotes'};
+function buildVM12(B,M){
+  const g=new T.Group(); const wood=new T.MeshPhongMaterial({color:0x5a3e24,shininess:12,specular:0x111111});
+  B(g,.05,.06,.56,0,-.03,-.12,wood); B(g,.045,.1,.18,0,-.08,.2,wood,-.25); B(g,.62,.025,.04,0,.0,-.38,M.gun); B(g,.4,.006,.006,0,.0,-.3,new T.MeshBasicMaterial({color:0xd8d0b8}));
+  const bolt=new T.Group(); g.add(bolt); B(bolt,.012,.012,.38,0,.03,-.26,hm(0x6a5a3a)); B(bolt,.02,.02,.04,0,.03,-.46,M.gun);
+  B(g,.05,.07,.08,0,-.07,.1,M.skin); B(g,.062,.062,.3,.03,-.12,.26,M.sleeve,-.25); B(g,.05,.06,.07,-.02,-.06,-.32,M.skin); B(g,.06,.06,.3,-.07,-.11,-.2,M.sleeve,-.5);
+  const muzzle=new T.Object3D(); muzzle.position.set(0,.03,-.5); g.add(muzzle);
+  VM.models.xbow={g,mag:bolt,muzzle,hip:V3(.15,-.13,-.34),ads:V3(0,-.1,-.28),magHome:bolt.position.clone()};
+}
+function fireBolt12(){
+  const P=G.player; const f=V3(0,0,-1).applyQuaternion(camera.quaternion); const rng=mulberry32((++G.shotId)*31+G.seed); jitterDir(f,currentSpread()*DEG,rng);
+  const pos=camera.position.clone().addScaledVector(f,.5).add(V3(0,-.05,0));
+  const m=new T.Group(); const sh=new T.Mesh(new T.CylinderGeometry(.012,.012,.42,6),hm(0x6a5a3a)); sh.rotation.x=Math.PI/2; m.add(sh); const tip=new T.Mesh(new T.ConeGeometry(.02,.06,6),hm(0x3a3a3a)); tip.rotation.x=-Math.PI/2; tip.position.z=-.24; m.add(tip);
+  m.position.copy(pos); m.lookAt(pos.clone().add(f)); scene.add(m);
+  (W.bolts=W.bolts||[]).push({mesh:m,pos:pos.clone(),vel:f.clone().multiplyScalar(58),age:0,done:false});
+  G.stats.shots++; AudioSys.play('cloth',null,1); AudioSys.play('pin',null,.6); emitNoise(P.pos,1,'muffled',null);
+  P.pitch+=.6*DEG; VM.kick=.03; G.hud.ammoT=4;
+}
+function dropBolt12(p){
+  const id='bolt'+(G.boltN=(G.boltN||0)+1); const m=new T.Group(); const sh=new T.Mesh(new T.CylinderGeometry(.014,.014,.42,6),hm(0x6a5a3a)); sh.rotation.z=Math.PI/2+.3; m.add(sh); m.position.copy(p); scene.add(m);
+  const it={id,pt:()=>m.position,r:1.8,skip:true,label:()=>it.done?null:'Recuperar o virote',use:()=>{ if(it.done) return; it.done=true; scene.remove(m); const a=G.player.ammo.xbow; if(a){ a.reserve=Math.min(WEAPONS.xbow.reserveMax,a.reserve+1); } G.flags.boltsBack=(G.flags.boltsBack||0)+1; AudioSys.play('pickup'); pickupMsg('Virote recuperado'); if(G.flags.boltsBack>=5&&obj('bolts')&&obj('bolts').state==='active') complete('bolts'); }};
+  W.interactables.push(it);
+}
+function updateBolts(dt){
+  if(!W.bolts||!W.bolts.length) return;
+  for(const r of W.bolts){
+    if(r.done) continue; r.age+=dt; r.vel.y-=4.9*dt;
+    const a=r.pos.clone(), b=a.clone().addScaledVector(r.vel,dt), dir=V3().subVectors(b,a), len=dir.length(); dir.divideScalar(len);
+    let hitT=Infinity, hit=null;
+    const sh=segFirst(a.x,a.y,a.z,b.x,b.y,b.z); if(sh){ hitT=sh.t*len; hit='solid'; }
+    let he=null; for(const e of G.enemies){ if(e.dead||e===r.skip) continue; const t=rayCylinder(a,dir,Math.min(len,hitT),e.pos.x,e.pos.z,.36,e.pos.y,1.85); if(t>=0&&t<hitT){ hitT=t; hit='enemy'; he=e; } }
+    const gy=heightAt(b.x,b.z); if(!hit&&b.y<=gy+.02){ hitT=Math.max(0,(a.y-gy-.02)/Math.max(1e-4,a.y-b.y)*len); hit='ground'; }
+    if(hit||r.age>4){
+      const p=a.clone().addScaledVector(dir,Math.min(hitT,len));
+      if(hit==='enemy'){ const hp0=he.hp; const o=a.clone().addScaledVector(dir,Math.max(0,hitT-.6)); resolveShot({shooter:'player',origin:o,dir:dir.clone(),weapon:WEAPONS.xbow,shotId:G.shotId,far:2.5}); if(he.hp===hp0&&!he.dead){ r.skip=he; r.pos.copy(b); r.mesh.position.copy(b); continue; } r.done=true; scene.remove(r.mesh); dropBolt12(V3(p.x,heightAt(p.x,p.z)+.05,p.z)); continue; }
+      r.done=true;
+      if(hit){ r.mesh.position.copy(p.clone().addScaledVector(dir,-.15)); AudioSys.play('clank',p,.35); FX.burst(p,3,0x9a8a6a,1.2,.2,3); const it={id:'bs'+G.shotId,pt:()=>r.mesh.position,r:1.8,skip:true,label:()=>it.done?null:'Recuperar o virote',use:()=>{ if(it.done) return; it.done=true; scene.remove(r.mesh); const am=G.player.ammo.xbow; if(am) am.reserve=Math.min(WEAPONS.xbow.reserveMax,am.reserve+1); G.flags.boltsBack=(G.flags.boltsBack||0)+1; AudioSys.play('pickup'); pickupMsg('Virote recuperado'); if(G.flags.boltsBack>=5&&obj('bolts')&&obj('bolts').state==='active') complete('bolts'); }}; W.interactables.push(it); emitNoise(p,3,'lure',null); }
+      else scene.remove(r.mesh);
+      continue; }
+    r.pos.copy(b); r.mesh.position.copy(b); r.mesh.lookAt(b.clone().add(r.vel));
+  }
+  W.bolts=W.bolts.filter(r=>!r.done);
+}
+/* ---- fase ---- */
+const ENEMY_DEFS_12=[
+  {id:'k1',x:-3,z:17.6,yaw:-Math.PI/2,weapon:'rifle',helmet:true},{id:'k2',x:3,z:22.4,yaw:Math.PI/2,weapon:'rifle',helmet:true},
+  {id:'kr',x:6,z:16,weapon:'pistol',officer:true,patrol:[[6,16],[6,18.6],[9.6,18.6],[9.6,16]]},
+  {id:'r1',x:-30,z:20,weapon:'rifle',lantern:true,patrol:[[-40,22.4],[-12,22.4]]},{id:'r2',x:30,z:20,weapon:'smg',lantern:true,patrol:[[14,22.4],[46,22.4]]},
+  {id:'h1',x:28,z:33,yaw:0,weapon:'rifle',helmet:true},{id:'h2',x:34,z:30.6,weapon:'rifle',patrol:[[22,31],[46,31]]},
+  {id:'sh',x:40,z:47,yaw:0,weapon:'rifle',sleep:true},
+  {id:'f1',x:-20,z:-6,weapon:'rifle',helmet:true,lantern:true,patrol:[[-30,-8],[-10,4],[-30,10]]},{id:'f2',x:24,z:-6,weapon:'rifle',helmet:true,lantern:true,patrol:[[30,-8],[12,4],[30,10]]},
+  {id:'s1',x:-4,z:-25,yaw:0,weapon:'rifle',helmet:true},{id:'s2',x:4.4,z:-25.6,yaw:0,weapon:'smg',helmet:true},
+  {id:'s3',x:0,z:-38,weapon:'pistol',officer:true,patrol:[[-5,-38],[5,-38]]},{id:'s4',x:-12,z:-30,weapon:'rifle',patrol:[[-12,-30],[-12,-44],[12,-44],[12,-30]]},
+];
+function light12(x,z){ let l=.18; const R=G.refs; if(x>-8&&x<8&&z>-46&&z<-30) l=.5; if(x>2&&x<10&&z>13&&z<20) l=.55; if(R&&R.lampsXZ) for(const [lx,lz] of R.lampsXZ){ const d=Math.hypot(x-lx,z-lz); if(d<8) l=Math.max(l,.7*(1-d/8)+.2); } return l; }
+function buildLevel12(){
+  M5=mats05(); M6=mats06(); const M=M6;
+  scene.background=new T.Color(0x0a0e16); scene.fog=new T.FogExp2(0x0c1018,.022);
+  skyDome(1212,[[0,'#02040a'],[.3,'#080c18'],[.45,'#121828'],[.5,'#1a1e2a'],[.53,'#0c0c10'],[1,'#060606']],[200,90,12],10);
+  scene.add(new T.HemisphereLight(0x3a4a6a,0x10120e,.34)); const sun=new T.DirectionalLight(0x8a9ad0,.22); sun.position.set(-30,60,10); scene.add(sun); scene.add(new T.AmbientLight(0x1a2030,.22));
+  const grass=new T.MeshLambertMaterial({color:0x2a3424}), dirt=new T.MeshLambertMaterial({color:0x3a3428});
+  floorPlane(200,260,0,-40,grass,'stone',0); floorPlane(140,6,0,20,M.road,'stone',.012); floorPlane(140,4,0,36,dirt,'stone',.011); floorPlane(8,60,0,-6,M.road,'stone',.013); floorPlane(4,30,-48,38,dirt,'stone',.012);
+  // trilhos
+  for(let x=-68;x<=68;x+=1.1) addMesh(BOX(.25,.08,2.4),hm(0x2a2218),x,.05,36,null); for(const z of [35.3,36.7]) addMesh(BOX(136,.1,.08),hm(0x5a5a5a),0,.14,z,'metal');
+  // vagões
+  for(const [x,c] of [[18,0x4a2a1e],[27,0x3a3a30],[36,0x4a2a1e]]){ addBlock(x-3.8,x+3.8,34.8,37.2,2.4,{y0:.7,mat:hm(c),surf:'wood',cover:true,seg:1}).minY=0; for(const s of [-2.6,2.6]){ const w=addMesh(new T.CylinderGeometry(.42,.42,.2,10),MAT.tire,x+s,.42,34.7,'metal'); w.rotation.x=Math.PI/2; } }
+  addBlock(42,52,38.4,40,.6,{mat:M.lime,surf:'stone',seg:2});
+  // galpão de manutenção
+  wallOpen('x',44,44.2,36,44,3,[{c:40,w:1.6}],M.wood,{inner:{}}); wallOpen('x',50,50.2,36,44,3,[],M.wood,{inner:{}}); wallOpen('z',36,36.2,44.2,50,3,[],M.wood,{inner:{}}); wallOpen('z',43.8,44,44.2,50,3,[],M.wood,{inner:{}});
+  addBlock(35.8,44.2,43.8,50.4,.2,{y0:3,mat:MAT.roof,bottom:MAT.ceil,surf:'wood',seg:2}); addBlock(41,43.6,48.8,49.8,.85,{mat:M.wood,surf:'wood',cover:true,seg:1}); const tools=addMesh(BOX(.5,.06,.12),hm(0x8a1a10),42,.92,49.2,'metal');
+  bulb('T1',40,2.7,47,5); W.lamps[W.lamps.length-1].base=.5; W.lamps[W.lamps.length-1].light.intensity=.5;
+  // posto de controle com rádio
+  makeDoor('bar12',{x:0,z:20,y0:.9,w:5,d:.16,h:.16,mat:M.barrier,offset:V3(0,2.4,0),npc:false,nav:true});
+  wallOpen('x',13.8,14,2,10,2.8,[{c:6,w:1}],M.wood,{inner:{}}); wallOpen('x',20,20.2,2,10,2.8,[{c:4,w:1.2,sill:1,top:2}],M.wood,{inner:{}}); wallOpen('z',2,2.2,14,20,2.8,[{c:17,w:1,sill:1,top:2}],M.wood,{inner:{}}); wallOpen('z',9.8,10,14,20,2.8,[],M.wood,{inner:{}});
+  addBlock(1.8,10.2,13.8,20.2,.2,{y0:2.8,mat:MAT.roof,bottom:MAT.ceil,surf:'wood',seg:2}); addBlock(7.6,9.6,18.6,19.6,.78,{mat:M.wood,surf:'wood',cover:true,seg:1}); const radio12=addMesh(BOX(.6,.45,.4),hm(0x3a3e34),8.6,1.0,19.1,'metal');
+  addMesh(new T.CylinderGeometry(.03,.03,4,6),MAT.darkMetal,9.6,4.6,19.6,'metal');
+  // estação do vale do teleférico
+  const sw=(x0,x1,z0,z1,h,y)=>addBlock(x0,x1,z0,z1,h,{y0:y||0,mat:M.lime,surf:'stone',seg:2});
+  sw(-8,-7.6,-46,-30,6); sw(7.6,8,-46,-30,6); sw(-8,8,-46.4,-46,6); sw(-8,-3,-30.4,-30,6); sw(3,8,-30.4,-30,6); sw(-3,3,-30.4,-30,2,4);
+  addBlock(-8.4,8.4,-46.8,-29.6,.3,{y0:6,mat:MAT.roof,bottom:MAT.ceil,surf:'stone',seg:2});
+  addBlock(-6,-3,-44,-41,1.6,{mat:MAT.stove,surf:'metal',cover:true,seg:1}); const wheel=new T.Mesh(new T.TorusGeometry(1.6,.12,8,24),MAT.darkMetal); wheel.rotation.x=Math.PI/2; wheel.position.set(0,5.2,-42); scene.add(wheel);
+  addBlock(3,6,-36,-35,1.1,{mat:M.wood,surf:'wood',cover:true,seg:1}); const lever=addMesh(BOX(.08,.8,.08),hm(0x8a1a10),4.5,1.5,-35.5,'metal'); lever.rotation.x=.4;
+  // gôndola
+  const gon=new T.Group(); gon.position.set(0,0,-38); scene.add(gon); { const fl=new T.Mesh(BOX(2.6,.12,3.2),MAT.darkMetal); fl.position.y=.06; gon.add(fl); const roof=new T.Mesh(BOX(2.8,.12,3.4),hm(0x8a2a1a)); roof.position.y=2.5; gon.add(roof);
+    for(const [a,b] of [[-1.25,-1.55],[1.25,-1.55],[-1.25,1.55],[1.25,1.55]]){ const p=new T.Mesh(BOX(.08,2.4,.08),MAT.darkMetal); p.position.set(a,1.25,b); gon.add(p); }
+    for(const s of [-1,1]){ const w=new T.Mesh(BOX(.04,1,3.1),hm(0x5a2a1a)); w.position.set(s*1.27,.6,0); gon.add(w); } const hang=new T.Mesh(BOX(.1,3.6,.1),MAT.darkMetal); hang.position.y=4.3; gon.add(hang); const chain=new T.Mesh(new T.TorusGeometry(.12,.025,6,10),hm(0xb0b0a0)); chain.position.set(0,.9,1.6); gon.add(chain); gon.chain=chain; }
+  const gonSolid=addSolidOnly(-1.35,-1.25,-39.6,-36.4,2.4,0); const gonSolid2=addSolidOnly(1.25,1.35,-39.6,-36.4,2.4,0); const gonSolid3=addSolidOnly(-1.35,1.35,-39.7,-39.6,2.4,0);
+  // cabo, torres e castelo
+  const A=V3(0,6.1,-40), Bp=V3(0,64,-220);
+  for(const dx of [-.5,.5]){ const c=new T.Mesh(new T.CylinderGeometry(.03,.03,A.distanceTo(Bp),4),MAT.darkMetal); c.position.copy(A).add(Bp).multiplyScalar(.5); c.position.x+=dx; c.lookAt(Bp.x+dx,Bp.y,Bp.z); c.rotateX(Math.PI/2); scene.add(c); }
+  for(const [z,h] of [[-100,28],[-160,46]]){ const y=A.y+(Bp.y-A.y)*((z-A.z)/(Bp.z-A.z)); const t=new T.Mesh(BOX(1.2,y,1.2),MAT.darkMetal); t.position.set(0,y/2-.4,z); scene.add(t); const arm=new T.Mesh(BOX(2.4,.3,.4),MAT.darkMetal); arm.position.set(0,y,z); scene.add(arm); }
+  const crag=new T.Mesh(new T.CylinderGeometry(44,80,62,9),hm(0x2a2a28)); crag.position.set(0,31,-240); scene.add(crag);
+  const cst=hm(0x3a3a3c); for(const [x,z,w,d,h] of [[-14,-232,30,24,22],[10,-236,18,30,16]]){ const b=new T.Mesh(BOX(w,h,d),cst); b.position.set(x,62+h/2,z); scene.add(b); }
+  for(const [x,z,r,h] of [[-30,-222,5,34],[2,-218,4.5,30],[18,-248,5,28],[-26,-246,4,26]]){ const t=new T.Mesh(new T.CylinderGeometry(r,r,h,12),cst); t.position.set(x,62+h/2,z); scene.add(t); const cone=new T.Mesh(new T.ConeGeometry(r*1.15,6,12),hm(0x1e2228)); cone.position.set(x,62+h+3,z); scene.add(cone); }
+  for(let i=0;i<14;i++){ const R=mulberry32(1200+i); const w=new T.Mesh(BOX(1,1.6,.2),new T.MeshBasicMaterial({color:R()<.6?0xffc870:0x302820})); w.position.set(-26+R()*44,68+R()*16,-219.6); scene.add(w); }
+  const castleStation=new T.Mesh(BOX(10,6,8),cst); castleStation.position.set(0,61,-222); scene.add(castleStation);
+  // floresta
+  const trunks=[], tops=[]; const clear=(x,z)=>(Math.abs(z-20)<5)||(Math.abs(z-36)<4)||(x>-10&&x<12&&z>-48&&z<-24)||(x>-12&&x<12&&z>-24&&z<26&&Math.abs(x)<5)||(x>12&&x<22&&z>0&&z<12)||(x>34&&x<54&&z>34&&z<52)||(x>-58&&x<-42&&z>40&&z<62)||(Math.abs(x+48)<3&&z>22&&z<56);
+  for(let i=0;i<520;i++){ const R=mulberry32(7000+i); const x=-68+R()*136, z=-58+R()*124; if(clear(x,z)) continue; const h=5+R()*5; trunks.push([x,1.4,z,.35,2.8,.35,0]); tops.push([x,2.4+h/2,z,1.8+R()*.8,h,1.8+R()*.8,R()*3]); if(Math.hypot(x+48,z-50)>6) addSolidOnly(x-.3,x+.3,z-.3,z+.3,3,0,true); }
+  instanced(new T.CylinderGeometry(.5,.6,1,6),hm(0x2a1e14),trunks); instanced(new T.ConeGeometry(1,1,7),hm(0x14221a),tops);
+  // cabana da Rede
+  addBlock(-56,-50,54,60,2.6,{mat:M.wood,surf:'wood',top:MAT.roof,seg:1});
+  // lampiões
+  const lampsXZ=[]; for(const [id,x,z] of [['L1',-3,14],['L2',26,40],['L3',-6,-28],['L4',6,-28]]){ const L=lampPost(id,x,z,0,.6); L.base=1.2; L.light.intensity=1.2; lampsXZ.push([x,z]); }
+  // holofote no telhado da estação
+  const spot=new T.SpotLight(0xdde6ff,2.6,50,.17,.45,1.1); spot.position.set(0,6.8,-29.4); scene.add(spot); scene.add(spot.target); const lens=addMesh(new T.CylinderGeometry(.24,.24,.05,14),MAT.bulb,0,6.8,-29.2,'glass'); lens.rotation.x=Math.PI/2; addMesh(BOX(.7,.5,.8),MAT.darkMetal,0,6.8,-29.6,'metal');
+  let beam=null; if(MAT_HQ){ const len=44, rad=Math.tan(.17)*len; const bg=new T.ConeGeometry(rad,len,20,1,true); bg.translate(0,-len/2,0); bg.rotateX(-Math.PI/2); beam=new T.Mesh(bg,MAT.beamCold); beam.position.copy(spot.position); scene.add(beam); }
+  const SL={id:'SL12',x:0,z:-29.4,r:0,light:spot,lantern:lens,broken:false,base:2.6,ph:0,cone:beam}; lens.userData.breakable=true; lens.userData.lamp=SL; W.lamps.push(SL);
+  G.sl={light:spot,beam,lamp:SL,t:0,lit:false,litT:0,cd:0,msg:'Da estação: “Tem alguém na clareira!”',path:t=>V3(Math.sin(t*.3)*16,0,-8+Math.cos(t*.22)*10)};
+  // navegação
+  const N=[];
+  for(let x=-66;x<=66;x+=3) for(let z=-56;z<=64;z+=3) N.push({x,z});
+  for(let x=-6.6;x<=6.6;x+=2.2) for(let z=-44.6;z<=-31.4;z+=2.2) N.push({x,z});
+  for(let x=2.8;x<=9.4;x+=1.6) for(let z=14.6;z<=19.4;z+=1.6) N.push({x,z});
+  for(let x=36.8;x<=43.4;x+=1.6) for(let z=44.8;z<=49.4;z+=1.5) N.push({x,z});
+  N.push({x:0,z:-29},{x:0,z:-31.4},{x:6,z:13},{x:6,z:14.6},{x:40,z:43},{x:40,z:44.8},{x:0,z:18.6},{x:0,z:21.4});
+  W.nav.nodes=N.filter(n=>!insideSolid(n.x,n.z,.4)); W.nav.link=4.3; buildNav();
+  return {sun,tools,radio12,lever,gon,gonSolids:[gonSolid,gonSolid2,gonSolid3],wheel,cA:A,cB:Bp,lampsXZ};
+}
+function objectives12(){ return [
+  {id:'radio',text:'Destrua o rádio do posto de controle da estrada',state:'active',marker:{x:8.6,z:19.1}},
+  {id:'tools',text:'Pegue o alicate corta-correntes no galpão da ferrovia',state:'active',marker:{x:42,z:49.2}},
+  {id:'cable',text:'Corte a corrente da gôndola e acione a alavanca do teleférico',state:'hidden',marker:{x:4.5,z:-35.5}},
+  {id:'ride',text:'Suba ao castelo de Schwarzfels pelo teleférico',state:'hidden'},
+  {id:'warn',text:'Opcional: destrua o rádio antes de qualquer alarme',state:'active',optional:true},
+  {id:'bolts',text:'Opcional: recupere cinco virotes',state:'active',optional:true},
+]; }
+function interact12(R){
+  const I=W.interactables, F=()=>G.flags;
+  I.push({id:'radio12',pt:()=>V3(8.6,1.1,19.1),r:2.2,hold:()=>2.2,label:()=>F().radioDead?null:'Arrebentar o rádio do posto (segure)',
+    use:()=>{ F().radioDead=true; G.radioDead=true; R.radio12.material=hm(0x1c1a18); AudioSys.play('glass',V3(8.6,1,19.1),.8); AudioSys.play('clank'); FX.burst(V3(8.6,1.2,19.1),10,0xffe0a0,3,.3,4); complete('radio'); if(!G.alarm) complete('warn'); G.radioMsg('ÉLISE','Rádio mudo. Se eles gritarem agora, o castelo não escuta.'); cp12(); }});
+  I.push({id:'tools12',pt:()=>V3(42,.95,49.2),r:2.2,label:()=>F().tools?null:'Pegar o alicate corta-correntes',use:()=>{ F().tools=true; R.tools.visible=false; AudioSys.play('pickup'); pickupMsg('Alicate corta-correntes'); complete('tools'); activate('cable'); cp12(); }});
+  I.push({id:'chain12',pt:()=>V3(0,1,-36.3),r:2.2,hold:()=>1.6,label:()=>F().chainCut||obj('cable').state!=='active'?null:'Cortar a corrente da gôndola (segure)',use:()=>{ F().chainCut=true; R.gon.chain.visible=false; AudioSys.play('clank'); R.gonSolids[2].active=true; pickupMsg('Corrente cortada'); }});
+  I.push({id:'lever12',pt:()=>V3(4.5,1.5,-35.5),r:2.2,hold:()=>1.2,label:()=>{ if(F().riding||obj('cable').state!=='active') return null; return F().chainCut?'Acionar a alavanca e pular na gôndola':'Alavanca do teleférico — a gôndola está acorrentada'; },locked:()=>!F().chainCut,
+    use:()=>{ if(!F().chainCut) return; complete('cable'); activate('ride'); F().riding=true; F().rideT=0; R.lever.rotation.x=-.4; AudioSys.play('clank'); AudioSys.play('engine'); const P=G.player; P.pos.set(0,0,-38); P.vx=P.vz=P.vy=0; G.radioMsg('ÉLISE','Segure firme. Seiscentos metros de cabo no escuro.','warn'); emitNoise(V3(0,0,-38),18,'lure',null); }});
+}
+function update12(dt){
+  const P=G.player, F=G.flags, R=G.refs;
+  updateSearchlight(dt);
+  if(!F.i1&&G.introT>.8){ F.i1=true; G.radioMsg('ÉLISE','Schwarzfels lá no alto, na rocha. O único caminho rápido é o teleférico do vale. A besta não faz barulho — e os virotes podem ser recuperados.','tip'); }
+  if(!F.i2&&G.introT>10){ F.i2=true; G.radioMsg('DICA','Tecla 6: besta. O virote cai com a distância — mire um pouco acima. Aperte E sobre um virote cravado para recuperá-lo.','tip'); }
+  if(G.alarm&&obj('warn').state==='active'&&!F.radioDead) failObjective('warn');
+  R.wheel.rotation.z+=dt*(F.riding?1.6:0);
+  if(F.riding&&!F.arrived){ F.rideT+=dt; const T_=G.diff==='recruta'?20:22; const k=clamp(F.rideT/T_,0,1), e=k*k*(3-2*k); const p=V3().lerpVectors(V3(0,0,-38),V3(R.cB.x,R.cB.y-6.1,R.cB.z+2),e);
+    R.gon.position.copy(p); P.pos.set(p.x,p.y,p.z+.4); P.vx=P.vz=0; P.vy=0; P.ys=null; P.onGround=true; for(const s of R.gonSolids) s.active=false;
+    G.progress={label:'Teleférico — subindo para Schwarzfels',v:k}; if(Math.random()<dt*2) AudioSys.play('clank',null,.15);
+    if(k>=1){ F.arrived=true; G.progress=null; complete('ride'); missionComplete(); } }
+}
+function cp12(){ checkpoint(); }
+function restore12(s){ const F=G.flags, R=G.refs; if(F.tools) R.tools.visible=false; if(F.radioDead){ G.radioDead=true; R.radio12.material=hm(0x1c1a18); } if(F.chainCut) R.gon.chain.visible=false; F.riding=false; }
+function drawMap12(g,w,h){
+  g.fillStyle='#1e2430'; g.fillRect(0,0,w,h); g.fillStyle='#d8d0b8'; g.fillRect(4,4,w-8,h-8); const S=(w-8)/140, X=x=>4+(x+70)*S, Z=z=>4+(z+60)*S;
+  g.fillStyle='#8a9a7a'; g.fillRect(X(-68),Z(-58),136*S,124*S); g.fillStyle='#b8a888'; g.fillRect(X(-68),Z(18),136*S,4*S); g.fillStyle='#6a5a4a'; g.fillRect(X(-68),Z(35),136*S,2*S); g.fillRect(X(-3),Z(-24),6*S,40*S);
+  g.fillStyle='#4a3a22'; for(const [a,b,c,d] of [[-8,8,-46,-30],[2,10,14,20],[44,50,36,44],[-56,-50,54,60]]) g.fillRect(X(a),Z(c),(b-a)*S,(d-c)*S);
+  g.fillStyle='#2a2418'; g.textAlign='center'; const t=(s,x,z,f)=>{ g.font=f||'11px serif'; g.fillText(s,X(x),Z(z)); };
+  t('TELEFÉRICO',0,-48,'bold 11px serif'); t('rádio',6,12,'10px serif'); t('posto',-6,26,'italic 10px serif'); t('ferrovia',-30,40,'italic 10px serif'); t('galpão (alicate)',47,34,'10px serif'); t('cabana',-53,63,'10px serif'); t('estrada',-40,18,'italic 10px serif'); t('↑ castelo',0,-54,'italic 10px serif');
+}
+DOCS.planta12={title:'Vale de Schwarzfels',sub:'croqui do guarda-florestal da Rede',map:'12',body:'',pencil:'O rádio do posto da estrada avisa o castelo. A gôndola fica acorrentada à noite — o alicate está no galpão da ferrovia.'};
+LEVELS['12']={id:'12',num:12,op:'Operação 12',name:'Subida a Schwarzfels',place:'Vale de Schwarzfels, Vestfália',prev:'11',
+  loadout:{weapons:['xbow','silenced','pistol'],ammo:{xbow:{mag:1,reserve:9},silenced:{mag:6,reserve:12},pistol:{mag:8,reserve:16}},cur:'xbow',camera:false},baseLight:.18,lightFn:light12,shadows:false,bloomTh:.75,grenades:true,
+  build:buildLevel12,enemies:ENEMY_DEFS_12,ally:null,start:{x:-48,z:50,yaw:Math.PI*.9},startDocs:['planta12'],drawMap:drawMap12,
+  reinf:[{id:'n1',x:-2,z:-50,weapon:'smg',helmet:true},{id:'n2',x:2,z:-50,weapon:'rifle',helmet:true},{id:'n3',x:60,z:20,weapon:'rifle',helmet:true}],
+  radio:{x:8.6,z:18,fx:8.6,fz:19.1},radioRun:'O oficial corre para o rádio do posto!',alarmPos:V3(8.6,1.2,19.1),alarmText:'Alarme no vale! O castelo foi avisado.',alarmObjective:null,
+  alarmYes:'O vale deu o alarme. ',alarmNo:'',deathText:'A patrulha do vale fechou a estrada e o teleférico.',
+  objectives:objectives12,interact:interact12,pickups:()=>{ addPickup('w_x1',-52,57,'xbow',4,.1); addPickup('w_med1',-49,56,'med',30,.1); addPickup('w_x2',8,15,'xbow',3,.1); addPickup('w_med2',42.8,46,'med',30,.1); addPickup('w_nade',-4,-43,'nade',1,1.65); G.player.nades=G.player.nades||0; },
+  update:update12,restore:restore12,
+  resultTitle:'Subida a Schwarzfels',outro:['ÉLISE','A gôndola range até parar sob a rocha. Lá dentro, salões, armaduras e um museu que ninguém deveria ver. Dizem que o “instituto” guarda tudo no salão abobadado.'],menuCam:{cx:30,cz:60,y:6,tx:0,tz:-40},ambient:'forest',mist:{n:14,x0:-60,x1:60,z0:-50,z1:60,color:0x1a2230},
+  briefing:{meta:'VESTFÁLIA — 3 DE JUNHO DE 1943 — 01h00',paras:['De Creta, a Rede manda Élise para a Alemanha. No alto de um rochedo, o castelo de Schwarzfels virou sede de um “instituto de pesquisas ancestrais”: arquivos, artefatos roubados de meia Europa e uma escola de oficiais que brinca de cavaleiros.','O único acesso rápido é o teleférico do vale. Destrua o rádio do posto da estrada para que ninguém avise o castelo, pegue o alicate no galpão da ferrovia, corte a corrente da gôndola e suba. Para a floresta, a Rede deixou uma besta de caça: silenciosa, e os virotes podem ser recuperados.'],list:['Rádio do posto de controle','Alicate no galpão da ferrovia','Corrente da gôndola, alavanca e subida']}};
+LEVEL_ORDER.push('12');
+window.__SDP12={fireBolt12,updateBolts};
+
+
+/* =========================================================
+   OPERAÇÃO 13 — Valhala Sombrio (castelo de Schwarzfels, 03/06/1943, 02h)
+   armaduras com proteção própria, armaduras "vivas" entre as decorativas,
+   museu com vitrines, arquivo, salão abobadado
+   ========================================================= */
+const STEEL=()=>MAT_HQ?new T.MeshPhongMaterial({color:0xa8acb4,shininess:70,specular:0x8a8a90}):new T.MeshLambertMaterial({color:0xa0a4ac});
+function armorUp13(e){
+  const m=STEEL(), P=e.h.parts; e.armored=true;
+  const plate=(name,sx,sy,sz,oy)=>{ const p=P[name]; if(!p) return; p.userData.armor=true; const g=p.geometry.parameters; const o=new T.Mesh(BOX(g.width*sx,g.height*sy,g.depth*sz),m); o.position.set(0,oy||0,0); p.add(o); };
+  plate('chest',1.14,1.06,1.22); plate('abdomen',1.12,1.08,1.22); plate('pelvis',1.1,1.08,1.18);
+  for(const s of ['L','R']){ plate('upperArm_'+s,1.5,1.02,1.5); plate('thigh_'+s,1.2,1.02,1.2); plate('forearm_'+s,1.5,.85,1.5); }
+  plate('head',1.3,1.22,1.3,.02); if(P.hair) P.hair.userData.armor=true; const crest=new T.Mesh(BOX(.03,.12,.26),hm(0x8a1a1a)); crest.position.set(0,.2,0); P.head.add(crest);
+}
+(function(){ const sm=Enemy.prototype.speedMul; Enemy.prototype.speedMul=function(){ return sm.call(this)*(this.armored?.78:1); }; })();
+/* armaduras paradas: só "acordam" quando alguém chega perto, leva tiro ou há alarme */
+(function(){ const up=Enemy.prototype.update; Enemy.prototype.update=function(dt){
+  if(this.def&&this.def.statue&&!this.statueAwake&&!this.dead){
+    const P=G.player, d=Math.hypot(P.pos.x-this.pos.x,P.pos.z-this.pos.z);
+    if(d<2.6||G.alarm||this.hp<this.maxHp||(this.awareness>.6)){ this.statueAwake=true; AudioSys.play('clank',this.pos,1.2); AudioSys.play('shout',this.pos); G.flags.statues=(G.flags.statues||0)+1; this.enterCombat(P.pos.x,P.pos.z,false,true); if(G.levelId==='13'&&G.flags.statues===1) G.radioMsg('ÉLISE','A armadura se mexeu! Tem gente dentro de algumas delas.','warn'); return up.call(this,dt); }
+    this.moveDir(0,0,0,dt); this.animate(dt); return; }
+  return up.call(this,dt); }; })();
+const ENEMY_DEFS_13=[
+  {id:'st1',x:26,z:-24,yaw:-Math.PI/2,weapon:'rifle',helmet:true},
+  {id:'g1',x:-30,z:-29,weapon:'smg',patrol:[[-30,-29],[16,-29]]},
+  {id:'S1',x:-19.1,z:-22,yaw:Math.PI/2,weapon:'smg',statue:true,armor:true},
+  {id:'S2',x:13.1,z:-17,yaw:-Math.PI/2,weapon:'rifle',statue:true,armor:true},
+  {id:'S3',x:-19.1,z:-12,yaw:Math.PI/2,weapon:'smg',statue:true,armor:true},
+  {id:'K1',x:-14,z:-19.6,weapon:'smg',armor:true,patrol:[[-14,-19.6],[9,-19.6],[9,-11],[-14,-11]]},
+  {id:'h1',x:-1,z:-9.4,yaw:0,weapon:'rifle',helmet:true},
+  {id:'m1',x:-29,z:-20,weapon:'rifle',patrol:[[-29,-20],[-29,-6],[-29,8],[-29,-6]]},
+  {id:'m2',x:-27.6,z:-6,yaw:Math.PI/2,weapon:'pistol',officer:true},
+  {id:'c1',x:-16,z:-4,weapon:'rifle',helmet:true,patrol:[[-16,-4],[10,-4],[10,12],[-16,12]]},
+  {id:'c2',x:-7.5,z:6,yaw:2.2,weapon:'rifle'},
+  {id:'a1',x:24,z:-6,weapon:'pistol',officer:true,patrol:[[24,-6],[28,-6],[28,0],[24,0]]},
+  {id:'a2',x:19,z:0,yaw:-Math.PI/2,weapon:'rifle',helmet:true},
+  {id:'v1',x:-10,z:24,weapon:'rifle',armor:true,patrol:[[-10,24],[4,24],[4,30],[-10,30]]},
+  {id:'v2',x:-1,z:32.8,yaw:Math.PI,weapon:'smg',helmet:true},
+  {id:'x1',x:-1,z:36.4,yaw:0,weapon:'rifle',helmet:true},
+];
+const ARM_LOOK={uniform:0x6a6c72,pants:0x5a5c62,helmet:false,cap:null};
+function light13(x,z){ if(x>-20&&x<14&&z>-8&&z<16) return .3; if(x>-14&&x<8&&z>18&&z<34) return .42; return .38; }
+function buildLevel13(){
+  M5=mats05(); M6=mats06(); if(!M9) M9=mats09(); const M=M6;
+  scene.background=new T.Color(0x0a0c12); scene.fog=new T.FogExp2(0x0a0c12,.018);
+  skyDome(1313,[[0,'#02040a'],[.3,'#080c18'],[.45,'#121828'],[.5,'#1a1e2a'],[.53,'#0c0c10'],[1,'#060606']],[700,100,10],6);
+  scene.add(new T.HemisphereLight(0x7a7a90,0x3a3026,.8)); scene.add(new T.AmbientLight(0x4a4038,.55));
+  const stone=new T.MeshLambertMaterial({map:TEX.lime5,color:0x8a8478}), dark=new T.MeshLambertMaterial({map:TEX.lime5,color:0x5a564e}), floorM=new T.MeshLambertMaterial({map:TEX.lime5,color:0x6a6052}), red=new T.MeshLambertMaterial({color:0x5a1a14});
+  floorPlane(80,84,-2,4,floorM,'stone',0); floorPlane(34,24,-3,4,MAT.ground,'stone',.01);
+  const H=6, wl=(axis,c0,c1,a0,a1,ops,mat)=>wallOpen(axis,c0,c1,a0,a1,H,ops||[],mat||stone,{inner:{}});
+  const roof=(x0,x1,z0,z1)=>addBlock(x0,x1,z0,z1,.4,{y0:H,mat:dark,bottom:MAT.ceil,surf:'stone',seg:3});
+  // muralha externa
+  wl('x',-32.4,-32,-36,32); wl('x',40,40.4,-36,32,[{c:-3,w:2}]); wl('z',-36.4,-36,-32,40); wl('z',32,32.4,-32,40);
+  // estação do teleférico (NE) e galeria norte
+  wl('z',20,20.2,-32,-18,[{c:-25,w:1.6}]); wl('x',-18.2,-18,20.2,32,[{c:26,w:1.6}]); roof(20,32,-32,-18); addBlock(29.4,31.8,-31.4,-27.2,2.3,{y0:.35,mat:hm(0x5a1e18),surf:'metal',seg:1}); addMesh(BOX(2.5,.08,4.4),MAT.darkMetal,30.6,2.7,-29.3,'metal'); addMesh(new T.CylinderGeometry(.03,.03,14,6).rotateX(Math.PI/2),MAT.darkMetal,30.6,4.6,-36,null); for(const z of [-30.6,-28]) addMesh(BOX(.04,.7,1),new T.MeshBasicMaterial({color:0x2a3440}),29.38,1.9,z,null);
+  wl('x',-26.2,-26,-36,20,[{c:-29,w:1.6},{c:-3,w:1.8},{c:-21,w:1.6},{c:15,w:1.6}]); roof(-36,20,-32,-26);
+  // salão dos cavaleiros
+  wl('z',-20.2,-20,-26,-8,[]); wl('z',14,14.2,-26,-8,[]); wl('x',-8.2,-8,-20,14.2,[{c:-3,w:2}]); roof(-20.2,14.2,-26,-8);
+  for(const [x,z] of [[-12,-21],[-12,-13],[6,-21],[6,-13]]){ const c=addMesh(new T.CylinderGeometry(.5,.5,H,12),dark,x,H/2,z,'stone'); addSolidOnly(x-.5,x+.5,z-.5,z+.5,H,0,true); }
+  addMesh(new T.PlaneGeometry(3.2,17).rotateX(-Math.PI/2),red,-3,.02,-17,null); addBlock(-7,1,-17.6,-16.4,.8,{mat:MAT.darkWood,surf:'wood',cover:true,seg:1}); for(let x=-6;x<=0;x+=2) addMesh(new T.CylinderGeometry(.05,.05,.3,6),hm(0xe8e0c8),x,.95,-17,null);
+  for(const [x,z] of [[-14,-25.6],[8,-25.6]]) poster(x,3.2,-25.56,0,1.8,2.6,(g,w,h)=>{ g.fillStyle='#4a1414'; g.fillRect(0,0,w,h); g.fillStyle='#c8a860'; g.fillRect(w*.42,h*.12,w*.16,h*.7); g.beginPath(); g.arc(w/2,h*.3,w*.22,0,7); g.lineWidth=6; g.strokeStyle='#c8a860'; g.stroke(); });
+  // armaduras decorativas (iguais às "vivas")
+  const deco=(x,z,yaw)=>{ const a=new Actor({id:'deco'+x+z,x,z,yaw},Object.assign({weapon:'rifle',boots:true,skin:0x6a6c72,hair:0x6a6c72,pants:0x5a5c62},ARM_LOOK)); removeShootables(a.h.hitMeshes); const m=STEEL(); a.decoPose=true; const sz={chest:[1.14,1.06,1.22],abdomen:[1.12,1.08,1.22],pelvis:[1.1,1.08,1.18],head:[1.3,1.22,1.3],upperArm_L:[1.5,1.02,1.5],upperArm_R:[1.5,1.02,1.5],forearm_L:[1.5,.85,1.5],forearm_R:[1.5,.85,1.5],thigh_L:[1.2,1.02,1.2],thigh_R:[1.2,1.02,1.2]}; for(const k in sz){ const p=a.h.parts[k]; if(!p) continue; const gp=p.geometry.parameters, f=sz[k]; const o=new T.Mesh(BOX(gp.width*f[0],gp.height*f[1],gp.depth*f[2]),m); if(k==='head'){ o.position.y=.02; const cr=new T.Mesh(BOX(.03,.12,.26),hm(0x8a1a1a)); cr.position.set(0,.2,0); p.add(cr); } p.add(o); o.userData={mat:'metal'}; W.shootables.push(o); } addSolidOnly(x-.35,x+.35,z-.35,z+.35,1.9,0,true); return a; };
+  const decos=[deco(-19.1,-17,Math.PI/2),deco(13.1,-22,-Math.PI/2),deco(13.1,-12,-Math.PI/2),deco(-16,-25.2,0),deco(10,-25.2,0)];
+  // museu (oeste) — três salas com vitrines
+  wl('x',-12.2,-12,-36,-26,[{c:-29,w:1.6}]); wl('x',2,2.2,-36,-26,[{c:-29,w:1.6}]); wl('z',-26.2,-26,-26,14,[{c:8,w:1.6}]); wl('x',14,14.2,-36,-26);
+  roof(-36,-26,-26,14.2);
+  const cases=[]; for(const [i,x,z,lbl,ar] of [[0,-31,-19,'relicário de prata','o'],[1,-31,-5,'coroa votiva','a'],[2,-31,8,'códice iluminado','o']]){ addBlock(x-.7,x+.7,z-.7,z+.7,1,{mat:dark,surf:'stone',seg:1,cover:true}); const gl=addGlass('case'+i,x-.6,x+.6,1,1.8,z-.6,z+.6,{small:true,loud:16}); const art=addMesh(i===0?new T.BoxGeometry(.3,.3,.3):i===1?new T.TorusGeometry(.18,.05,6,12):new T.BoxGeometry(.32,.06,.42),hm(i===1?0xd8b040:i===0?0xc8c8d0:0x6a2a1a),x,1.25,z,null); cases.push({i,x,z,art,lbl,ar,gl}); }
+  for(const [x,z] of [[-28,-22],[-34,-15],[-34,-9],[-28,-1],[-34,11]]){ addBlock(x-.4,x+.4,z-.4,z+.4,1,{mat:dark,surf:'stone',seg:1}); addMesh(new T.CylinderGeometry(.12,.16,.4,8),hm(0x9a8a6a),x,1.2,z,'stone'); }
+  // arquivo (leste)
+  wl('x',-14.2,-14,16,32,[]); wl('x',6,6.2,16,32,[]); wl('z',16,16.2,-14,6.2,[{c:-4,w:1.6}]); wl('x',-18.2,-18,14,20,[]);
+  roof(16,32,-14,6.2); for(const x of [20,24,28]) for(const z of [-11,-7]) addBlock(x-1.2,x+1.2,z-.3,z+.3,2.4,{mat:M.wood,surf:'wood',seg:1});
+  addBlock(25,28,2,3,.78,{mat:M.wood,surf:'wood',cover:true,seg:1}); const planM=addMesh(BOX(.8,.02,.6),hm(0xe8dcc0),26.5,.8,2.5,null);
+  // salão abobadado (sul)
+  wl('x',16,16.2,-14,8,[{c:-3,w:2}]); wl('x',34,34.2,-14,8,[{c:-3,w:1.6}]); wl('z',-14.2,-14,16,34,[]); wl('z',8,8.2,16,34,[]); roof(-14.2,8.2,16,34.2);
+  for(let a=0;a<12;a++){ const t=a/12*Math.PI*2; const x=-3+Math.sin(t)*6.5, z=25+Math.cos(t)*6.5; addBlock(x-.35,x+.35,z-.35,z+.35,1.1,{mat:dark,surf:'stone',seg:1,cover:true}); }
+  addMesh(new T.CylinderGeometry(2.4,2.4,.2,24),red,-3,.1,25,null); addBlock(-4.4,-1.6,24.4,25.6,.9,{mat:dark,surf:'stone',seg:1,cover:true}); const rite=addMesh(BOX(1.2,.03,.8),hm(0xd8ccb0),-3,.93,25,null);
+  const braz=[]; for(const [x,z] of [[-10,19],[4,19],[-10,31],[4,31]]){ addMesh(new T.CylinderGeometry(.3,.2,.9,8),MAT.darkMetal,x,.45,z,'metal'); addSolidOnly(x-.3,x+.3,z-.3,z+.3,.9,0,true); const l=new T.PointLight(0xff8a3a,1.5,13,1.6); l.position.set(x,1.4,z); scene.add(l); braz.push([x,z,l]); }
+  // portão sul
+  wl('x',34,34.2,-36,-6,[]); wl('x',34,34.2,2,32,[]); wl('z',-6.2,-6,34.2,40,[]); wl('z',2,2.2,34.2,40,[]); makeDoor('gate13',{x:-3,z:40.2,w:2,d:.15,h:3,mat:M.wood,offset:V3(1.9,0,0),npc:true,nav:true});
+  // poço do pátio
+  addMesh(new T.CylinderGeometry(1,1.1,.9,16),stone,-4,.45,4,'stone'); addSolidOnly(-5,-3,3,5,.9,0,true);
+  // luzes
+  for(const [id,x,z,r] of [['C1',26,-25,7],['C2',-12,-29,8],['C3',8,-29,8],['C4',-3,-20,9],['C5',-3,-13,9],['C6',-29,-19,7],['C7',-29,-5,7],['C8',-29,8,7],['C9',24,-4,8],['C10',-3,37,6]]){ bulb(id,x,H-.4,z,r); const L=W.lamps[W.lamps.length-1]; L.base=1.25; L.light.intensity=1.25; L.light.distance=r*1.6; }
+  [[-19.7,-20,1],[-19.7,-14,1],[13.7,-20,-1],[13.7,-14,-1],[-35.7,-19,1],[-35.7,-5,1],[-35.7,8,1],[31.7,-8,-1],[-13.7,25,1],[7.7,25,-1]].forEach(([x,z,yaw],si)=>{ addMesh(BOX(.12,.3,.12),MAT.darkMetal,x,2.4,z,null); const fl=addMesh(new T.ConeGeometry(.08,.22,6),new T.MeshBasicMaterial({color:0xffb050}),x+yaw*.05,2.68,z,null); if(si%2===0||si>=4&&si<=6){ const l=new T.PointLight(0xff9a48,1.15,11,1.6); l.position.set(x+yaw*.5,2.7,z); scene.add(l); } });
+  // navegação
+  const N=[];
+  for(let x=-35;x<=31.2;x+=2.3) for(let z=-31;z<=39.2;z+=2.3) N.push({x,z});
+  N.push({x:20,z:-25},{x:18.4,z:-25},{x:21.6,z:-25},{x:26,z:-18},{x:26,z:-16.4},{x:-29,z:-26},{x:-29,z:-27.6},{x:-29,z:-24.4},{x:-3,z:-26},{x:-3,z:-8},{x:-21,z:-26},{x:15,z:-26},{x:-26,z:8},{x:-27.6,z:8},{x:-24.4,z:8},{x:-29,z:-13.6},{x:-29,z:-10.4},{x:-29,z:.4},{x:-29,z:3.6},{x:15,z:-26},{x:15,z:-27.6},{x:15,z:-24.4},{x:-21,z:-26},{x:-21,z:-27.6},{x:-21,z:-24.4},{x:-3,z:-27.6},{x:-3,z:-24.4},{x:-3,z:-9.6},{x:-3,z:-6.4},{x:14.4,z:-4},{x:-29,z:-12},{x:-29,z:2},{x:16,z:-4},{x:17.6,z:-4},{x:-3,z:16},{x:-3,z:17.6},{x:-3,z:34},{x:-3,z:35.6},{x:-3,z:39});
+  W.nav.nodes=N.filter(n=>!insideSolid(n.x,n.z,.4)); W.nav.link=3.4; buildNav();
+  return {cases,planM,rite,braz,decos};
+}
+function objectives13(){ return [
+  {id:'arts',text:'Recupere três artefatos roubados no museu, ala oeste (0/3)',state:'active',marker:{x:-31,z:-19}},
+  {id:'plan',text:'Fotografe o plano de confisco no arquivo, ala leste',state:'active',marker:{x:26.5,z:2.5}},
+  {id:'rite',text:'Examine a mesa do salão abobadado, ao sul do pátio',state:'active',marker:{x:-3,z:25}},
+  {id:'exit',text:'Saia pelo portão sul do castelo',state:'hidden',marker:{x:-3,z:39}},
+  {id:'statues',text:'Opcional: descubra as três armaduras vivas',state:'active',optional:true},
+  {id:'quiet13',text:'Opcional: pegue os artefatos sem soar o alarme',state:'active',optional:true},
+]; }
+function art13(c){ const F=G.flags; if(F['art'+c.i]) return; F['art'+c.i]=true; c.art.visible=false; F.artN=(F.artN||0)+1; AudioSys.play('pickup'); pickupMsg('Artefato '+F.artN+'/3 — '+c.lbl); const o=obj('arts'); o.text='Recupere três artefatos roubados no museu, ala oeste ('+F.artN+'/3)'; const nx=G.refs.cases.find(k=>!F['art'+k.i]); if(nx) o.marker={x:nx.x,z:nx.z}; refreshObjectiveUI(); if(F.artN>=3){ complete('arts'); if(!G.alarm) complete('quiet13'); } check13(); cp13(); }
+function check13(){ if(['arts','plan','rite'].every(id=>obj(id).state==='done')&&obj('exit').state==='hidden'){ activate('exit'); G.radioMsg('ÉLISE','Artefatos, plano e lista. Agora sair deste lugar antes que a cidadela inteira acorde.','warn'); } }
+function interact13(R){
+  const I=W.interactables, F=()=>G.flags;
+  R.cases.forEach(c=>I.push({id:'case'+c.i,pt:()=>V3(c.x,1.3,c.z),r:2.3,skip:true,hold:()=>c.gl.broken?0:2.4,
+    label:()=>F()['art'+c.i]?null:(c.gl.broken?'Pegar '+c.ar+' '+c.lbl:'Abrir a vitrine com a gazua (segure) — ou quebre o vidro'),
+    use:()=>{ if(!c.gl.broken){ c.gl.broken=true; if(c.gl.solid) c.gl.solid.active=false; c.gl.mesh.position.y+=.82; c.gl.mesh.scale.y=.08; F()['caseOpen'+c.i]=true; AudioSys.play('unlock'); return; } art13(c); }}));
+  I.push({id:'rite13',pt:()=>V3(-3,1,25),r:2.4,hold:()=>1.2,label:()=>obj('rite').state==='done'?null:'Examinar os papéis da mesa (segure)',use:()=>{ R.rite.visible=false; openDoc('rito13'); complete('rite'); check13(); cp13(); }});
+  I.push({id:'exit13',pt:()=>V3(-3,1.4,39.6),r:2.6,skip:true,label:()=>obj('exit').state==='active'?'Sair pelo portão sul':null,use:()=>{ if(obj('exit').state==='active') missionComplete(); }});
+}
+function photos13(){ W.photo.push({id:'plan13',label:'Plano de confisco (“Sicherstellung”)',pos:V3(26.5,.82,2.5),normal:V3(0,1,0),max:2.8,obj:'plan',size:.5,msg:'Lista de museus de Paris, Bruxelas e Cracóvia com datas de “recolhimento”.',after:()=>check13()}); }
+DOCS.rito13={title:'Programa da cerimônia de solstício',sub:'papéis sobre a mesa do salão abobadado',body:`21.6.  Investidura dos novos “cavaleiros”
+       (oficiais da escola — de armadura)
+       Exposição dos objetos “recuperados”:
+       relicário de prata (Aachen), coroa
+       votiva (Toledo), códice (Cracóvia)
+
+Lista de convidados anexa: 40 nomes,
+patentes, unidades.`,pencil:'Teatro de cavaleiros — e uma lista com os nomes de quem manda no saque.'};
+DOCS.planta13={title:'Schwarzfels — interior',sub:'planta desenhada por um ex-criado do castelo',map:'13',body:'',pencil:'Museu a oeste, arquivo a leste, salão abobadado ao sul do pátio. Cuidado com as armaduras do salão dos cavaleiros.'};
+function drawMap13(g,w,h){
+  g.fillStyle='#e8dcc0'; g.fillRect(0,0,w,h); const S=w/76, X=x=>(x+38)*S, Z=z=>(z+34)*S;
+  const rect=(x0,x1,z0,z1,fill,stroke)=>{ g.fillStyle=fill; g.fillRect(X(x0),Z(z0),(x1-x0)*S,(z1-z0)*S); if(stroke){ g.strokeStyle=stroke; g.lineWidth=2; g.strokeRect(X(x0),Z(z0),(x1-x0)*S,(z1-z0)*S); } };
+  rect(-36,32,-32,40,'#c8b894','#3a2a1a'); rect(-20,14,-8,16,'#e0d4b0',null); rect(-20,14,-26,-8,'#b8a07a','#4a3a22'); rect(-36,-22,-26,14,'#b8a07a','#4a3a22'); rect(16,32,-14,6,'#b8a07a','#4a3a22'); rect(-14,8,16,34,'#a89070','#4a3a22'); rect(20,32,-32,-18,'#b8a07a','#4a3a22');
+  g.fillStyle='#2a2418'; g.textAlign='center'; const t=(s,x,z,f)=>{ g.font=f||'11px serif'; g.fillText(s,X(x),Z(z)); };
+  t('teleférico',26,-24,'10px serif'); t('galeria norte',-8,-29,'italic 10px serif'); t('SALÃO DOS CAVALEIROS',-3,-16,'bold 10px serif'); t('MUSEU',-29,-6,'bold 11px serif'); t('ARQUIVO',24,-4,'bold 11px serif'); t('PÁTIO',-3,6,'bold 11px serif'); t('SALÃO ABOBADADO',-3,26,'bold 10px serif'); t('portão sul',-3,39,'10px serif');
+}
+function update13(dt){
+  const F=G.flags, R=G.refs;
+  if(!F.armSet){ F.armSet=true; for(const e of G.enemies) if(e.def.armor&&!e.armored){ armorUp13(e); } }
+  if(!F.i1&&G.introT>.8){ F.i1=true; G.radioMsg('ÉLISE','Dentro do castelo. Museu a oeste, arquivo a leste, salão abobadado ao sul. E armaduras por todo lado.','tip'); }
+  if(!F.i2&&G.introT>9){ F.i2=true; G.radioMsg('DICA','Bala em armadura só arranha: mire nas canelas, mãos e pescoço — ou use granada. Vitrine: abra devagar ou quebre o vidro (barulho).','tip'); }
+  for(const b of R.braz){ b[2].intensity=1.45+Math.sin(simTime*8+b[0])*.12+Math.random()*.1; if(Math.random()<dt*5) FX.puff(V3(b[0],1.1,b[1]),1,0xff8a30,.35,.4,V3(0,1,0),.7); }
+  if(!F.decoP){ F.decoP=true; for(const a of R.decos){ a.aimTarget=0; a.animate(1); a.animate(1); } }
+  if((F.statues||0)>=3&&obj('statues').state==='active') complete('statues');
+  if(G.alarm&&obj('quiet13').state==='active') failObjective('quiet13');
+}
+function cp13(){ checkpoint(); }
+function restore13(s){ const F=G.flags, R=G.refs; for(const c of R.cases){ if(F['art'+c.i]) c.art.visible=false; if(F['caseOpen'+c.i]&&!c.gl.broken){ c.gl.broken=true; if(c.gl.solid) c.gl.solid.active=false; c.gl.mesh.position.y+=.82; c.gl.mesh.scale.y=.08; } } if(obj('rite').state==='done') R.rite.visible=false; F.armSet=false; F.decoP=false; }
+LEVELS['13']={id:'13',num:13,op:'Operação 13',name:'Valhala Sombrio',place:'Castelo de Schwarzfels, Vestfália',prev:'12',
+  loadout:{weapons:['xbow','silenced','pistol'],ammo:{xbow:{mag:1,reserve:8},silenced:{mag:6,reserve:12},pistol:{mag:8,reserve:16}},cur:'xbow',camera:true},baseLight:.38,lightFn:light13,shadows:false,bloomTh:.75,grenades:true,
+  build:()=>{ const r=buildLevel13(); photos13(); return r; },enemies:ENEMY_DEFS_13.map(d=>d.armor?Object.assign({},d,{look:ARM_LOOK,hp:130}):d),ally:null,start:{x:27.6,z:-29.3,yaw:Math.PI/2},startDocs:['planta13'],drawMap:drawMap13,
+  reinf:[{id:'n1',x:-3,z:38,weapon:'smg',helmet:true},{id:'n2',x:0,z:38,weapon:'rifle',helmet:true,nades:1},{id:'n3',x:28,z:-22,weapon:'rifle',helmet:true}],
+  radio:{x:24,z:-2,fx:24,fz:-4},radioRun:'O oficial corre para o telefone do arquivo!',alarmPos:V3(24,1.4,-4),alarmText:'Alarme em Schwarzfels! Os cadetes vestem armas, não armaduras.',alarmObjective:'quiet13',
+  alarmYes:'O castelo deu o alarme. ',alarmNo:'',deathText:'Os guardas de Schwarzfels cercaram a ladra do museu.',
+  objectives:objectives13,interact:interact13,pickups:()=>{ addPickup('v_x1',24,-30,'xbow',3,.1); addPickup('v_med1',-6,-17,'med',30,.85); addPickup('v_nade1',30,4,'nade',2,.1); addPickup('v_med2',-26,12,'med',35,.1); addPickup('v_pis1',-12,32,'pistol',8,.1); addPickup('v_nade2',-34,-30,'nade',1,.1); G.player.nades=G.player.nades||0; },
+  update:update13,restore:restore13,
+  resultTitle:'Valhala sombrio',outro:['ÉLISE','Três objetos roubados na mochila e quarenta nomes na câmera. Atrás de mim, as sirenes do castelo começam a uivar.'],menuCam:{cx:0,cz:10,y:2,tx:-3,tz:-17},ambient:'forest',mist:null,
+  briefing:{meta:'VESTFÁLIA — 3 DE JUNHO DE 1943 — 02h00',paras:['A gôndola deixou Élise na estação do teleférico, dentro das muralhas. O “instituto” transformou o castelo em museu particular: objetos levados de catedrais e bibliotecas da Europa ocupada, um salão de armaduras para os cadetes brincarem de cavaleiros e um salão abobadado para cerimônias.','Recupere três artefatos do museu, fotografe o plano de confisco no arquivo e examine os papéis do salão abobadado. As armaduras não são todas enfeite: algumas têm gente dentro, e bala em placa de aço só arranha.'],list:['Três artefatos nas vitrines do museu','Plano de confisco no arquivo; papéis do salão abobadado','Sair pelo portão sul']}};
+LEVEL_ORDER.push('13');
+
+
+/* =========================================================
+   OPERAÇÃO 14 — Círculo Vicioso (encosta de Schwarzfels, 03/06/1943, 03h)
+   fuga sob sirenes; ponte do quartel; reforços em ciclo; casa segura
+   ========================================================= */
+const ENEMY_DEFS_14=[
+  {id:'p1',x:0,z:-40,weapon:'rifle',lantern:true,patrol:[[0,-40],[0,-22],[3,-22],[3,-40]]},
+  {id:'p2',x:-7,z:-29,yaw:Math.PI*.9,weapon:'smg',helmet:true},
+  {id:'p3',x:7,z:-14,yaw:-2.4,weapon:'rifle'},
+  {id:'b1',x:14,z:-13,yaw:-Math.PI/2,weapon:'smg',helmet:true},
+  {id:'b2',x:29,z:-8,yaw:-Math.PI/2,weapon:'rifle',helmet:true},
+  {id:'b3',x:38,z:-13,weapon:'rifle',patrol:[[38,-13],[46,-13],[46,-9],[38,-9]]},
+  {id:'b4',x:34,z:-8,yaw:-Math.PI/2,weapon:'pistol',officer:true},
+  {id:'m1',x:2,z:2,weapon:'rifle',lantern:true,patrol:[[2,2],[2,26],[-2,26],[-2,2]]},
+  {id:'m2',x:-14,z:12,weapon:'rifle',patrol:[[-14,12],[-14,-6],[-24,-6],[-24,12]]},
+  {id:'c1',x:-3.5,z:37,yaw:Math.PI,weapon:'smg',helmet:true},
+  {id:'c2',x:3.6,z:38,yaw:Math.PI,weapon:'rifle',helmet:true},
+  {id:'c3',x:9,z:40,yaw:Math.PI*.8,weapon:'rifle'},
+  {id:'c4',x:-8,z:43.5,yaw:Math.PI/2,weapon:'pistol',officer:true},
+  {id:'v1',x:10,z:55,weapon:'rifle',patrol:[[10,55],[28,55],[28,51],[10,51]]},
+  {id:'h1',x:-18,z:48,weapon:'smg',patrol:[[-18,48],[-4,48]]},
+];
+function light14(x,z){ let l=.2; const R=G.refs; if(R&&R.lit14) for(const [a,b,r] of R.lit14){ const d=Math.hypot(x-a,z-b); if(d<r) l=Math.max(l,.62*(1-d/r)+.2); } return l; }
+function buildLevel14(){
+  M5=mats05(); M6=mats06(); const M=M6;
+  scene.background=new T.Color(0x0a0e16); scene.fog=new T.FogExp2(0x0c1018,.02);
+  skyDome(1414,[[0,'#02040a'],[.3,'#080c18'],[.45,'#141a2a'],[.5,'#1c2030'],[.53,'#0c0c10'],[1,'#060606']],[600,120,12],10);
+  scene.add(new T.HemisphereLight(0x4a5a7a,0x14160e,.5)); const sun=new T.DirectionalLight(0x8a9ad0,.3); sun.position.set(-30,60,10); scene.add(sun); scene.add(new T.AmbientLight(0x1e2434,.32));
+  const grass=new T.MeshLambertMaterial({color:0x2a3424}), dirt=new T.MeshLambertMaterial({color:0x3a3428}), rock=new T.MeshLambertMaterial({map:TEX.lime5,color:0x4a4844}), wallM=new T.MeshLambertMaterial({map:TEX.lime5,color:0x6a665e});
+  // chão: dois lados da garganta
+  floorPlane(88,132,-26,5,grass,'stone',0); floorPlane(44,132,48,5,grass,'stone',0);
+  floorPlane(6,110,0,-3,M.road,'stone',.012); floorPlane(36,4,-18,48,dirt,'stone',.011); floorPlane(18,4,35,-11,M.road,'stone',.012); floorPlane(30,20,16,60,dirt,'stone',.011);
+  // garganta
+  for(const x of [18,26]){ addMesh(BOX(.5,9,132),rock,x,-4.5,5,null); for(const [z0,z1] of [[-61,-12.8],[-7.2,71]]) addMesh(BOX(.9,.45,z1-z0),rock,x+(x<22?-.1:.1),.12,(z0+z1)/2,null); }
+  for(let i=0;i<6;i++){ const m=new T.Mesh(new T.PlaneGeometry(7.6,22).rotateX(-Math.PI/2),new T.MeshBasicMaterial({color:0x9aa6b4,transparent:true,opacity:.07,depthWrite:false})); m.position.set(22,-2.5-i*.8,-50+i*22); scene.add(m); }
+  const water=addMesh(new T.PlaneGeometry(8,132).rotateX(-Math.PI/2),(MAT_HQ?new T.MeshPhongMaterial({color:0x1c3040,specular:0x8899aa,shininess:80}):new T.MeshLambertMaterial({color:0x1c3040})),22,-8,5,null);
+  for(let i=0;i<26;i++){ const R=mulberry32(1400+i); const z=-58+R()*126; if(Math.abs(z+10)<5) continue; const s=.6+R()*1.2; addMesh(new T.DodecahedronGeometry(s,0),rock,(R()<.5?18.6:25.4),-.2+R()*.3,z,null); }
+  const gorgeN=addSolidOnly(17.8,26.2,-62,-12.7,3), gorgeS=addSolidOnly(17.8,26.2,-7.3,72,3), gorgeB=addSolidOnly(17.8,26.2,-12.7,-7.3,3); gorgeB.active=false;
+  // ponte de madeira
+  const bridge=new T.Group(); scene.add(bridge); const bw=MAT_HQ?new T.MeshPhongMaterial({map:TEX.wood,color:0x7a5a3a,shininess:4}):new T.MeshLambertMaterial({map:TEX.wood,color:0x7a5a3a});
+  const deck=new T.Mesh(BOX(9.2,.22,5),bw); deck.position.set(22,-.11,-10); bridge.add(deck); deck.userData.mat='wood'; W.shootables.push(deck);
+  for(const z of [-12.4,-7.6]){ const r=new T.Mesh(BOX(9.2,.12,.12),bw); r.position.set(22,1,z); bridge.add(r); for(let x=17.8;x<=26.3;x+=2.1){ const p=new T.Mesh(BOX(.14,1,.14),bw); p.position.set(x,.5,z); bridge.add(p); } }
+  for(const [x,z] of [[19,-12],[19,-8],[25,-12],[25,-8]]){ const b=new T.Mesh(BOX(.3,7.6,.3),bw); b.position.set(x,-3.9,z); b.rotation.z=(x<22?-.18:.18); bridge.add(b); }
+  const railN=addSolidOnly(17.8,26.2,-12.7,-12.3,1.1,0), railS=addSolidOnly(17.8,26.2,-7.7,-7.3,1.1,0);
+  // muralha do castelo e portão (atrás do jogador)
+  addBlock(-70,-2.6,-62,-57,11,{mat:wallM,surf:'stone',seg:4}); addBlock(2.6,70,-62,-57,11,{mat:wallM,surf:'stone',seg:4}); addBlock(-2.6,2.6,-62,-57,5,{y0:6,mat:wallM,surf:'stone',seg:1});
+  addBlock(-2.6,2.6,-57.4,-57.1,6,{mat:MAT.darkMetal,surf:'metal',seg:1});
+  for(const x of [-5,5]){ addMesh(new T.CylinderGeometry(2.6,2.8,14,12),wallM,x,7,-57.6,'stone'); addSolidOnly(x-2.6,x+2.6,-60.2,-55,14,0); const c=addMesh(new T.ConeGeometry(3,4,12),hm(0x1e2228),x,16,-57.6,null); }
+  for(let i=0;i<10;i++){ const R=mulberry32(1450+i); addMesh(BOX(.9,1.4,.15),new T.MeshBasicMaterial({color:R()<.7?0xffc870:0x302820}),-40+R()*80,4+R()*5,-56.9,null); }
+  // sirenes
+  const sirens=[]; const siren=(i,x,z,h,yaw,box)=>{ addMesh(new T.CylinderGeometry(.08,.12,h,6),MAT.darkMetal,x,h/2,z,'metal'); addSolidOnly(x-.15,x+.15,z-.15,z+.15,h); const horn=new T.Group(); horn.position.set(x,h+.2,z); horn.rotation.y=yaw; scene.add(horn); const hm1=hm(0x8a8a80);
+    const cones=[]; for(const s of [-1,1]){ const c=new T.Mesh(new T.CylinderGeometry(.32,.12,.6,10),hm1); c.rotation.x=Math.PI/2; c.position.set(s*.36,0,.25); horn.add(c); cones.push(c); } const body=new T.Mesh(BOX(.5,.4,.4),hm(0x5a5a52)); horn.add(body); cones.push(body);
+    const S={i,x,z,h,horn,cones,on:true,boxPt:box?V3(x+box[0],1.2,z+box[1]):null,ph:i*1.3};
+    for(const c of cones){ c.userData={mat:'metal',zoneHit:()=>killSiren14(S,true)}; W.shootables.push(c); }
+    if(box){ addMesh(BOX(.4,.55,.22),hm(0x3a4034),x+box[0],1.2,z+box[1],'metal'); } sirens.push(S); return S; };
+  siren(0,7,-54.6,8,0,[0,.25]); siren(1,40,-11,7.5,-Math.PI/2,null); siren(2,-7,41,7,Math.PI/2,[.25,0]);
+  // quartel (lado leste)
+  addBlock(30,47,-25,-18,3.2,{mat:M.wood,surf:'wood',top:MAT.roof,seg:2}); addBlock(30,47,-4,3,3.2,{mat:M.wood,surf:'wood',top:MAT.roof,seg:2});
+  for(let x=31.5;x<=46;x+=2.5) for(const z of [-17.95,-4.05]) addMesh(BOX(.8,.7,.05),new T.MeshBasicMaterial({color:0xffc070}),x,1.8,z,null);
+  sandbags(28.4,29.2,-15.4,-12.9); sandbags(28.4,29.2,-7.1,-4.6); addMesh(new T.CylinderGeometry(.05,.05,9,6),MAT.darkMetal,48,4.5,-11,'metal'); poster(48.6,7.6,-11,Math.PI/2,1.6,1,(g,w,h)=>{ g.fillStyle='#8a1a14'; g.fillRect(0,0,w,h); g.fillStyle='#e8e0d0'; g.beginPath(); g.arc(w/2,h/2,h*.32,0,7); g.fill(); });
+  // posto de controle da vila
+  makeDoor('bar14',{x:0,z:40,y0:.9,w:5.6,d:.16,h:.16,mat:M.barrier,offset:V3(0,2.4,0),npc:true,nav:true});
+  addBlock(-6.2,-3.2,39.6,40.4,.9,{mat:M.lime,surf:'stone',seg:1,cover:true}); addBlock(3.2,6.2,39.6,40.4,.9,{mat:M.lime,surf:'stone',seg:1,cover:true});
+  sandbags(-5.6,-2.6,35.6,36.4); sandbags(2.6,5.6,35.6,36.4); truck04(11,34);
+  addBlock(-12,-8,44,48,2.6,{mat:M.wood,surf:'wood',top:MAT.roof,seg:1}); addMesh(BOX(.8,.6,.05),new T.MeshBasicMaterial({color:0xffc070}),-10,1.6,43.96,null);
+  // vila ao sul
+  for(const [x0,x1,z0,z1] of [[6,14,58,66],[17,24,60,68],[27,34,57,64],[8,13,68,72]]){ addBlock(x0,x1,z0,z1,4,{mat:M.lime,surf:'stone',top:MAT.roof,seg:2}); addMesh(BOX(.8,.9,.05),new T.MeshBasicMaterial({color:mulberry32(x0|0)()<.6?0xffc070:0x2a2418}),(x0+x1)/2,2.2,z0-.03,null); }
+  // casa segura (cabana do guarda-florestal)
+  const hut=(axis,c0,c1,a0,a1,ops)=>wallOpen(axis,c0,c1,a0,a1,2.8,ops||[],M.wood,{inner:{}});
+  hut('x',53.8,54,-39,-29,[]); hut('x',62,62.2,-39,-29,[{c:-36,w:1,sill:1,top:2}]); hut('z',-39.2,-39,54,62.2,[]); hut('z',-29.2,-29,54,62.2,[{c:58,w:1.2}]);
+  addBlock(-39.4,-28.8,53.6,62.6,.2,{y0:2.8,mat:MAT.roof,bottom:MAT.ceil,surf:'wood',seg:2}); addBlock(-37,-35,59,61,.8,{mat:M.wood,surf:'wood',seg:1,cover:true});
+  bulb('H14',-34,2.5,58,5); { const L=W.lamps[W.lamps.length-1]; L.base=.9; L.light.intensity=.9; }
+  makeDoor('hut14',{x:-29.1,z:58,w:.12,d:1.2,h:2.1,mat:MAT.doorWood,offset:V3(0,0,1.1),npc:true,nav:true});
+  // floresta
+  const trunks=[], tops=[]; const clear=(x,z)=>(Math.abs(x)<5.5&&z<54)||(x>14&&x<28)||(z<-50)||(x>27&&x<52&&z>-29&&z<7)||(x>27&&x<46&&Math.abs(z+11)<4)||(x>-14&&x<16&&z>31&&z<52)||(z>44&&z<52&&x>-40&&x<2)||(x>-44&&x<-24&&z>50&&z<66)||(x>2&&x<36&&z>48)||(x>8&&x<14&&z>-16&&z<-6)||(Math.hypot(x+19,z-3)<8);
+  for(let i=0;i<560;i++){ const R=mulberry32(14000+i); const x=-68+R()*136, z=-54+R()*124; if(clear(x,z)) continue; const h=5+R()*6; trunks.push([x,1.4,z,.35,2.8,.35,0]); tops.push([x,2.4+h/2,z,1.8+R()*.8,h,1.8+R()*.8,R()*3]); addSolidOnly(x-.3,x+.3,z-.3,z+.3,3,0,true); }
+  instanced(new T.CylinderGeometry(.5,.6,1,6),hm(0x2a1e14),trunks); instanced(new T.ConeGeometry(1,1,7),hm(0x14221a),tops);
+  for(let i=0;i<30;i++){ const R=mulberry32(14900+i); const x=-60+R()*120, z=-50+R()*110; if(clear(x,z)) continue; const s=.4+R()*.7; addMesh(new T.DodecahedronGeometry(s,0),rock,x,s*.5,z,'stone'); addSolidOnly(x-s*.7,x+s*.7,z-s*.7,z+s*.7,s,0,true); }
+  // clareira com troncos cortados (cobertura)
+  for(const [x,z] of [[-19,1],[-16,6],[-22,5]]){ const l=addMesh(new T.CylinderGeometry(.35,.35,4,8).rotateZ(Math.PI/2),hm(0x4a3422),x,.35,z,'wood'); addSolidOnly(x-2,x+2,z-.35,z+.35,.7,0,true); }
+  // lampiões
+  const lit14=[]; for(const [id,x,z,r] of [['L1',3.4,-50,9],['L2',15.6,-14.6,8],['L3',30,-11,9],['L4',7.4,42.5,9],['L5',-8.6,42,7],['L6',40,-15,9]]){ const L=lampPost(id,x,z,-1,0); L.base=1.15; L.light.intensity=1.15; lit14.push([x,z,r]); }
+  // holofote da muralha
+  const spot=new T.SpotLight(0xdde6ff,2.8,70,.16,.45,1.1); spot.position.set(-9,11.6,-56.6); scene.add(spot); scene.add(spot.target); const lens=addMesh(new T.CylinderGeometry(.26,.26,.05,14),MAT.bulb,-9,11.6,-56.4,'glass'); lens.rotation.x=Math.PI/2; addMesh(BOX(.8,.6,.9),MAT.darkMetal,-9,11.6,-56.9,'metal');
+  let beam=null; if(MAT_HQ){ const len=60, rad=Math.tan(.16)*len; const bg=new T.ConeGeometry(rad,len,20,1,true); bg.translate(0,-len/2,0); bg.rotateX(-Math.PI/2); beam=new T.Mesh(bg,MAT.beamCold); beam.position.copy(spot.position); scene.add(beam); }
+  const SL={id:'SL14',x:-9,z:-56.4,r:0,light:spot,lantern:lens,broken:false,base:2.8,ph:0,cone:beam}; lens.userData.breakable=true; lens.userData.lamp=SL; W.lamps.push(SL);
+  G.sl={light:spot,beam,lamp:SL,t:0,lit:false,litT:0,cd:0,msg:'Da muralha: “Lá embaixo, na encosta!”',path:t=>V3(Math.sin(t*.27)*13,0,-34+Math.cos(t*.19)*13)};
+  // navegação
+  const N=[];
+  for(let x=-66;x<=15.1;x+=3) for(let z=-53;z<=67;z+=3) N.push({x,z});
+  for(let x=29;x<=66;x+=3) for(let z=-53;z<=67;z+=3) N.push({x,z});
+  for(let x=16.6;x<=27.5;x+=1.8) N.push({x,z:-10},{x,z:-11.4},{x,z:-8.6});
+  for(let x=-37.4;x<=-30.6;x+=1.7) for(let z=55;z<=61.4;z+=1.6) N.push({x,z});
+  N.push({x:-27.6,z:58},{x:-29.1,z:58},{x:0,z:38.4},{x:0,z:41.6},{x:-1.6,z:40},{x:1.6,z:40});
+  W.nav.nodes=N.filter(n=>!insideSolid(n.x,n.z,.4)); W.nav.link=4.3; buildNav();
+  return {sun,sirens,bridge,gorgeB,railN,railS,water,lit14};
+}
+function killSiren14(S,shot){
+  const F=G.flags; if(!S.on) return; S.on=false; F['siren'+S.i]=true; F.sirensOff=(F.sirensOff||0)+1;
+  for(const c of S.cones) c.material=hm(0x2a2a26); S.horn.rotation.x=shot?.5:0;
+  AudioSys.play(shot?'metal':'clank',V3(S.x,S.h,S.z),1.2); FX.burst(V3(S.x,S.h+.2,S.z),shot?12:6,0xffe0a0,3,.3,4); if(shot) emitNoise(V3(S.x,S.h,S.z),10,'impact',null);
+  const left=3-F.sirensOff; pickupMsg(left?'Sirene calada — faltam '+left:'Todas as sirenes caladas');
+  if(!left){ complete('sirens'); G.alarm=false; G.radioMsg('ÉLISE','Silêncio. Sem as sirenes, eles voltam a caçar no escuro — e eu também.','tip'); for(const e of G.enemies) if(!e.dead&&e.state!=='COMBAT') e.alertLevel=Math.min(e.alertLevel,.5); }
+  else if(F.sirensOff===1) G.radioMsg('ÉLISE','Uma a menos. Cada sirene calada é um caminhão a menos subindo do quartel.');
+  cp14();
+}
+function objectives14(){ return [
+  {id:'bridge',text:'Exploda a ponte do quartel antes que os reforços desçam (garganta, leste)',state:'active',marker:{x:17,z:-10}},
+  {id:'house',text:'Chegue à casa segura do guarda-florestal (sudoeste)',state:'hidden',marker:{x:-31,z:58}},
+  {id:'sirens',text:'Opcional: cale as três sirenes (tiro na buzina ou cabo cortado)',state:'active',optional:true},
+  {id:'check14',text:'Opcional: atravesse o posto da vila sem ser ferida abaixo de 50',state:'active',optional:true},
+]; }
+function interact14(R){
+  const I=W.interactables, F=()=>G.flags;
+  for(const S of R.sirens) if(S.boxPt) I.push({id:'siren'+S.i,pt:()=>S.boxPt,r:2,hold:()=>1.4,label:()=>S.on?'Cortar o cabo da sirene (segure)':null,use:()=>killSiren14(S,false)});
+  I.push({id:'charge14',pt:()=>V3(17.4,.6,-10),r:2.6,hold:()=>G.diff==='veterano'?3.2:2.4,label:()=>F().armed14||F().bridgeDown?null:'Prender a carga nos pilares da ponte (segure)',
+    use:()=>{ F().armed14=true; F().fuse14=G.diff==='recruta'?12:9; AudioSys.play('unlock'); pickupMsg('Carga armada — afaste-se da ponte'); G.radioMsg('ÉLISE','Pavio curto. Para trás!','warn'); cp14(); }});
+  I.push({id:'house14',pt:()=>V3(-34,1.2,58),r:2.6,skip:true,label:()=>F().bridgeDown?'Fechar a porta e esperar o amanhecer':'Casa segura — a ponte ainda está de pé',
+    use:()=>{ if(!F().bridgeDown){ G.radioMsg('ÉLISE','Se o quartel continuar ligado à encosta, eles vasculham a floresta até chegar aqui. A ponte primeiro.','warn'); return; } complete('house'); if(obj('check14').state==='active') complete('check14'); missionComplete(); }});
+}
+function bridgeBoom14(){
+  const F=G.flags, R=G.refs; F.bridgeDown=true; F.armed14=false; G.progress=null;
+  explode(V3(22,.6,-10),{r:7,dmgE:200,dmgP:120,src:'charge',kind:'charge'});
+  FX.burst(V3(22,.4,-10),40,0x8a6a4a,6,1.2,9.8,1.4); AudioSys.play('explosion',V3(22,0,-10),1.6);
+  F.bridgeFall=0; R.gorgeB.active=true; R.railN.active=false; R.railS.active=false;
+  for(const e of G.enemies){ if(!e.dead&&e.pos.x>17.8&&e.pos.x<26.2&&e.pos.z>-12.7&&e.pos.z<-7.3) e.takeDamage({dmg:999,region:'chest',dir:V3(0,-1,0),point:e.pos.clone(),shooter:'player'}); }
+  W.nav.nodes=W.nav.nodes.filter(n=>!insideSolid(n.x,n.z,.4)); buildNav();
+  complete('bridge'); activate('house'); G.radioMsg('ÉLISE','A ponte caiu na garganta. O quartel ficou do lado errado. Agora: a casa do guarda-florestal, depois da vila.','tip'); cp14();
+}
+function drawMap14(g,w,h){
+  g.fillStyle='#1e2430'; g.fillRect(0,0,w,h); g.fillStyle='#d8d0b8'; g.fillRect(4,4,w-8,h-8); const S=(w-8)/140, X=x=>4+(x+70)*S, Z=z=>4+(z+62)*S;
+  g.fillStyle='#7a8a6a'; g.fillRect(X(-68),Z(-56),136*S,126*S); g.fillStyle='#3a4a5a'; g.fillRect(X(18),Z(-62),8*S,134*S); g.fillStyle='#b8a888'; g.fillRect(X(-3),Z(-57),6*S,110*S); g.fillRect(X(26),Z(-13),18*S,4*S); g.fillStyle='#8a6a4a'; g.fillRect(X(18),Z(-12.5),8*S,5*S);
+  g.fillStyle='#4a3a2a'; g.fillRect(X(-70),Z(-62),140*S,5*S); for(const [a,b,c,d] of [[30,47,-25,-18],[30,47,-4,3],[-39,-29,54,62],[6,14,58,66],[17,24,60,68],[27,34,57,64],[-12,-8,44,48]]) g.fillRect(X(a),Z(c),(b-a)*S,(d-c)*S);
+  g.fillStyle='#2a2418'; g.textAlign='center'; const t=(s,x,z,f)=>{ g.font=f||'11px serif'; g.fillText(s,X(x),Z(z)); };
+  t('muralha de Schwarzfels',0,-58.5,'bold 10px serif'); t('garganta',22,30,'italic 10px serif'); t('ponte',22,-14,'10px serif'); t('QUARTEL',38,-20,'bold 10px serif'); t('posto da vila',0,34,'10px serif'); t('vila',22,56,'italic 11px serif'); t('casa segura',-34,52,'bold 10px serif');
+  g.fillStyle='#8a1a14'; for(const [x,z] of [[7,-54.6],[40,-11],[-7,41]]){ g.beginPath(); g.arc(X(x),Z(z),4,0,7); g.fill(); } t('sirene',10,-51,'9px serif');
+}
+DOCS.mapa14={title:'Encosta de Schwarzfels',sub:'rascunho de um lenhador da Rede',map:'14',body:'',pencil:'A ponte de madeira liga o quartel à estrada. Sem ela, só dando a volta pelo vale — horas. Três sirenes: muralha, quartel e o posto da vila.'};
+function update14(dt){
+  const P=G.player, F=G.flags, R=G.refs;
+  updateSearchlight(dt);
+  if(!F.start14){ F.start14=true; G.alarm=true; for(const e of G.enemies) e.alertLevel=1; }
+  if(!F.i1&&G.introT>.8){ F.i1=true; G.radioMsg('ÉLISE','Portão fechado atrás de mim e o castelo todo uivando. O quartel do outro lado da garganta vai mandar gente pela ponte — sem parar.','warn'); }
+  if(!F.i2&&G.introT>9){ F.i2=true; G.radioMsg('DICA','Cale as sirenes (tiro na buzina ou cortando o cabo) para espaçar os reforços. Exploda a ponte para cortá-los de vez.','tip'); }
+  // sirenes
+  for(const S of R.sirens){ if(!S.on) continue; S.ph-=dt; S.horn.rotation.y+=dt*.6; if(S.ph<=0){ S.ph=4.4; AudioSys.play('siren',V3(S.x,S.h,S.z),.9); } }
+  // reforços em ciclo
+  if(!F.bridgeDown){ if(F.reT===undefined) F.reT=G.diff==='recruta'?60:42; F.reT-=dt;
+    const alive=G.enemies.filter(e=>!e.dead&&e.id.startsWith('q')).length;
+    if(F.reT<=0){ F.reT=(G.diff==='veterano'?20:26)+12*(F.sirensOff||0)+(G.diff==='recruta'?14:0);
+      if(alive<4&&(F.waves||0)<6){ F.waves=(F.waves||0)+1; const n=F.waves; spawnEnemy04({id:'q'+n+'a',x:44,z:-12.5,weapon:n%2?'smg':'rifle',helmet:true},true); spawnEnemy04({id:'q'+n+'b',x:44,z:-9.5,weapon:'rifle',helmet:true,nades:n>2?1:0},true);
+        if(n===1) G.radioMsg('ÉLISE','Caminhão no pátio do quartel. Lá vêm eles pela ponte.','warn'); } } }
+  if(F.armed14&&!F.bridgeDown){ F.fuse14-=dt; G.progress={label:'Carga na ponte: '+Math.max(0,Math.ceil(F.fuse14))+' s',v:F.fuse14/(G.diff==='recruta'?12:9)}; if(Math.random()<dt*6) FX.puff(V3(18.2,.4,-10),1,0xffd080,.15,.3,V3(0,1,0),.9); if(F.fuse14<=0) bridgeBoom14(); }
+  if(F.bridgeDown&&F.bridgeFall<3){ F.bridgeFall+=dt; R.bridge.position.y-=dt*(2+F.bridgeFall*6); R.bridge.rotation.z=F.bridgeFall*.25; if(F.bridgeFall>=3) R.bridge.visible=false; }
+  if(obj('check14').state==='active'&&P.hp<50&&P.pos.z>30) failObjective('check14');
+  if(obj('house').state==='active'&&!F.houseMsg&&P.pos.z>44){ F.houseMsg=true; G.radioMsg('ÉLISE','A trilha de terra a oeste leva à cabana. A lamparina acesa quer dizer: porta aberta.'); }
+  const cs=$('#convChip'); if(cs){ cs.hidden=false; const sig=R.sirens.map(s=>s.on?1:0).join('')+'|'+(F.bridgeDown?1:0)+'|'+Math.ceil(Math.max(0,F.reT||0)/5);
+    if(cs.dataset.sig!==sig){ cs.dataset.sig=sig; const lb=cs.querySelector('.lbl'); if(lb&&lb.firstChild) lb.firstChild.nodeValue='Sirenes · '; cs.className='disg conv'+(R.sirens.every(s=>!s.on)?' ok':'');
+      $('#convState').textContent=R.sirens.filter(s=>s.on).length+' tocando'; $('#convRow').innerHTML=R.sirens.map(s=>'<span class="trk '+(s.on?'burn':'wreck')+'">'+['M','Q','V'][s.i]+'</span>').join('');
+      $('#convSub').textContent=F.bridgeDown?'Ponte destruída — sem reforços':'Próximos reforços: ~'+Math.max(0,Math.ceil(F.reT||0))+' s'; } }
+}
+function cp14(){ checkpoint(); }
+function restore14(s){ const F=G.flags, R=G.refs;
+  for(const S of R.sirens) if(F['siren'+S.i]){ S.on=false; for(const c of S.cones) c.material=hm(0x2a2a26); }
+  if(F.bridgeDown){ R.bridge.visible=false; F.bridgeFall=9; R.gorgeB.active=true; R.railN.active=false; R.railS.active=false; W.nav.nodes=W.nav.nodes.filter(n=>!insideSolid(n.x,n.z,.4)); buildNav(); }
+  if(F.armed14&&!F.bridgeDown) F.fuse14=Math.max(F.fuse14||0,6);
+  F.start14=true; G.alarm=(F.sirensOff||0)<3; if(F.reT!==undefined) F.reT=Math.max(F.reT,15);
+}
+LEVELS['14']={id:'14',num:14,op:'Operação 14',name:'Círculo Vicioso',place:'Encosta de Schwarzfels, Vestfália',prev:'13',
+  loadout:{weapons:['xbow','silenced','smg'],ammo:{xbow:{mag:1,reserve:6},silenced:{mag:6,reserve:12},smg:{mag:32,reserve:96}},cur:'smg',camera:false},baseLight:.2,lightFn:light14,shadows:false,bloomTh:.75,grenades:true,
+  build:()=>buildLevel14(),enemies:ENEMY_DEFS_14,ally:null,start:{x:0,z:-53.5,yaw:Math.PI},startDocs:['mapa14'],drawMap:drawMap14,
+  reinf:[],radio:{x:0,z:0,fx:0,fz:0},radioRun:'',alarmPos:V3(7,8,-54.6),alarmText:'',alarmObjective:null,
+  alarmYes:'As sirenes tocaram a noite inteira. ',alarmLate:'Ela calou as sirenes uma a uma. ',alarmNo:'Ela calou as sirenes uma a uma. ',alarmOk:()=>true,deathText:'A patrulha do quartel encontrou Élise na encosta.',
+  objectives:objectives14,interact:interact14,pickups:()=>{ addPickup('w_smg1',-6,-27,'smg',32,.1); addPickup('w_med1',14.4,-15,'med',35,.1); addPickup('w_nade1',2,-20,'nade',2,.1); addPickup('w_med2',-10,46,'med',40,.85); addPickup('w_x1',-18,4,'xbow',3,.1); addPickup('w_smg2',12,38,'smg',32,.1); G.player.nades=Math.max(G.player.nades||0,2); },
+  update:update14,restore:restore14,
+  resultTitle:'Círculo vicioso',outro:['ÉLISE','A porta da cabana fecha. Lá em cima, Schwarzfels continua aceso, mas as sirenes calaram — e a ponte do quartel está no fundo da garganta. Os quarenta nomes seguem para Londres ao amanhecer.'],menuCam:{cx:6,cz:-30,y:4,tx:22,tz:-10},ambient:'forest',mist:null,
+  briefing:{meta:'VESTFÁLIA — 3 DE JUNHO DE 1943 — 03h10',paras:['Élise saiu pelo portão sul com os artefatos e a lista, mas o castelo inteiro acordou. Três sirenes — na muralha, no quartel e no posto da vila — chamam reforços sem parar: enquanto a ponte de madeira ligar o quartel à encosta, caminhões de soldados vão descer atrás dela.','Exploda a ponte sobre a garganta para cortar o ciclo e chegue à cabana do guarda-florestal, depois da vila. Calar as sirenes espaça os reforços — e, com as três mudas, a encosta volta a ficar escura.'],list:['Explodir a ponte do quartel','Calar as sirenes (opcional)','Chegar à casa segura']}};
+LEVEL_ORDER.push('14');
+
+
+/* =========================================================
+   OPERAÇÃO 15 — O Desvio (Montecalvo, Itália, 14/02/1944, fim de tarde)
+   torre de vigia, depósito de combustível, chave da grade do ossário
+   ========================================================= */
+const Y15=3.2;
+const ENEMY_DEFS_15=[
+  {id:'t1',x:12,z:30,yaw:Math.PI,weapon:'rifle',helmet:true,fixed:true,sight:1.6},
+  {id:'e1',x:15,z:26.5,yaw:Math.PI*.9,weapon:'rifle'},
+  {id:'p1',x:1.2,z:46,weapon:'rifle',helmet:true,patrol:[[1.2,46],[1.2,18],[-1.2,18],[-1.2,46]]},
+  {id:'r1',x:-2.4,z:12.4,yaw:Math.PI,weapon:'smg',helmet:true},
+  {id:'r2',x:6,z:10.4,yaw:Math.PI*.8,weapon:'rifle'},
+  {id:'g1',x:-20,z:42,weapon:'rifle',patrol:[[-20,42],[-20,18],[-34,18],[-34,42]]},
+  {id:'k1',x:-4,z:-5,weapon:'smg',helmet:true,patrol:[[-4,-5],[-11,-5],[-11,-9],[-4,-9]]},
+  {id:'d1',x:-37,z:-17,weapon:'rifle',patrol:[[-36,-17],[-15,-17]]},
+  {id:'d2',x:-40,z:-18.6,yaw:Math.PI/2,weapon:'pistol',officer:true},
+  {id:'d3',x:-31,z:-6.2,yaw:-Math.PI/2,weapon:'rifle',helmet:true},
+  {id:'d4',x:-22,z:-21.6,yaw:0,weapon:'pistol'},
+  {id:'s1',x:0,z:-33,yaw:Math.PI,weapon:'rifle',helmet:true},
+  {id:'s2',x:2,z:-40.4,weapon:'rifle',patrol:[[2,-40.4],[19.4,-40.4],[19.4,-44.9],[2,-44.9]]},
+  {id:'s3',x:26,z:-46.5,yaw:Math.PI,weapon:'smg',helmet:true},
+  {id:'s4',x:35,z:-33,yaw:Math.PI,weapon:'rifle'},
+  {id:'s5',x:-18,z:-36,weapon:'rifle',helmet:true,patrol:[[-18,-36],[-18,-55],[-8,-55],[-8,-36]]},
+];
+function light15(x,z){ let l=.4; const R=G.refs; if(R&&R.lit15) for(const [a,b,r] of R.lit15){ const d=Math.hypot(x-a,z-b); if(d<r) l=Math.max(l,.66*(1-d/r)+.4); } return l; }
+function zone15(x,z,y){ if(x>-46&&x<-12&&z>-28&&z<0) return 'Depósito do comboio'; if(z<-30) return 'Terraço do mosteiro'; if(Math.hypot(x-12,z-30)<10) return 'Torre de vigia'; return 'Estrada de Montecalvo'; }
+function buildLevel15(){
+  M5=mats05(); M6=mats06(); const M=M6;
+  scene.background=new T.Color(0x6a6058); scene.fog=new T.FogExp2(0x7a6a5e,.012);
+  skyDome(1515,[[0,'#3a3e4a'],[.3,'#6a6870'],[.44,'#b08870'],[.5,'#d89a68'],[.53,'#5a5048'],[1,'#3a3430']],null,8);
+  const hemi=new T.HemisphereLight(0xb0a8a8,0x4a4032,.62); scene.add(hemi); const sun=new T.DirectionalLight(0xffb88a,.5); sun.position.set(-50,22,30); sun.target.position.set(0,0,0); scene.add(sun); scene.add(sun.target); scene.add(new T.AmbientLight(0x4a4440,.3));
+  const grass=MAT_HQ?new T.MeshPhongMaterial({map:TEX.dust5,color:0x7a8058,shininess:2,specular:0x050505}):new T.MeshLambertMaterial({map:TEX.dust5,color:0x7a8058});
+  const stone=new T.MeshLambertMaterial({map:TEX.lime5,color:0xb8ab98}), stoneD=new T.MeshLambertMaterial({map:TEX.lime5,color:0x8a8070}), dirt=new T.MeshLambertMaterial({map:TEX.dust5,color:0x8a7458});
+  floorPlane(130,140,0,0,grass,'stone',0);
+  floorPlane(6,70,0,23,M.road,'stone',.012); floorPlane(48,6,-23,-5,M.road,'stone',.012); floorPlane(4,12,0,-18,dirt,'stone',.011); floorPlane(5,8,35,-26,dirt,'stone',.011); floorPlane(34,26,-29,-14,dirt,'stone',.01);
+  // limites: rocha nos lados, parapeito do vale ao sul
+  const rk=(x0,x1,z0,z1,h,y0)=>addBlock(x0,x1,z0,z1,h,{y0:y0||0,mat:M.rock,surf:'stone',top:M.rock,seg:4});
+  rk(-62,-50,-70,64,9); rk(50,62,-70,64,9); rk(-50,-24,-70,-30,8); rk(44,50,-70,-30,8);
+  addBlock(-50,50,60,60.8,1,{mat:stoneD,surf:'stone',seg:6,cover:true}); addSolidOnly(-50,50,60,61,4);
+  // terraço do mosteiro
+  addWalk(-24,44,-62,-30,Y15,{mat:stone,top:grass,seg:6});
+  stairSteps('z',-30,1,-2,2,Y15-.2,16,stone,stone); stairSteps('z',-30,1,33,37,Y15-.2,16,stone,stone);
+  for(const [a,b] of [[-24,-2],[2,33],[37,44]]){ addBlock(a,b,-30.4,-30,.9,{y0:Y15,mat:stoneD,surf:'stone',seg:2,cover:true}); addSolidOnly(a,b,-30.4,-30,4,Y15); }
+  addSolidOnly(-24.4,-24,-62,-30,4,Y15); addSolidOnly(44,44.4,-62,-30,4,Y15);
+  // muralha da abadia e fachada
+  addBlock(-24,44,-66,-62,12,{y0:Y15,mat:stone,surf:'stone',seg:6}); addBlock(-10,30,-80,-66,22,{y0:Y15,mat:stone,surf:'stone',top:MAT.roof,seg:4});
+  for(let x=-20;x<=40;x+=6) addBlock(x-.6,x+.6,-62,-61,8,{y0:Y15,mat:stoneD,surf:'stone',seg:1});
+  for(let i=0;i<16;i++){ const x=-8+i*2.5, y=Y15+14+(i%2)*4; addMesh(BOX(.7,1.6,.1),new T.MeshBasicMaterial({color:i%3?0x2a2420:0xd8a868}),x,y,-65.95,null); }
+  // cemitério e ciprestes
+  const stones=[]; for(let x=2;x<=18.1;x+=2.3) for(const z of [-38.2,-42.6,-47]){ addBlock(x-.32,x+.32,z-.09,z+.09,.85,{y0:Y15,mat:stoneD,surf:'stone',seg:1,cover:true}); stones.push(x); }
+  const cyp=[]; for(const [x,z] of [[-2,-36],[-2,-44],[-2,-52],[22,-36],[22,-44],[40,-36],[40,-46],[40,-56],[-22,-34],[-22,-46]]){ cyp.push([x,Y15+3.6,z,1.1,6.4,1.1,0]); cyp.push([x,Y15+.6,z,.25,1.2,.25,0]); addSolidOnly(x-.35,x+.35,z-.35,z+.35,2,Y15,true); }
+  instanced(new T.ConeGeometry(.9,1,8),hm(0x2a3a22),cyp.filter((c,i)=>i%2===0)); instanced(new T.CylinderGeometry(.5,.5,1,6),hm(0x3a2a1a),cyp.filter((c,i)=>i%2===1));
+  // ossário (acesso à cripta)
+  addBlock(23,33,-60,-50.2,5,{y0:Y15,mat:stone,surf:'stone',top:MAT.roof,seg:2}); addMesh(new T.ConeGeometry(2.2,2,4),hm(0x6a4a3a),28,Y15+6,-55,null).rotation.y=Math.PI/4;
+  const grate=new T.Group(); grate.position.set(28,Y15,-50.1); scene.add(grate); for(let x=-.9;x<=.91;x+=.3){ const b=new T.Mesh(BOX(.05,2.2,.05),MAT.darkMetal); b.position.set(x,1.1,0); grate.add(b); } const gb=new T.Mesh(BOX(2,.08,.06),MAT.darkMetal); gb.position.y=1.9; grate.add(gb);
+  addMesh(BOX(2,2.3,.05),new T.MeshBasicMaterial({color:0x080606}),28,Y15+1.15,-50.25,null);
+  // torre de vigia
+  const tower=new T.Group(); scene.add(tower); const tw=M.wood;
+  for(const [a,b] of [[-1.2,-1.2],[1.2,-1.2],[-1.2,1.2],[1.2,1.2]]){ const l=new T.Mesh(BOX(.22,7.4,.22),tw); l.position.set(12+a,3.7,30+b); tower.add(l); }
+  for(const y of [1.6,3.4]) for(const [w,d,x,z] of [[2.6,.1,12,28.8],[2.6,.1,12,31.2],[.1,2.6,10.8,30],[.1,2.6,13.2,30]]){ const b=new T.Mesh(BOX(w,.12,d),tw); b.position.set(x,y,z); tower.add(b); }
+  const plat=new T.Mesh(BOX(3.2,.2,3.2),tw); plat.position.set(12,4.9,30); tower.add(plat); const roofT=new T.Mesh(new T.ConeGeometry(2.6,1.2,4),hm(0x4a3a2a)); roofT.position.set(12,8,30); roofT.rotation.y=Math.PI/4; tower.add(roofT);
+  for(const [w,d,x,z] of [[3.2,.08,12,28.4],[3.2,.08,12,31.6],[.08,3.2,10.4,30],[.08,3.2,13.6,30]]){ const r=new T.Mesh(BOX(w,.9,d),tw); r.position.set(x,5.45,z); tower.add(r); }
+  for(const c of tower.children){ c.position.x-=12; c.position.z-=30; } tower.position.set(12,0,30);
+  const tSolid=addSolidOnly(10.6,13.4,28.6,31.4,4.8,0), tWalk=addWalk(10.4,13.6,28.4,31.6,5,{y0:4.8,mat:tw,surf:'wood',seg:1}); tWalk.mesh&&(tWalk.mesh.visible=false);
+  const tRail=[addSolidOnly(10.3,13.7,28.3,28.5,1,5),addSolidOnly(10.3,13.7,31.5,31.7,1,5),addSolidOnly(10.3,10.5,28.3,31.7,1,5),addSolidOnly(13.5,13.7,28.3,31.7,1,5)];
+  // posto de controle da estrada
+  makeDoor('bar15',{x:0,z:10,y0:.9,w:5.6,d:.16,h:.16,mat:M.barrier,offset:V3(0,2.4,0),npc:true,nav:true});
+  addBlock(5,9,6,10,2.6,{mat:stone,surf:'stone',top:MAT.roof,seg:1}); addMesh(BOX(.8,.6,.05),new T.MeshBasicMaterial({color:0xffc070}),7,1.6,10.03,null);
+  addBlock(-6.4,-3.2,9.6,10.4,.9,{mat:M.lime,surf:'stone',seg:1,cover:true});
+  // depósito do comboio
+  truck04(-30,-20); truck04(-30,-14); tanker(-20,-24); drums(-44,-40.8,-12,-9.4,1.8,M.drumG); crate(-16,-12,1.1,1); crate(-16,-10.8,1,.9); crate(-15.8,-11.4,.8,.8,1.1);
+  tent(-44,-36,-23,-15,3.2,new T.MeshLambertMaterial({color:0x8a8462,side:T.DoubleSide})); addBlock(-42,-39.6,-21,-20,.78,{mat:M.wood,surf:'wood',cover:true,seg:1});
+  const mapM=addMesh(BOX(.9,.02,.7),hm(0xd8ccb0),-40.3,.8,-20.5,null); const keyM=addMesh(BOX(.16,.03,.06),hm(0xc8a040),-41.4,.8,-20.3,null);
+  const fuel=[]; const fuelG=new T.CylinderGeometry(.32,.32,.9,10), redM=MAT_HQ?new T.MeshPhongMaterial({color:0x9a2a1a,shininess:40,specular:0x442222}):new T.MeshLambertMaterial({color:0x9a2a1a});
+  for(let i=0;i<10;i++){ const x=-38.6+(i%5)*.7, z=-8.4+Math.floor(i/5)*.7; const m=addMesh(fuelG,redM,x,.45,z,'metal'); m.userData.zoneHit=()=>depotBoom15('tiro'); W.shootables.push(m); fuel.push(m); }
+  addSolidOnly(-39,-35.3,-8.8,-7.3,.9,0,true);
+  // oliveiras, muretas
+  const trunks=[], tops=[]; const clear=(x,z)=>(Math.abs(x)<5.5&&z>-14)||(z>-11&&z<1&&x<1)||(x>-48&&x<-11&&z>-28&&z<1)||(Math.hypot(x-12,z-30)<5)||(x>-9&&x<12&&z>3&&z<15)||(Math.abs(x)<4&&z<-11)||(x>29&&x<41&&z<-18)||(Math.hypot(x,z-56)<6)||z<-29;
+  for(let i=0;i<260;i++){ const R=mulberry32(15000+i); const x=-48+R()*96, z=-28+R()*86; if(clear(x,z)) continue; trunks.push([x,.9,z,.25,1.8,.25,R()*3]); const s=1.5+R()*.8; tops.push([x,2.3+R()*.4,z,s,s*.75,s,R()*3]); addSolidOnly(x-.22,x+.22,z-.22,z+.22,2,0,true); }
+  instanced(new T.CylinderGeometry(.5,.7,1,6),hm(0x4a3a2a),trunks); instanced(new T.IcosahedronGeometry(1,0),hm(0x5a6a48),tops);
+  for(const [a,b,c,d] of [[-32,-20,30,30.7],[18,30,40,40.7],[-16,-8,24,24.7],[20,30,12,12.7],[-40,-30,8,8.7],[30,40,-8,-7.3],[-14,-8,48,48.7]]) addBlock(a,b,c,d,1,{mat:stoneD,surf:'stone',seg:2,cover:true});
+  // luzes
+  const lit15=[]; for(const [id,x,z,r,dx] of [['L1',3.6,13,9,-1],['L2',-34,-14.4,10,1],['L3',-24,-10,9,1]]){ const L=lampPost(id,x,z,dx,0); if(L){ L.base=1.05; L.light.intensity=1.05; } lit15.push([x,z,r]); }
+  for(const [id,x,z,r] of [['L4',2.6,-32,8],['L5',30,-48,8]]){ addMesh(new T.CylinderGeometry(.06,.09,3.4,6),MAT.darkMetal,x,Y15+1.7,z,'metal'); addSolidOnly(x-.12,x+.12,z-.12,z+.12,3.4,Y15); bulb(id,x,Y15+3.5,z,r); const L=W.lamps[W.lamps.length-1]; L.base=1; L.light.intensity=1; lit15.push([x,z,r]); }
+  bulb('TB',12,7.2,30,6); { const L=W.lamps[W.lamps.length-1]; L.base=.8; L.light.intensity=.8; } lit15.push([12,30,5]);
+  // navegação
+  const N=[];
+  for(let x=-47;x<=47.1;x+=3) for(let z=-28;z<=58.1;z+=3) N.push({x,z});
+  for(let x=-22;x<=42.1;x+=3) for(let z=-58;z<=-32.4;z+=3) N.push({x,z});
+  for(const x of [0,35]) for(const z of [-31.6,-29.4,-27,-24.6,-22]) N.push({x,z});
+  N.push({x:0,z:8.4},{x:0,z:11.6},{x:-1.6,z:10},{x:1.6,z:10},{x:20.2,z:-38.2},{x:20.2,z:-42.6},{x:-.2,z:-42.6},{x:28,z:-48.6});
+  W.nav.nodes=N.filter(n=>!insideSolid(n.x,n.z,.4)); W.nav.link=4.3; buildNav();
+  return {hemi,sun,tower,tSolid,tWalk,tRail,grate,mapM,keyM,fuel,lit15};
+}
+function towerDown15(how){
+  const F=G.flags, R=G.refs; if(F.towerDown) return; F.towerDown=true; F.armedT=false; G.progress=null;
+  if(how==='charge'){ F.towerCollapsed=true; explode(V3(12,.6,30),{r:5.5,dmgE:200,dmgP:90,src:'charge',kind:'charge'}); F.towerFall=0; }
+  R.tSolid.active=false; R.tWalk.active=false; for(const s of R.tRail) s.active=false; removeShootables([R.tWalk.mesh]);
+  const t1=G.enemies.find(e=>e.id==='t1'); if(t1&&!t1.dead) t1.takeDamage({dmg:999,region:'chest',dir:V3(0,-1,0),point:t1.pos.clone(),shooter:'player'});
+  done15tower();
+}
+function done15tower(){ if(obj('tower').state!=='active') return; complete('tower'); G.radioMsg('BRUNA','A torre caiu calada. A estrada é sua.','tip'); check15(); cp15(); }
+function depotBoom15(how){
+  const F=G.flags, R=G.refs; if(F.depotDone) return; F.depotDone=true; F.armedD=false; G.progress=null;
+  for(const m of R.fuel) m.visible=false;
+  explode(V3(-37,.6,-8),{r:7,dmgE:200,dmgP:90,src:'charge',kind:'wreck'}); F.boomQ=[[1.2,-30,-14],[2.2,-30,-20],[3.1,-20,-24],[3.8,-42,-10.6]]; F.boomT=0;
+  G.fires=[]; complete('depot'); if(obj('quiet15').state==='active'&&!G.alarm) complete('quiet15');
+  G.radioMsg('BRUNA','Brucia! Dá para ver a coluna de fumaça daqui de baixo. Agora a chave e a cripta.','tip'); check15(); cp15();
+}
+function check15(){ const F=G.flags; if(obj('crypt').state==='active'||obj('crypt').state==='done') return; if(F.key15&&obj('tower').state==='done'&&obj('depot').state==='done'){ activate('crypt'); G.radioMsg('ÉLISE','Torre, depósito, chave. A grade do ossário fica no terraço, à direita do cemitério.','warn'); } }
+function objectives15(){ return [
+  {id:'tower',text:'Neutralize a torre de vigia sobre a estrada',state:'active',marker:{x:12,z:30}},
+  {id:'depot',text:'Destrua o combustível do depósito do comboio (pátio oeste)',state:'active',marker:{x:-37,z:-8}},
+  {id:'key',text:'Pegue a chave da grade do ossário na tenda do comando',state:'active',marker:{x:-40.6,z:-20.5}},
+  {id:'crypt',text:'Abra a grade do ossário no terraço e desça à cripta',state:'hidden',marker:{x:28,z:-49}},
+  {id:'map15',text:'Opcional: fotografe o mapa de artilharia na tenda',state:'active',optional:true},
+  {id:'quiet15',text:'Opcional: destrua o depósito antes de soar o alarme',state:'active',optional:true},
+]; }
+function interact15(R){
+  const I=W.interactables, F=()=>G.flags;
+  I.push({id:'chT',pt:()=>V3(12,.8,32),r:2.2,hold:()=>2.4,label:()=>F().towerDown||F().armedT?null:'Prender a carga nas pernas da torre (segure)',use:()=>{ F().armedT=true; F().fuseT=8; AudioSys.play('unlock'); pickupMsg('Carga armada — 8 s'); }});
+  I.push({id:'chD',pt:()=>V3(-37,.8,-6.8),r:2.4,hold:()=>2,label:()=>F().depotDone||F().armedD?null:'Abrir um tambor e acender o pavio (segure)',use:()=>{ F().armedD=true; F().fuseD=10; AudioSys.play('unlock'); pickupMsg('Pavio aceso — 10 s'); }});
+  I.push({id:'key15',pt:()=>V3(-41,.9,-20.4),r:2,label:()=>F().key15?null:'Pegar a chave e as ordens',use:()=>{ F().key15=true; R.keyM.visible=false; AudioSys.play('pickup'); pickupMsg('Chave da grade do ossário'); openDoc('ordem15'); complete('key'); check15(); cp15(); }});
+  I.push({id:'grate15',pt:()=>V3(28,Y15+1.1,-49.6),r:2.4,skip:true,label:()=>obj('crypt').state==='active'?'Abrir a grade e descer à cripta':(F().key15?'Ainda não: torre e depósito primeiro':'Grade trancada'),
+    use:()=>{ if(obj('crypt').state!=='active'){ G.radioMsg('ÉLISE',F().key15?'Se eu descer agora, a torre e o depósito continuam lá. Primeiro o trabalho.':'Trancada com corrente. A chave deve estar com o comando do depósito.','warn'); return; } AudioSys.play('unlock'); R.grate.rotation.y=-1.4; complete('crypt'); missionComplete(); }});
+}
+function photos15(){ W.photo.push({id:'map15',label:'Mapa das baterias de artilharia',pos:V3(-40.3,.82,-20.5),normal:V3(0,1,0),max:2.8,obj:'map15',size:.5,msg:'Posições de canhões ao longo do vale, marcadas a lápis vermelho.'}); }
+DOCS.ordem15={title:'Ordem — Depósito Montecalvo',sub:'pasta sobre a mesa da tenda, com uma chave de ferro presa ao clipe',body:`1. O comboio sobe à noite; combustível
+   reservado às baterias do vale.
+2. A cripta sob o mosteiro serve de
+   cela provisória: 14 prisioneiros
+   aliados, transferência no dia 16.
+3. Chave da grade do ossário: com o
+   oficial de serviço. NÃO entregar
+   aos monges.`,pencil:'Catorze prisioneiros debaixo dos nossos pés. A cripta é o caminho.'};
+DOCS.carta15={title:'Bilhete de Bruna',sub:'Rede partigiana do vale',map:'15',body:'',pencil:'A torre vê a estrada inteira — vá pelos olivais. O combustível fica no pátio oeste, os tambores vermelhos. A chave da grade, na tenda do comando.'};
+function drawMap15(g,w,h){
+  g.fillStyle='#e0d6bc'; g.fillRect(0,0,w,h); const S=w/104, X=x=>(x+52)*S, Z=z=>(z+66)*S*.86+4;
+  g.fillStyle='#a8b08a'; g.fillRect(X(-50),Z(-30),100*S,90*S*.86); g.fillStyle='#c8bca0'; g.fillRect(X(-24),Z(-62),68*S,32*S*.86); g.fillStyle='#8a7a68'; g.fillRect(X(-24),Z(-66),68*S,4*S*.86);
+  g.fillStyle='#b89a70'; g.fillRect(X(-3),Z(-12),6*S,72*S*.86); g.fillRect(X(-46),Z(-8),46*S,6*S*.86); g.fillStyle='#9a8a70'; g.fillRect(X(-46),Z(-28),34*S,26*S*.86);
+  g.fillStyle='#5a4a3a'; g.fillRect(X(10.6),Z(28.6),2.8*S,2.8*S*.86); g.fillRect(X(23),Z(-60),10*S,10*S*.86); g.fillRect(X(-44),Z(-23),8*S,8*S*.86);
+  g.fillStyle='#2a2418'; g.textAlign='center'; const t=(s,x,z,f)=>{ g.font=f||'11px serif'; g.fillText(s,X(x),Z(z)); };
+  t('ABADIA DE MONTECALVO',10,-63,'bold 10px serif'); t('cemitério',10,-35,'italic 10px serif'); t('ossário',28,-47,'bold 10px serif'); t('torre',12,35,'bold 10px serif'); t('posto',0,6,'10px serif'); t('DEPÓSITO',-30,-26,'bold 10px serif'); t('comando',-40,-13,'9px serif'); t('combustível',-37,-3,'9px serif'); t('olivais',-24,30,'italic 11px serif'); t('olivais',30,24,'italic 11px serif'); t('estrada do vale',0,58,'10px serif');
+}
+function update15(dt){
+  const P=G.player, F=G.flags, R=G.refs;
+  if(!F.i1&&G.introT>.8){ F.i1=true; G.radioMsg('BRUNA','Benvenuta a Montecalvo. A torre da curva vê a estrada inteira — e o vigia tem binóculo. Vá pelos olivais.','tip'); }
+  if(!F.i2&&G.introT>9){ F.i2=true; G.radioMsg('DICA','Torre: derrube o vigia com o fuzil de luneta (tecla 5) ou prenda uma carga nas pernas. Combustível: tiro num tambor vermelho ou pavio aceso.','tip'); }
+  // vigia morto conta como torre neutralizada
+  if(!F.towerDown&&obj('tower').state==='active'){ const t1=G.enemies.find(e=>e.id==='t1'); if(t1&&t1.dead){ F.towerDown=true; done15tower(); } }
+  if(F.armedT&&!F.towerDown){ F.fuseT-=dt; G.progress={label:'Carga na torre: '+Math.max(0,Math.ceil(F.fuseT))+' s',v:F.fuseT/8}; if(F.fuseT<=0) towerDown15('charge'); }
+  if(F.towerFall!==undefined&&F.towerFall<2.4){ F.towerFall+=dt; R.tower.rotation.z=-Math.min(1.45,F.towerFall*F.towerFall*.45); if(F.towerFall>=2.4){ AudioSys.play('wood',V3(18,0,30),1.4); AudioSys.play('thud',V3(18,0,30),1.4); FX.burst(V3(18,.3,30),30,0x8a7a5a,5,1,9.8,1.2); } }
+  if(F.armedD&&!F.depotDone){ F.fuseD-=dt; G.progress={label:'Pavio no combustível: '+Math.max(0,Math.ceil(F.fuseD))+' s',v:F.fuseD/10}; if(Math.random()<dt*8) FX.puff(V3(-37,.6,-7.2),1,0xffd080,.15,.3,V3(0,1,0),.9); if(F.fuseD<=0) depotBoom15('pavio'); }
+  if(F.boomQ){ F.boomT+=dt; for(const b of F.boomQ){ if(b[3]||F.boomT<b[0]) continue; b[3]=1; explode(V3(b[1],.6,b[2]),{r:5,dmgE:200,dmgP:60,src:'charge',kind:'wreck'}); if(G.fires.length<6) G.fires.push({x:b[1],z:b[2],L:G.fires.length<3?(()=>{ const l=new T.PointLight(0xff8a3a,2,18,1.6); l.position.set(b[1],2,b[2]); scene.add(l); return l; })():null}); } }
+  if(G.fires) for(const f of G.fires){ if(Math.random()<dt*6) FX.puff(V3(f.x+rnd(-1,1),1.2,f.z+rnd(-1,1)),1,Math.random()<.5?0xff9a40:0x2a2420,Math.random()<.5?.8:1.6,Math.random()<.5?.6:3,V3(0,1.4,0),.6); if(f.L) f.L.intensity=1.6+Math.random()*.8; }
+  // artilharia distante no vale
+  F.artT=(F.artT===undefined?6:F.artT)-dt; if(F.artT<=0){ F.artT=7+Math.random()*9; F.flash=.5; AudioSys.play('explosion',V3(P.pos.x+rnd(-60,60),0,P.pos.z+70),.35); }
+  if(F.flash>0){ F.flash-=dt; R.hemi.intensity=.62+Math.max(0,F.flash)*.9; } else R.hemi.intensity=.62;
+  if(obj('quiet15').state==='active'&&G.alarm&&!F.depotDone) failObjective('quiet15');
+}
+function cp15(){ checkpoint(); }
+function restore15(s){ const F=G.flags, R=G.refs;
+  if(F.towerCollapsed){ R.tower.visible=false; R.tSolid.active=false; R.tWalk.active=false; removeShootables([R.tWalk.mesh]); for(const r of R.tRail) r.active=false; F.towerFall=9; F.armedT=false; }
+  if(F.depotDone){ for(const m of R.fuel) m.visible=false; F.armedD=false; G.fires=[]; if(F.boomQ) for(const b of F.boomQ){ b[3]=1; if(G.fires.length<4) G.fires.push({x:b[1],z:b[2],L:null}); } }
+  if(F.key15) R.keyM.visible=false; if(F.armedT&&!F.towerDown) F.fuseT=Math.max(F.fuseT||0,5); if(F.armedD&&!F.depotDone) F.fuseD=Math.max(F.fuseD||0,5);
+}
+LEVELS['15']={id:'15',num:15,op:'Operação 15',name:'O Desvio',place:'Montecalvo, Itália',prev:'14',
+  loadout:{weapons:['rifle','silenced','smg'],ammo:{rifle:{mag:5,reserve:20},silenced:{mag:6,reserve:12},smg:{mag:32,reserve:64}},cur:'silenced',camera:true},baseLight:.45,lightFn:light15,zoneAt:zone15,shadows:false,bloomTh:.8,grenades:true,
+  build:()=>{ const r=buildLevel15(); photos15(); return r; },enemies:ENEMY_DEFS_15,ally:null,start:{x:0,z:56,yaw:0},startDocs:['carta15'],drawMap:drawMap15,
+  reinf:[{id:'n1',x:-46,z:-6,weapon:'smg',helmet:true},{id:'n2',x:-46,z:-3,weapon:'rifle',helmet:true,nades:1},{id:'n3',x:40,z:-40,weapon:'rifle',helmet:true}],
+  radio:{x:-42.4,z:-18,fx:-41.4,fz:-18.6},radioRun:'O oficial corre para o rádio da tenda!',alarmPos:V3(-42,1.4,-18),alarmText:'Alarme no depósito! Patrulhas sobem pela estrada do vale.',alarmObjective:null,
+  alarmYes:'O alarme soou antes da hora. ',alarmLate:'O alarme só soou com o combustível já em chamas. ',alarmNo:'',alarmOk:()=>!!G.flags.depotDone,deathText:'Os paraquedistas de Montecalvo encontraram Élise nos olivais.',
+  objectives:objectives15,interact:interact15,pickups:()=>{ addPickup('m_r1',-24,30,'rifle',5,.1); addPickup('m_med1',8.6,8,'med',30,.1); addPickup('m_nade1',-16,-13,'nade',2,.1); addPickup('m_med2',18,-34,'med',35,Y15+.1); addPickup('m_smg1',-31,-11,'smg',32,.1); addPickup('m_med3',-38,20,'med',25,.1); G.player.nades=Math.max(G.player.nades||0,1); },
+  update:update15,restore:restore15,
+  resultTitle:'O desvio',outro:['ÉLISE','A grade range e o cheiro de pedra molhada sobe da escada. Lá em baixo, entre os ossos dos monges, há catorze homens vivos esperando.'],menuCam:{cx:-8,cz:40,y:4,tx:12,tz:20},ambient:'forest',mist:null,
+  briefing:{meta:'ITÁLIA — 14 DE FEVEREIRO DE 1944 — 17h20',paras:['A lista de Schwarzfels apontou para o sul: a Abadia de Montecalvo, no alto do vale, virou depósito e prisão. As baterias que seguram a frente vivem do combustível que sobe a estrada à noite, sob os olhos de uma torre de vigia.','A partigiana Bruna guia Élise pelos olivais. Neutralize a torre, queime o combustível do comboio e encontre a chave da grade do ossário: a cripta é o caminho até os prisioneiros.'],list:['Neutralizar a torre de vigia','Destruir o combustível do depósito','Chave da grade do ossário → cripta']}};
+LEVEL_ORDER.push('15');
+
+const CAMPAIGNS=[['01','Campanha 1 · Paris ocupada'],['05','Campanha 2 · Norte da África'],['09','Campanha 3 · Creta'],['12','Campanha 4 · Vestfália'],['15','Campanha 5 · Montecalvo']];
 function renderOps(){
   const camp=store.get('sdp_campaign')||{}; const done=camp.done||{}; const box=$('#opsList'); box.innerHTML='';
   for(const id of LEVEL_ORDER){ const L=LEVELS[id], d=done[id];
-    const b=document.createElement('button'); b.className='opcard'; b.id='op'+id;
+    const cp=CAMPAIGNS.find(c=>c[0]===id); if(cp){ const h=document.createElement('div'); h.className='opcamp'; h.textContent=cp[1]; box.appendChild(h); }
+    const b=document.createElement('button'); b.className='opcard'+(d?' done':''); b.id='op'+id;
     const parts=[['opn',String(L.num)],['opt',L.name],['opp',L.place],['opst',d?`Concluída · ${d.rating} · ${DIFF[d.diff].label}`:'Não concluída']];
     for(const [c,t] of parts){ const sp=document.createElement('span'); sp.className=c; sp.textContent=t; b.appendChild(sp); }
     b.onclick=()=>openBriefing(id); box.appendChild(b); }
