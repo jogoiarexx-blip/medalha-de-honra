@@ -54,6 +54,23 @@ button{font:inherit;color:inherit}
 .disg .lbl{display:block;text-transform:uppercase;font-size:12px;letter-spacing:.14em;color:var(--dim)} .disg b{font-weight:600;color:var(--olive)}
 .disg.warn{border-left-color:var(--amber)} .disg.warn b{color:var(--amber)} .disg.bad{border-left-color:var(--alert)} .disg.bad b{color:var(--alert)}
 #disgSub{font-size:12px;color:var(--dim)}
+#scope{position:absolute;inset:0;pointer-events:none;background:radial-gradient(circle at 50% 50%,rgba(0,0,0,0) 0,rgba(0,0,0,0) min(37vh,37vw),rgba(0,0,0,.6) calc(min(37vh,37vw) + 1px),#000 calc(min(37vh,37vw) + 10px))}
+#scope i{position:absolute;background:rgba(10,10,10,.9)} #scope .sc-h{left:calc(50% - min(37vh,37vw));right:calc(50% - min(37vh,37vw));top:50%;height:2px;margin-top:-1px}
+#scope .sc-v{left:50%;width:2px;margin-left:-1px;top:50%;bottom:calc(50% - min(37vh,37vw))} #scope .sc-p{left:50%;width:6px;margin-left:-3px;top:calc(50% + min(10vh,10vw));bottom:calc(50% - min(37vh,37vw))}
+.insp{position:absolute;left:50%;top:calc(50% + 92px);transform:translateX(-50%);min-width:300px;max-width:92vw;text-align:center;background:rgba(10,14,17,.66);padding:7px 14px 8px;border-top:2px solid var(--olive)}
+.insp.warn{border-top-color:var(--amber)} .insp.bad{border-top-color:var(--alert)} #inspT{font-size:17px;letter-spacing:.04em} #inspS{font-size:13px;color:var(--dim);margin-top:2px}
+.ibar{height:4px;background:rgba(255,255,255,.12);margin-top:6px} .ibar b{display:block;height:100%;width:100%;background:var(--olive);transition:width .15s} .insp.warn .ibar b{background:var(--amber)} .insp.bad .ibar b{background:var(--alert)}
+.papers{position:absolute;left:50%;bottom:calc(26px + env(safe-area-inset-bottom,0px));width:300px;margin-left:-150px;background:#e6dcc0;color:#2a2418;padding:12px 16px 16px;font-family:'Courier New',monospace;box-shadow:0 10px 34px rgba(0,0,0,.55);transform:translateY(60px) rotate(-2deg);opacity:0;transition:transform .25s,opacity .25s;pointer-events:none}
+.papers.show{transform:translateY(0) rotate(-2deg);opacity:1}
+.pc-h{font-size:11px;letter-spacing:.18em;border-bottom:1px solid #8a7a5a;padding-bottom:4px;margin-bottom:7px} .pc-n{font-size:18px;font-weight:700} .pc-r{font-size:12px;margin-bottom:7px} .pc-z{font-size:12px;max-width:190px} .pc-s{font-size:12px;font-style:italic;margin-top:9px}
+.pc-stamp{position:absolute;right:14px;bottom:14px;width:72px;height:72px;border:3px solid rgba(40,60,120,.55);border-radius:50%;color:rgba(40,60,120,.62);font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;text-align:center;transform:rotate(14deg)}
+.pc-red{position:absolute;right:-8px;top:26px;background:#a82a1a;color:#f4e8d0;font-size:11px;letter-spacing:.12em;padding:2px 10px;transform:rotate(8deg)}
+.papers.okd::after,.papers.bad::after{position:absolute;left:34px;top:48px;font-size:30px;font-weight:700;padding:0 8px;transform:rotate(-12deg)}
+.papers.okd::after{content:'GEPRÜFT';color:rgba(30,110,50,.8);border:3px solid rgba(30,110,50,.65)} .papers.bad::after{content:'UNGÜLTIG';color:rgba(170,30,20,.85);border:3px solid rgba(170,30,20,.7)}
+@media (max-width:900px){.papers{width:250px;margin-left:-125px;bottom:calc(190px + env(safe-area-inset-bottom,0px))}.insp{top:calc(50% + 80px);min-width:240px}}
+#convRow{margin:4px 0 3px;white-space:nowrap} .trk{display:inline-block;min-width:30px;margin-right:4px;padding:1px 4px;border:1px solid rgba(255,255,255,.2);font-size:12px;text-align:center;color:var(--fg,#e8e4d8)}
+.trk.chg{border-color:var(--amber);color:var(--amber)} .trk.dis{color:var(--dim);border-style:dashed} .trk.mov{border-color:var(--alert);color:var(--alert)} .trk.burn{background:rgba(255,120,40,.45)} .trk.wreck{background:rgba(224,90,58,.22);color:var(--dim);text-decoration:line-through}
+.conv.bad{border-left-color:var(--alert)} .conv.bad b{color:var(--alert)} .conv.ok b{color:var(--olive)}
 .nadeind{position:absolute;left:50%;top:50%;width:0;height:0}
 .nadeind span{position:absolute;transform:translate(-50%,-50%);font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--amber);background:rgba(10,14,17,.66);border:1px solid var(--amber);padding:2px 7px 3px;white-space:nowrap}
 .nadeind span.near{color:#fff;background:rgba(150,34,20,.85);border-color:var(--alert);animation:thr .25s ease-in-out infinite alternate}
@@ -263,11 +280,15 @@ button{font:inherit;color:inherit}
       <div id="objProg" class="oprog" hidden><span id="objProgL"></span><i><b id="objProgB"></b></i></div>
     </div>
     <div id="alertChip" class="chip" hidden></div>
+    <div id="inspBox" class="insp" hidden><div id="inspT"></div><div id="inspS"></div><div class="ibar"><b id="inspB"></b></div></div>
+    <div id="papersCard" class="papers" hidden></div>
+    <div id="convChip" class="disg conv" hidden><span class="lbl">Comboio · <b id="convState">estacionado</b></span><div id="convRow"></div><span id="convSub"></span></div>
     <div id="disgChip" class="disg" hidden><span class="lbl">Disfarce · <b id="disgState">seguro</b></span><span id="disgSub"></span></div>
     <div id="tankChip" class="tankchip" hidden><span class="lbl">Blindado</span><div class="tbar"><b id="tankHull"></b></div><span id="tankSys"></span></div>
     <div id="threat" class="threat" hidden><span id="threatT"></span><i><b id="threatB"></b></i></div>
     <div id="nadeInd" class="nadeind" hidden><span></span></div>
     <div id="radio" class="radio"></div>
+    <div id="scope" hidden><i class="sc-h"></i><i class="sc-v"></i><i class="sc-p"></i></div>
     <div id="crosshair"><i></i><i></i><i></i><i></i><b></b></div>
     <div id="hitmarker"><i></i><i></i><i></i><i></i></div>
     <div id="hsTag" hidden>Na cabeça</div>
@@ -368,6 +389,7 @@ button{font:inherit;color:inherit}
         <button class="btn" id="bPOptions">Opções</button>
         <button class="btn" id="bPHelp">Controles</button>
         <button class="btn" id="bCheckpoint">Voltar ao checkpoint</button>
+        <button class="btn" id="bRestart">Reiniciar a fase</button>
         <button class="btn" id="bQuit">Sair para o menu</button>
       </div>
     </div>
@@ -388,6 +410,7 @@ button{font:inherit;color:inherit}
         <label for="oShake">Tremor e vinheta pulsante</label><input id="oShake" type="checkbox">
         <label for="oHelmet">Capacete salva do 1º tiro na cabeça</label><input id="oHelmet" type="checkbox">
         <label for="oBlood">Sangue</label><select id="oBlood"><option value="discreto">Discreto</option><option value="off">Desligado</option></select>
+        <label for="oBodies">Corpos <small style="display:block;font-size:12px;opacity:.75">Sumir deixa o jogo mais leve, mas guardas não acham mais corpos depois disso.</small></label><select id="oBodies"><option value="somem">Somem após 5 s</option><option value="ficam">Ficam no chão</option></select>
         <label for="oQuality">Qualidade gráfica <small style="display:block;font-size:12px;opacity:.75">Médio e Alto: luz por pixel, relevo, brilho e névoa. Vale na próxima missão.</small></label><select id="oQuality"><option value="baixo">Baixo</option><option value="medio">Médio</option><option value="alto">Alto</option></select>
         <label for="oVol">Volume de efeitos</label><input id="oVol" type="range" min="0" max="1" step="0.05">
         <label for="oMus">Volume da música</label><input id="oMus" type="range" min="0" max="1" step="0.05">
@@ -415,6 +438,7 @@ button{font:inherit;color:inherit}
         <kbd>T</kbd><span>Arremessar uma pedra para atrair um guarda</span>
         <kbd>G · X</kbd><span>Granada, quando houver (raio de ~6 m; quem a vê foge)</span>
         <kbd>4</kbd><span>Panzerfaust: antitanque, um disparo por tubo (R pega o próximo)</span>
+        <kbd>5</kbd><span>Fuzil com luneta, quando houver (botão direito olha pela luneta)</span>
         <kbd>H</kbd><span>Guardar / sacar a arma (sob disfarce, arma à mostra chama atenção)</span>
         <kbd>M</kbd><span>Abrir a planta do lugar, quando você tiver uma</span>
         <kbd>Tab</kbd><span>Diário de campo (não pausa)</span>
@@ -494,7 +518,7 @@ const ease=t=>t<.5?2*t*t:1-Math.pow(-2*t+2,2)/2;
    CONFIGURAÇÃO E DADOS
    ========================================================= */
 const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
-const DEFAULT_SETTINGS={sens:1,fov:75,invertY:false,hud:'dynamic',hitmarkers:true,adsToggle:false,crouchToggle:true,bob:!REDUCED,shake:!REDUCED,helmetSave:false,blood:'discreto',quality:'medio',volume:.8,music:.5,difficulty:'soldado'};
+const DEFAULT_SETTINGS={sens:1,fov:75,invertY:false,hud:'dynamic',hitmarkers:true,adsToggle:false,crouchToggle:true,bob:!REDUCED,shake:!REDUCED,helmetSave:false,blood:'discreto',bodies:'somem',quality:'medio',volume:.8,music:.5,difficulty:'soldado'};
 let settings=Object.assign({},DEFAULT_SETTINGS,store.get('sdp_settings')||{});
 const saveSettings=()=>store.set('sdp_settings',settings);
 
@@ -519,7 +543,7 @@ const D=()=>DIFF[G?G.diff:settings.difficulty];
 // Armas do jogador — parâmetros iniciais de balanceamento (não são dados históricos)
 const WEAPONS={
   pistol:{id:'pistol',name:'P38',cat:'Pistola',mode:'SEMI',auto:false,rpm:350,dmg:34,mag:8,reserveMax:64,reload:{out:.28,in:1.0,end:1.42},spreadHip:1.6,spreadADS:.35,bloom:.55,recoil:1.25,recoilX:.25,adsTime:.16,noise:32,falloff:[20,45,.7],fovADS:58,ammoName:'munição 9 mm'},
-  silenced:{id:'silenced',name:'Welrod Mk II',cat:'Pistola silenciada',mode:'MANUAL',auto:false,silent:true,rpm:75,dmg:32,mag:6,reserveMax:36,reload:{out:.4,in:1.4,end:1.9},spreadHip:1.4,spreadADS:.28,bloom:.4,recoil:.7,recoilX:.12,adsTime:.18,noise:5,falloff:[15,35,.7],fovADS:56,ammoName:'munição .32'},
+  silenced:{id:'silenced',name:'Welrod Mk II',cat:'Pistola silenciada',mode:'MANUAL',auto:false,silent:true,rpm:75,dmg:32,mag:6,reserveMax:36,reload:{out:.4,in:1.4,end:1.9},spreadHip:1.4,spreadADS:.28,bloom:.4,recoil:.7,recoilX:.12,adsTime:.18,noise:2.5,falloff:[15,35,.7],fovADS:56,ammoName:'munição .32'},
   smg:{id:'smg',name:'Sten Mk II',cat:'Submetralhadora',mode:'AUTO',auto:true,rpm:540,dmg:21,mag:32,reserveMax:192,reload:{out:.34,in:1.5,end:2.05},spreadHip:2.5,spreadADS:.55,bloom:.3,recoil:.72,recoilX:.42,adsTime:.2,noise:38,falloff:[15,40,.6],fovADS:52,ammoName:'carregadores Sten'},
 };
 // Multiplicadores por região — pontos de partida de game design
@@ -639,6 +663,10 @@ const AudioSys={
       case 'flare': N({type:'highpass',freq:1800,gain:.4*g,dur:1.6,att:.05}); N({type:'lowpass',freq:300,gain:.25*g,dur:.3}); break;
       case 'drone': Tn({freq:58+Math.random()*4,wave:'sawtooth',lp:220,gain:.16*g,dur:1.6,att:.4}); Tn({freq:61,wave:'sawtooth',lp:200,gain:.12*g,dur:1.6,att:.4,delay:.05}); break;
       case 'siren': Tn({freq:380,to:760,wave:'sawtooth',lp:1400,gain:.12*g,dur:2.2,att:.3}); Tn({freq:760,to:380,wave:'sawtooth',lp:1400,gain:.1*g,dur:2.2,att:.1,delay:2.2}); break;
+      case 'hiss': N({type:'highpass',freq:2600,gain:.32*g,dur:.7,att:.02}); break;
+      case 'leak': N({type:'bandpass',freq:520,gain:.3*g,dur:1.1,att:.05}); N({type:'lowpass',freq:240,gain:.18*g,dur:.9}); break;
+      case 'fireball': N({type:'lowpass',freq:240,gain:.95*g,dur:2.6,att:.04}); Tn({freq:40,wave:'sawtooth',lp:110,gain:.32*g,dur:2,att:.05}); N({type:'highpass',freq:1600,gain:.2*g,dur:1.6,att:.2}); break;
+      case 'honk': Tn({freq:330,wave:'square',lp:1300,gain:.13*g,dur:.55}); Tn({freq:415,wave:'square',lp:1300,gain:.1*g,dur:.55}); break;
       case 'sabotage': N({type:'highpass',freq:2500,gain:.3,dur:.25}); Tn({freq:180,wave:'square',gain:.1,dur:.4}); break;
     }
   },
@@ -651,6 +679,7 @@ const AudioSys={
     if(kind==='medina'){ noise('bandpass',520,.5,.022); noise('highpass',3800,.4,.005); noise('lowpass',160,.7,.02); }
     if(kind==='night'){ noise('lowpass',650,.5,.018); const o=c.createOscillator(); o.frequency.value=4300; const og=c.createGain(); og.gain.value=0; const lfo=c.createOscillator(); lfo.type='square'; lfo.frequency.value=21; const lg=c.createGain(); lg.gain.value=.005; const sl=c.createOscillator(); sl.frequency.value=.4; const sg=c.createGain(); sg.gain.value=.005; lfo.connect(lg); lg.connect(og.gain); sl.connect(sg); sg.connect(og.gain); o.connect(og); og.connect(out); o.start(); lfo.start(); sl.start(); nodes.push(o,lfo,sl); }
     if(kind==='dawn'){ noise('bandpass',340,.9,.035); noise('highpass',2800,.5,.006); noise('lowpass',120,.7,.03); }
+    if(kind==='desert'){ noise('bandpass',260,.6,.042); noise('lowpass',90,.7,.03); noise('highpass',5200,.3,.004); }
     this.amb=nodes;
   },
   startMusic(){
@@ -1500,6 +1529,7 @@ class Enemy extends Actor{
     const combat=this.state==='COMBAT'||this.state==='RADIO';
     let lt=info.light; if(this.h.lanternLight&&!this.lanternBroken) lt=Math.max(lt,clamp(1-dist/9,0,1)*.75);
     let range=combat?48:(6+26*lt)*D().perception*(info.crouch?.62:1)*(info.sprint?1.25:info.moving?1:.85)*(this.alertLevel?1.3:1);
+    range*=((G.level&&G.level.sightMul)||1)*(this.def.sight||1);
     if(dist>range) return 0;
     const fov=combat?110*DEG:(this.state==='INVESTIGATE'||this.state==='SEARCH')?78*DEG:56*DEG;
     const ang=Math.abs(angDiff(this.yaw+this.headYaw,Math.atan2(dx,dz)));
@@ -1543,7 +1573,7 @@ class Enemy extends Actor{
   }
   checkCorpses(){
     for(const e of G.enemies){
-      if(!e.dead||e===this||G.discovered.has(e.id)) continue;
+      if(!e.dead||e.gone||e===this||G.discovered.has(e.id)) continue;
       const dx=e.pos.x-this.pos.x, dz=e.pos.z-this.pos.z, d=Math.hypot(dx,dz); if(d>14) continue;
       if(Math.abs(angDiff(this.yaw,Math.atan2(dx,dz)))>65*DEG) continue;
       if(segFirst(this.pos.x,this.eyeY(),this.pos.z,e.pos.x,e.pos.y+.3,e.pos.z)) continue;
@@ -1592,7 +1622,7 @@ class Enemy extends Actor{
     return {x:P.pos.x,z:P.pos.z,chest:ch,head:hd};
   }
   update(dt){
-    if(this.dead){ this.animate(dt); return; }
+    if(this.dead){ if(this.gone) return; this.animate(dt); if(settings.bodies!=='ficam') this.fadeBody(); return; }
     if(this.asleep){ this.moveDir(0,0,0,dt); this.animate(dt); return; }
     this.aimPenalty=Math.max(0,this.aimPenalty-dt*.35); this.movePenalty=Math.max(0,this.movePenalty-dt*.25); this.suppression=Math.max(0,this.suppression-dt*.28);
     if(this.wounds) this.woundTick(dt);
@@ -1729,12 +1759,12 @@ class Enemy extends Actor{
   /* ---- dano e reações localizadas ---- */
   takeDamage(o){
     if(this.dead) return false;
-    const dmg=o.dmg; this.hp-=dmg; this.lastHit={region:o.region,dmg};
+    const dmg=o.dmg; this.hp-=dmg; this.lastHit={region:o.region,dmg}; this.lastHitBy=o.shooter==='player'?'player':'other';
     const {lx,lz}=this.localDir(o.dir);
-    if(o.shooter==='player'&&disguiseOn()&&this.hp>0) blowDisguise(this,'atacada');
-    if(o.shooter==='player'||o.shooter===G.ally){ const s=o.shooter==='player'?G.player.pos:G.ally.pos; this.enterCombat(s.x,s.z,false); this.lastKnown={x:s.x,z:s.z}; this.reactionT=Math.max(this.reactionT,.35); }
-    if(this.state==='RADIO') this.radioT=0;
     if(this.hp<=0){ this.die(o.dir,o.region); return true; }
+    if(o.shooter==='player'&&disguiseOn()&&this.hp>0) blowDisguise(this,'atacada');
+    if(o.shooter==='player'||o.shooter===G.ally){ const s0=o.shooter==='player'?G.player.pos:G.ally.pos, dd=Math.hypot(s0.x-this.pos.x,s0.z-this.pos.z), fk=dd>40?dd*.22:0, s={x:s0.x+rnd(-fk,fk),z:s0.z+rnd(-fk,fk)}; this.enterCombat(s.x,s.z,false); this.lastKnown={x:s.x,z:s.z}; this.reactionT=Math.max(this.reactionT,.35); }
+    if(this.state==='RADIO') this.radioT=0;
     if(this.painCD<=0){ AudioSys.play('grunt',this.pos); this.painCD=.7; }
     if(settings.blood!=='off' && o.point) FX.burst(o.point,3,0x5a1410,1.2,.35);
     const now=simTime, anim=now-this.lastFlinch>CFG.flinchCooldown; if(anim) this.lastFlinch=now;
@@ -1790,24 +1820,24 @@ function jitterDir(dir,rad,rng){
 /* ---------------- ALIADO (Lucien) ---------------- */
 class Ally extends Actor{
   constructor(def){
-    super(def,{uniform:0x5a4630,pants:0x2d2a26,skin:0xcfa27e,hair:0x2b1e14,cap:'beret',weapon:'pistol',boots:true});
-    this.isAlly=true; this.hp=150; this.maxHp=150; this.mode='WAIT'; this.joined=false; this.downed=false; this.downT=0; this.shotCD=1; this.tgt=null; this.scanT=0; this.hidden=true; this.ffCD=0; this.crouchTarget=.7; this.aimTarget=.2; this.waitPos={x:def.x,z:def.z};
+    super(def,Object.assign({uniform:0x5a4630,pants:0x2d2a26,skin:0xcfa27e,hair:0x2b1e14,cap:'beret',weapon:'pistol',boots:true},def.look||{}));
+    this.isAlly=true; this.hp=def.hp||150; this.maxHp=this.hp; this.nm=def.name||'LUCIEN'; this.nmT=def.title||'Lucien'; this.mode='WAIT'; this.joined=false; this.downed=false; this.downT=0; this.shotCD=1; this.tgt=null; this.scanT=0; this.hidden=true; this.ffCD=0; this.crouchTarget=.7; this.aimTarget=.2; this.waitPos={x:def.x,z:def.z};
   }
   targetable(){ return !this.dead&&!this.downed&&!this.hidden; }
   targetInfo(){ return {light:lightAt(this.pos.x,this.pos.z),crouch:this.crouch>.5,moving:this.speedNow>.4,sprint:this.speedNow>3,head:lerp(1.65,1.1,this.crouch),chest:lerp(1.25,.8,this.crouch)}; }
   takeDamage(o){
     if(this.downed||this.dead) return;
-    if(o.shooter==='player'){ if(this.ffCD<=0){ G.radioMsg('LUCIEN','Cuidado, Élise! Sou eu!'); this.ffCD=4; } }
+    if(o.shooter==='player'){ if(this.ffCD<=0){ G.radioMsg(this.nm,'Cuidado, Élise! Sou eu!'); this.ffCD=4; } }
     this.hp-=o.dmg; const {lx,lz}=this.localDir(o.dir||V3(0,0,1)); this.react.sx+=lz*.3; this.react.sz+=-lx*.2;
-    if(this.hp<=0){ this.hp=0; this.downed=true; this.downT=30; this.path=null; this.crouchTarget=1; this.aimTarget=0; G.radioMsg('LUCIEN','Fui atingido! Élise… me ajude a levantar!','warn'); G.hintT=0; }
+    if(this.hp<=0){ this.hp=0; this.downed=true; this.downT=30; this.path=null; this.crouchTarget=1; this.aimTarget=0; G.radioMsg(this.nm,'Fui atingido! Élise… me ajude a levantar!','warn'); G.hintT=0; }
   }
   update(dt){
     this.ffCD-=dt;
-    if(this.downed){ this.downT-=dt; this.speedNow=0; this.crouchTarget=1; this.react.sx=-.5; if(this.downT<=0) missionFail('Lucien não resistiu','Lucien ficou caído tempo demais. Sem ele, ninguém liga o caminhão.'); this.animate(dt); return; }
+    if(this.downed){ this.downT-=dt; this.speedNow=0; this.crouchTarget=1; this.react.sx=-.5; if(this.downT<=0) missionFail(this.def.failTitle||'Lucien não resistiu',this.def.failText||'Lucien ficou caído tempo demais. Sem ele, ninguém liga o caminhão.'); this.animate(dt); return; }
     const P=G.player;
     this.scanT-=dt;
     if(this.scanT<=0){
-      this.scanT=.3; this.tgt=null; let bd=24;
+      this.scanT=.3; this.tgt=null; let bd=this.def.range||24;
       for(const e of G.enemies){
         if(e.dead||e.state==='DISARMED') continue;
         const hostile=e.state==='COMBAT'||e.state==='RADIO'||G.playerShotT>0; if(!hostile||(this.mode==='WAIT'&&!this.joined&&e.state!=='COMBAT')) continue;
@@ -1830,6 +1860,7 @@ class Ally extends Actor{
       if(this.stuck>2 && d>10){ this.recover(); }
       this.crouchTarget=this.tgt?.5:(P.crouch>.5?.8:0);
     } else { this.crouchTarget=this.joined?.5:.7; if(Math.hypot(this.waitPos.x-this.pos.x,this.waitPos.z-this.pos.z)>.8){ if(!this.path) this.setPath(this.waitPos.x,this.waitPos.z); this.followPath(2.6,dt); } else this.moveDir(0,0,0,dt); }
+    if(!this.joined&&this.def.caged) this.tgt=null;
     if(this.tgt){
       this.aimTarget=1; this.faceTowards(this.tgt.pos.x,this.tgt.pos.z,dt,6); this.shotCD-=dt;
       if(this.shotCD<=0 && Math.abs(angDiff(this.yaw,Math.atan2(this.tgt.pos.x-this.pos.x,this.tgt.pos.z-this.pos.z)))<.2){ this.shotCD=rnd(.85,1.4); this.fire(this.tgt); }
@@ -1847,10 +1878,10 @@ class Ally extends Actor{
     const P=G.player; const pe=V3(P.pos.x,P.pos.y+1.1,P.pos.z); if(distPointSeg(pe,m,aim)<.7) return;
     const dir=aim.sub(m).normalize(); jitterDir(dir,1.8*DEG,Math.random);
     this.hidden=false;
-    resolveShot({shooter:this,origin:m,dir,weapon:{dmg:28,falloff:[15,35,.7]},shotId:++G.shotId});
+    resolveShot({shooter:this,origin:m,dir,weapon:{dmg:this.def.dmg||28,falloff:this.def.dmg?[40,90,.7]:[15,35,.7]},shotId:++G.shotId});
     FX.flash(m); AudioSys.play('eshot',m,.9); emitNoise(this.pos,30,'gunshot',null);
   }
-  revive(){ this.downed=false; this.hp=70; this.react.sx=0; G.radioMsg('LUCIEN','Obrigado… ainda consigo andar. Vamos.'); }
+  revive(){ this.downed=false; this.hp=70; this.react.sx=0; G.radioMsg(this.nm,'Obrigado… ainda consigo andar. Vamos.'); }
 }
 
 /* =========================================================
@@ -1892,7 +1923,7 @@ function buildViewmodels(){
     B(g,.05,.07,.08,.004,-.085,.035,skin,-.2); B(g,.062,.062,.32,.03,-.13,.22,sleeve,-.25); B(g,.045,.06,.07,-.03,-.09,.01,skin,-.2); B(g,.06,.06,.3,-.065,-.14,.2,sleeve,-.3);
     const mag=B(g,.026,.09,.034,0,-.11,.035,gun); mag.visible=false; const muzzle=new T.Object3D(); muzzle.position.set(0,0,-.31); g.add(muzzle);
     VM.models.silenced={g,mag,muzzle,hip:V3(.15,-.16,-.5),ads:V3(0,-.031,-.56),magHome:mag.position.clone()}; }
-  buildVM04(B,{gun,grip,sleeve,skin});
+  buildVM04(B,{gun,grip,sleeve,skin}); buildVM08(B,{gun,grip,sleeve,skin});
   for(const k in VM.models){ VM.models[k].g.visible=false; VM.root.add(VM.models[k].g); }
   { const g=new T.Group(); const gl=new T.Mesh(new T.BoxGeometry(.06,.075,.06),new T.MeshBasicMaterial({color:0xffd590})); g.add(gl);
     B(g,.078,.014,.078,0,.045,0,gun); B(g,.078,.014,.078,0,-.045,0,gun); for(const [x,z] of [[-.034,-.034],[.034,-.034],[-.034,.034],[.034,.034]]) B(g,.008,.09,.008,x,0,z,gun);
@@ -2058,14 +2089,17 @@ function resolveShot(o){
       const mult=REGIONS[ud.region]?REGIONS[ud.region].m:1;
       let dmg=base*mult; if(isPlayer&&ch.isAlly) dmg*=.5;
       const headshot=ch.isEnemy&&(ud.region==='head'||ud.region==='neck'); if(headshot) dmg=Math.max(dmg,ch.hp+1);
+      let furtive=false; if(isPlayer&&o.weapon.silent&&ch.isEnemy&&!headshot&&ch.state!=='COMBAT'&&ch.state!=='RADIO'&&h.distance<30&&(ud.region==='chest'||ud.region==='abdomen'||ud.region==='pelvis')&&dmg<ch.hp){ dmg=ch.hp+1; furtive=true; }
       const killed=ch.takeDamage({dmg,region:ud.region,dir:o.dir,point:h.point,shooter:o.shooter});
       AudioSys.play('body',h.point,.8);
       if(isPlayer && ch.isEnemy){ G.stats.hits++; if(ud.region==='head'||ud.region==='neck') G.stats.heads++; hitMarker(killed?(headshot?'kill head':'kill'):'body'); if(headshot) headTag(); logShot(o,ch,REGIONS[ud.region].n,base,dmg,killed?'neutralizado':''); }
+      if(furtive&&killed) limbTag('TIRO FURTIVO');
       break;
     }
     if(ud.glass){ if(!ud.glass.broken) breakGlass(ud.glass,h.point,isPlayer); continue; }
     if(ud.glassDoor){ const d=Object.values(W.doors).find(x=>x.mesh===ob); if(d&&d.state!=='OPEN'){ setDoorOpenInstant(d); ob.visible=false; FX.burst(h.point,24,0xd8eef4,3,.9); AudioSys.play('glass',h.point,1.2); emitNoise(h.point,16,'glass',null); if(d.nav) buildNav(); G.flags.balcBroken=true; } continue; }
     if(ud.breakable){ const L=ud.lamp; if(L&&!L.broken) breakLamp(L,true); continue; }
+    if(ud.zoneHit) ud.zoneHit(h,o);
     const n=h.face?h.face.normal.clone().transformDirection(ob.matrixWorld):V3(0,1,0);
     if(ud.tank&&isPlayer) tankSmallArms(h.point);
     worldImpact(h.point,n,ud.mat||'stone'); end=h.point;
@@ -2075,7 +2109,7 @@ function resolveShot(o){
   // supressão por projéteis próximos (sem contar o atingido)
   if(isPlayer||o.shooter&&o.shooter.isAlly){
     const src=isPlayer?G.player.pos:o.shooter.pos;
-    for(const e of G.enemies){ if(e.dead||e===hitChar) continue; const hp=V3(e.pos.x,e.eyeY(),e.pos.z); if(distPointSeg(hp,o.origin,end)<1.2){ e.suppression=Math.min(1.5,e.suppression+.45); if(e.state!=='COMBAT'&&e.state!=='RADIO'&&e.state!=='DISARMED'&&e.state!=='RECOVER'){ e.awareness+=.6; e.enterCombat(src.x,src.z); } } }
+    for(const e of G.enemies){ if(e.dead||e===hitChar) continue; const hp=V3(e.pos.x,e.eyeY(),e.pos.z); if(distPointSeg(hp,o.origin,end)<1.2){ e.suppression=Math.min(1.5,e.suppression+.45); if(e.state!=='COMBAT'&&e.state!=='RADIO'&&e.state!=='DISARMED'&&e.state!=='RECOVER'){ if(o.weapon&&o.weapon.silent){ e.awareness=Math.min(.9,e.awareness+.3); if(e.awareness>.5) e.toInvestigate(end.x,end.z); } else { e.awareness+=.6; e.enterCombat(src.x,src.z); } } } }
   }
   return end;
 }
@@ -2352,11 +2386,11 @@ function showResults(){
   APP.state='RESULTS'; releaseLock(); UI.closeAll(); $('#hud').hidden=true; $('#touch').hidden=true;
   const L=G.level, s=G.stats, acc=s.shots?s.hits/s.shots:1, hp=G.player.hp;
   const opts=G.objectives.filter(o=>o.optional), optDone=opts.filter(o=>o.state==='done').length;
-  const score=50+optDone*10+hp/100*15+acc*15+(G.alarm?0:10);
+  const score=50+optDone*10+hp/100*15+acc*15+(G.alarm&&!(L.alarmOk&&L.alarmOk())?0:10);
   const rating=score>=85?'EXCELENTE':score>=65?'BOM':'MÉDIO';
   $('#rMeta').textContent='RELATÓRIO DE MISSÃO · '+L.op.toUpperCase(); $('#rTitle').textContent=L.resultTitle; $('#rRating').textContent=rating;
   const mins=Math.floor(G.time/60), secs=Math.floor(G.time%60);
-  $('#rText').textContent=(rating==='EXCELENTE'?'A Rede Lampião registra a medalha de prata da operação. ':'')+(G.alarm?L.alarmYes:L.alarmNo)+(s.kills===0?(s.takedowns?'Ninguém morreu: só rendições silenciosas.':'Ninguém foi abatido: infiltração limpa.'):'Classificação baseada em objetivos, saúde, precisão e sigilo — não no número de abatidos.');
+  $('#rText').textContent=(rating==='EXCELENTE'?'A Rede Lampião registra a medalha de prata da operação. ':'')+(G.alarm?(L.alarmOk&&L.alarmOk()?L.alarmLate:L.alarmYes):L.alarmNo)+(s.kills===0?(s.takedowns?'Ninguém morreu: só rendições silenciosas.':'Ninguém foi abatido: infiltração limpa.'):'Classificação baseada em objetivos, saúde, precisão e sigilo — não no número de abatidos.');
   const cells=[[`${mins}:${String(secs).padStart(2,'0')}`,'Tempo'],[s.shots?Math.round(acc*100)+'%':'—','Precisão'],[Math.round(hp),'Saúde final'],[s.kills,'Abatidos'],[s.takedowns,'Rendidos'],[s.disarms,'Desarmados'],[s.heads,'Tiros na cabeça'],[s.helmets,'Capacetes soltos'],[s.photos,'Fotos'],[optDone+'/'+opts.length,'Opcionais'],[s.alerts,'Alertas'],[G.alarm?'Sim':'Não','Alarme']];
   $('#rGrid').innerHTML=cells.map(([b,l])=>`<div><b>${b}</b><span>${l}</span></div>`).join('');
   const order={'MÉDIO':1,'BOM':2,'EXCELENTE':3};
@@ -3255,6 +3289,7 @@ function scorchMark(pos,r){
   const m=G.scorch[G.scorchI=(G.scorchI+1)%G.scorch.length]; m.visible=true; m.position.set(pos.x,.02+G.scorchI*.0006,pos.z); m.scale.setScalar(r*rnd(.85,1.1)); m.rotation.y=rnd(0,6);
 }
 function explode(pos,o){
+  if(G.level&&G.level.onExplode) G.level.onExplode(pos,o);
   const P=G.player, R=o.r;
   const occ=(x,y,z)=>!!segFirst(pos.x,pos.y+.3,pos.z,x,y,z,s=>!(G.tank&&s===G.tank.solid&&o.kind==='wreck'));
   const fall=d=>Math.pow(clamp(1-d/R,0,1),1.25);
@@ -4411,44 +4446,39 @@ Enemy.prototype.disguiseThink=function(pv,dP,dt){
   let f=0;
   if(pv>0){
     const zl=G.level.zoneAt(P.pos.x,P.pos.z,P.pos.y);
-    if(zl>G.cred) f+=.8;
+    if(zl>G.cred&&!G.escort) f+=.8;
     const mv=Math.hypot(P.vx,P.vz);
     if(P.sprinting) f+=.45; else if(P.crouch>.5&&mv>.4) f+=.32;
     if(!P.holster) f+=simTime-(G.drawT||-99)<1.5?1.5:.85;
     if(G.camMode){ const facing=Math.abs(angDiff(this.yaw+this.headYaw,Math.atan2(P.pos.x-this.pos.x,P.pos.z-this.pos.z)))<.75; f+=facing?1.7:.5; }
     if(simTime-(G.photoT||-99)<1&&dP<14) f+=2.2;
     if(dP<2.1){ this.closeT=(this.closeT||0)+dt; if(this.closeT>3.2) f+=.35; } else this.closeT=0;
-    for(const c of G.enemies){ if(c.dead&&Math.hypot(c.pos.x-P.pos.x,c.pos.z-P.pos.z)<4.5){ f+=.9; break; } }
+    for(const c of G.enemies){ if(c.dead&&!c.gone&&Math.hypot(c.pos.x-P.pos.x,c.pos.z-P.pos.z)<4.5){ f+=.9; break; } }
     if(curInteract&&curInteract.sus&&holdT>0&&dP<16) f+=curInteract.sus;
   }
   if(f>0){ const mult=clamp(1.6-dP/16,.35,1.4)*D().perception; this.sus=Math.min(1.2,(this.sus||0)+f*mult*dt); }
   else this.sus=Math.max(0,(this.sus||0)-.1*dt);
+  if(this.sus>=1&&this===G.inspector) this.sus=.95;
   if(this.sus>=1){ blowDisguise(this,curInteract&&curInteract.susWhy&&holdT>0?curInteract.susWhy:'suspeita'); return; }
   if(this.sus>=.5&&this.state!=='INSPECT'&&!G.inspector&&simTime-(this.clearedT||-99)>20&&this.hasWeapon) this.startInspect();
 };
 Enemy.prototype.startInspect=function(){
   this.wake(); this.releaseCover(); this.state='INSPECT'; this.inspectT=0; this.waitT2=0; this.reached=false; this.repathT=0; this.aimTarget=.35; this.path=null; G.inspector=this;
-  AudioSys.play('shout',this.pos); G.radioMsg('SENTINELA','“Alto! Documentos!” — pare e mostre o passe (E).','warn');
+  AudioSys.play('shout',this.pos); G.radioMsg('SENTINELA','“Alto! Documentos!”','warn');
 };
 Enemy.prototype.inspectStep=function(dt){
   const P=G.player.pos, d=Math.hypot(P.x-this.pos.x,P.z-this.pos.z);
   this.inspectT+=dt; this.headYaw*=.85; this.crouchTarget=0;
-  if(d>2){ this.repathT-=dt; if(this.repathT<=0||!this.path){ this.setPath(P.x,P.z); this.repathT=.8; } this.followPath(2.6*this.speedMul(),dt); }
-  else { this.moveDir(0,0,0,dt); this.faceTowards(P.x,P.z,dt,5); this.waitT2+=dt; }
+  const busy=(G.papers&&G.papers.e===this)||(G.escort&&G.escort.e===this);
+  if(d>(busy?2.8:2)){ this.repathT-=dt; if(this.repathT<=0||!this.path){ this.setPath(P.x,P.z); this.repathT=.8; } this.followPath(2.6*this.speedMul(),dt); }
+  else { this.moveDir(0,0,0,dt); this.faceTowards(P.x,P.z,dt,5); if(!busy) this.waitT2+=dt; }
   if(!disguiseOn()){ this.enterCombat(P.x,P.z,true,true); return; }
   if(d<=3.5) this.reached=true;
+  if(busy){ if(G.escort&&d>16) blowDisguise(this,'fuga'); return; }
   if(this.reached&&d>7.5) blowDisguise(this,'fuga');
   else if(this.reached&&this.waitT2>7) blowDisguise(this,'demora');
   else if(!this.reached&&this.inspectT>22){ G.inspector=null; this.sus=.3; this.clearedT=simTime-8; this.toReturn(); }
 };
-function showPapers(e){
-  if(!e||e.dead||!disguiseOn()) return; const P=G.player;
-  const zl=G.level.zoneAt(P.pos.x,P.pos.z,P.pos.y);
-  AudioSys.play('cloth');
-  if(zl<=G.cred){ e.sus=0; e.clearedT=simTime; e.waitT2=0; G.inspector=null; e.aimTarget=0; e.toReturn(); G.stats.inspections=(G.stats.inspections||0)+1;
-    G.radioMsg('SENTINELA',G.cred>=2?'“Passe vermelho… Certo. Pode seguir.”':'“Intérprete da Intendência… Certo. Pode seguir.”'); }
-  else blowDisguise(e,'credencial');
-}
 let MARKTEX=null;
 function susMark(e,kind){
   if(!MARKTEX){ const mk=(ch,col)=>textTex(64,64,(g,w,h)=>{ g.clearRect(0,0,w,h); g.fillStyle='rgba(10,14,17,.6)'; g.beginPath(); g.arc(32,32,22,0,7); g.fill(); g.fillStyle=col; g.font='bold 40px sans-serif'; g.textAlign='center'; g.fillText(ch,32,46); }); MARKTEX={q:mk('?','#e0b050'),x:mk('!','#e05a3a')}; }
@@ -4456,6 +4486,7 @@ function susMark(e,kind){
   e.mark.visible=!!kind; if(kind){ e.mark.material.map=kind==='x'?MARKTEX.x:MARKTEX.q; e.mark.position.set(e.pos.x,e.pos.y+2.25,e.pos.z); }
 }
 function updateHUD06(dt){
+  inspectHUD();
   const el=$('#disgChip'); if(!G.disguise){ el.hidden=true; return; } el.hidden=false; const P=G.player;
   let st='seguro', cls='ok';
   if(G.disguise.blown){ st='comprometido'; cls='bad'; }
@@ -4648,8 +4679,8 @@ function interact06(R){
     use:()=>{ const g=G.enemies.find(e=>e.id==='g1'); if(g&&!g.dead&&disguiseOn()){ if(!G.player.holster){ g.sus=.6; G.radioMsg('SENTINELA','“Guarde essa arma antes de chegar perto da cancela.”','warn'); return; } G.radioMsg('SENTINELA','“Intérprete da Intendência, assinado pelo major Kessel… Pode passar. O rancho é às oito.”'); }
       const d=W.doors.barrier; d.state='CLOSED'; openDoor(d,null); complete('gate'); activate('photo1'); activate('stamp');
       G.radioMsg('YASMINA','Lá dentro: fotografe o quadro do comboio na sala de operações. Para subir à torre você precisa de um passe vermelho — o carimbo fica na secretaria.','tip'); checkpoint(); }});
-  I.push({id:'papers',pt:()=>{ const e=G.inspector; return e?V3(e.pos.x,e.pos.y+1.5,e.pos.z):V3(0,-99,0); },r:3,skip:true,
-    label:()=>{ const e=G.inspector; if(!e||e.dead||!disguiseOn()) return null; return 'Mostrar documentos'; }, use:()=>showPapers(G.inspector)});
+  I.push({id:'papers',pt:()=>{ const f=V3(0,0,-1).applyQuaternion(camera.quaternion); return camera.position.clone().addScaledVector(f,.8); },r:3,skip:true,
+    label:()=>{ const e=G.inspector; if(!e||e.dead||!disguiseOn()||G.papers||G.escort) return null; const P=G.player; if(Math.hypot(P.pos.x-e.pos.x,P.pos.z-e.pos.z)>3.8) return null; return 'Entregar o passe e o salvo-conduto'; }, use:()=>showPapers(G.inspector)});
   I.push({id:'stamp',pt:()=>V3(-17.3,.9,-16.2),r:2.2,hold:()=>2.4,sus:3,susWhy:'falsificacao',label:()=>F().stamped?null:'Carimbar um passe em branco (segure)',
     use:()=>{ F().stamped=true; G.cred=2; AudioSys.play('stamp'); pickupMsg('Passe vermelho (área restrita)'); complete('stamp'); activate('photo2'); activate('radio'); G.radioMsg('ÉLISE','Carimbo do comandante. Com isto a torre e o depósito estão abertos — enquanto ninguém olhar de perto.'); checkpoint(); }});
   I.push({id:'radio6',pt:()=>V3(17.4,5.1,-19.1),r:2.3,hold:()=>F().radioStage?3.4:2,sus:1.4,susWhy:'sabotagem',
@@ -4695,6 +4726,7 @@ function updateRaid06(dt){
   for(const f of G.fires){ if(Math.random()<dt*6) FX.puff(V3(f.x+rnd(-1,1),1.2,f.z+rnd(-1,1)),1,Math.random()<.5?0xff9a40:0x2a2420,Math.random()<.5?.8:1.6,Math.random()<.5?.6:3,V3(0,1.4,0),.6); if(f.L) f.L.intensity=1.6+Math.random()*.8; }
 }
 function update06(dt){
+  inspectTick(dt);
   const P=G.player, F=G.flags, R=G.refs;
   if(!F.i1&&G.introT>.8){ F.i1=true; G.radioMsg('YASMINA','Você é a intérprete Morel, da Intendência. Arma guardada (H), passos calmos. Correr, se agachar ou sacar a arma na frente deles levanta suspeita.','tip'); }
   if(!F.i2&&G.introT>9){ F.i2=true; G.radioMsg('DICA','Se um guarda gritar “Documentos!”, pare e mostre o passe (E). O passe branco vale para o pátio e o QG; a torre e o depósito exigem o vermelho.','tip'); }
@@ -4754,6 +4786,906 @@ LEVEL_ORDER.push('06');
 
 window.__SDP6={blowDisguise,showPapers,startRaid06,toggleHolster,zone06,takePhoto,photoCandidate};
 
+/* =========================================================
+   OPERAÇÃO 7 — Oued el-Kebir (madrugada, 29/04/1943)
+   cargas de demolição, caminhões com zonas de dano,
+   explosões em cadeia e partida do comboio ao amanhecer
+   ========================================================= */
+let M7=null;
+function mats07(){
+  tex05(); const HQ=MAT_HQ;
+  const L=(o,ex)=>{ if(!HQ) return new T.MeshLambertMaterial(o); return new T.MeshPhongMaterial(Object.assign({shininess:14,specular:0x1a1a1a},o,ex||{})); };
+  if(!TEX.tank7){ TEX.tank7=textTex(512,512,(g,w,h)=>{ const R=mulberry32(707); g.fillStyle='#b49c6c'; g.fillRect(0,0,w,h);
+    for(let i=0;i<2200;i++){ g.fillStyle=R()<.5?`rgba(60,48,30,${R()*.12})`:`rgba(255,240,200,${R()*.08})`; g.fillRect(R()*w,R()*h,2+R()*10,1+R()*3); }
+    for(let i=0;i<14;i++){ g.fillStyle=`rgba(40,30,18,${.05+R()*.08})`; g.fillRect(R()*w,0,3+R()*8,h); }
+    g.strokeStyle='rgba(40,30,20,.5)'; g.lineWidth=2; for(let x=w/6;x<w;x+=w/6){ g.beginPath(); g.moveTo(x,0); g.lineTo(x,h); g.stroke(); }
+    g.textAlign='center'; for(const y0 of [96,352]){ g.fillStyle='#8a2a1a'; g.fillRect(40,y0+22,w-80,30); g.fillStyle='#e8dcc0'; g.font='bold 24px monospace'; g.fillText('FEUERGEFÄHRLICH',w/2,y0+46); g.fillStyle='#2a2418'; g.font='bold 26px monospace'; g.fillText('KRAFTSTOFF  4500 L',w/2,y0+8); g.font='bold 18px monospace'; g.fillText('WH-1427 · Nachsch.Kp.309',w/2,y0+80); } });
+    TEX.tank7.center.set(.5,.5); TEX.tank7.rotation=Math.PI/2; }
+  if(!TEX.tin7) TEX.tin7=canvasTex(128,128,(g,w,h)=>{ const R=mulberry32(717); g.fillStyle='#8a8476'; g.fillRect(0,0,w,h); for(let x=0;x<w;x+=8){ g.fillStyle='rgba(255,255,255,.08)'; g.fillRect(x,0,3,h); g.fillStyle='rgba(0,0,0,.14)'; g.fillRect(x+4,0,3,h); }
+    for(let i=0;i<120;i++){ g.fillStyle=`rgba(${110+R()*40|0},${60+R()*20|0},30,${R()*.25})`; g.fillRect(R()*w,R()*h,2+R()*6,2+R()*12); } },3);
+  return {tank:L({map:TEX.tank7},{shininess:30,specular:0x2a2a2a}), cab:L({color:0xb09a6a}), chassis:L({color:0x2a2824}), grille:L({color:0x3a3830}),
+    glass:L({color:0x16202a},{shininess:40,specular:0x1e2830}), charred:L({color:0x1c1a18},{shininess:2,specular:0x000000}), tin:L({map:TEX.tin7}), tinD:L({map:TEX.tin7,color:0x9a9488}),
+    concrete:L({map:TEX.lime5,color:0xb8b0a0}), charge:L({color:0x6a5a3a}), wire:new T.MeshBasicMaterial({color:0x1a1a1a}), fuel:new T.MeshBasicMaterial({color:0x14110c,transparent:true,opacity:.6,depthWrite:false,polygonOffset:true,polygonOffsetFactor:-2}),
+    hose:L({color:0x1e1e1c}), tower:L({color:0x9a9a92},{shininess:40,specular:0x444444}), key:L({color:0xc8a040},{shininess:60,specular:0x886622}), book:L({color:0x2a3a5a}), red:new T.MeshBasicMaterial({color:0xff3a20})};
+}
+function t2w(t,lx,ly,lz){ const c=Math.cos(t.yaw), s=Math.sin(t.yaw); return V3(t.x+lx*c+lz*s,ly,t.z-lx*s+lz*c); }
+function truckBox07(t){ let a=1e9,b=-1e9,c=1e9,d=-1e9; for(const [lx,lz] of [[-1.2,-3.8],[1.2,-3.8],[-1.2,4.45],[1.2,4.45]]){ const p=t2w(t,lx,0,lz); a=Math.min(a,p.x); b=Math.max(b,p.x); c=Math.min(c,p.z); d=Math.max(d,p.z); } Object.assign(t.solid,{minX:a,maxX:b,minZ:c,maxZ:d,minY:0,maxY:3.05}); }
+function makeTanker07(i,x,z,yaw){
+  const M=M7, g=new T.Group(); g.position.set(x,0,z); g.rotation.y=yaw; scene.add(g);
+  const t={i,id:'T'+(i+1),g,x,z,yaw,state:'PARKED',tankHp:160,engHp:90,cabHp:46,flat:0,leak:0,charge:false,speed:0,pathI:0,burnT:0,smokeT:0,startT:0,honkT:0,disc:0,fireLeft:0};
+  const part=(geo,mat,px,py,pz,zone,surf)=>{ const m=new T.Mesh(geo,mat); m.position.set(px,py,pz); m.userData.mat=surf||'metal'; g.add(m); W.shootables.push(m); if(zone) m.userData.zoneHit=(h,o)=>truckHit07(t,zone,h,o,m); return m; };
+  part(BOX(2.0,.32,8.1),M.chassis,0,.8,.3,null);
+  t.tank=part(new T.CylinderGeometry(1.02,1.02,5.0,18),M.tank,0,2.0,-1.25,'tank'); t.tank.rotation.x=Math.PI/2; t.tank.rotation.y=Math.PI/2;
+  part(BOX(.5,.08,4.8),M.chassis,0,3.06,-1.25,'tank'); part(new T.CylinderGeometry(.24,.24,.18,10),M.chassis,0,3.1,-.2,'tank');
+  for(const zz of [-3.5,1.0]) part(BOX(2.06,2.06,.12),M.chassis,0,2.0,zz,null);
+  t.cab=part(BOX(2.24,1.45,1.7),M.cab,0,1.72,2.45,'cab'); part(BOX(2.3,.1,1.8),M.cab,0,2.5,2.45,'cab');
+  t.wind=part(BOX(1.9,.55,.05),M.glass,0,2.12,3.31,'cab','glass');
+  for(const s of [-1,1]) part(BOX(.05,.5,.8),M.glass,s*1.13,2.12,2.5,'cab','glass');
+  t.hood=part(BOX(1.6,.82,1.1),M.cab,0,1.36,3.86,'engine'); part(BOX(1.3,.62,.05),M.grille,0,1.34,4.43,'engine');
+  for(const s of [-1,1]){ part(BOX(.5,.14,1.1),M.cab,s*1.0,1.0,3.76,null); const hl=new T.Mesh(new T.CylinderGeometry(.11,.11,.08,10),hm(0xd8d0a0)); hl.rotation.x=Math.PI/2; hl.position.set(s*.62,1.6,4.43); g.add(hl); }
+  part(BOX(.06,1.6,.06),M.chassis,-.8,2.2,1.2,null);
+  t.tires=[]; [[-1.02,-3.05],[1.02,-3.05],[-1.02,-1.85],[1.02,-1.85],[-1.0,3.62],[1.0,3.62]].forEach(([px,pz],k)=>{ const w=part(new T.CylinderGeometry(.46,.46,.3,12),MAT.tire,px,.46,pz,'tire'+k,'metal'); w.rotation.z=Math.PI/2; w.flat=false; t.tires.push(w); });
+  const ch=new T.Group(); ch.position.set(-.98,1.5,-1.7); g.add(ch); const cb=new T.Mesh(BOX(.16,.3,.4),M.charge); ch.add(cb); const cd=new T.Mesh(new T.CylinderGeometry(.03,.03,.16,6),hm(0x8a8070)); cd.position.set(-.09,.12,.1); cd.rotation.z=Math.PI/2; ch.add(cd); const cw=new T.Mesh(BOX(.02,1.1,.02),M.wire); cw.position.set(-.06,-.66,.15); ch.add(cw); ch.visible=false; t.ch=ch;
+  t.fireL=new T.PointLight(0xff7a2a,0,22,1.6); t.fireL.position.set(0,3.2,-1); g.add(t.fireL);
+  t.solid=addSolidOnly(0,0,0,0,3.05,0,true); t.solid.truck=t; truckBox07(t);
+  return t;
+}
+function setTruckPose07(t){ t.g.position.set(t.x,0,t.z); t.g.rotation.y=t.yaw; truckBox07(t); }
+function flatTire07(t,w){ if(w.flat) return; w.flat=true; w.scale.x=.7; w.position.y=.34; t.flat++; }
+function truckHit07(t,zone,h,o,mesh){
+  if(t.state==='WRECK'||t.state==='GONE') return; const isP=o.shooter==='player';
+  const dmg=computeDamage(o.weapon.dmg,h.distance,o.weapon.falloff,1); const F=G.flags;
+  if(isP) hitMarker('equip');
+  if(zone==='tank'){
+    const pre=t.tankHp; t.tankHp-=dmg; AudioSys.play('clank',h.point,.8); FX.burst(h.point,5,0xffd080,3,.2,3); emitNoise(h.point,7,'glass',null);
+    if(t.tankHp<115) startLeak07(t,h.point);
+    if(t.state!=='BURNING'){ if(t.tankHp<=0&&(pre>0?Math.random()<.25:Math.random()<.3)){ ignite07(t,1.6); if(isP) limbTag('TANQUE · pegou fogo'); }
+      else if(isP) limbTag(t.tankHp<=0?'TANQUE · rompido':t.leak?'TANQUE · vazando':'TANQUE'); }
+  } else if(zone==='engine'){
+    t.engHp-=dmg; AudioSys.play('metal',h.point,.9); FX.burst(h.point,6,0xffd080,3.5,.2,3);
+    if(t.engHp<=0&&!t.engDead){ t.engDead=true; if(isP) limbTag('MOTOR · fora de combate'); if(t.state==='DRIVING'||t.state==='STARTING') stopTruck07(t); syncTrucks07(); }
+    else if(isP&&!t.engDead) limbTag('MOTOR');
+  } else if(zone==='cab'){
+    if(mesh.userData.mat==='glass'&&mesh.visible){ mesh.visible=false; FX.burst(h.point,14,0xd8eef4,2.6,.7); AudioSys.play('glass',h.point,.9); }
+    if(t.state==='DRIVING'||t.state==='STARTING'){ t.cabHp-=dmg*1.3; if(t.cabHp<=0&&!t.driverDead){ t.driverDead=true; stopTruck07(t); if(isP){ limbTag('MOTORISTA ABATIDO'); G.stats.hits++; } syncTrucks07(); } else if(isP) limbTag('CABINE'); }
+    else if(isP) limbTag('CABINE · vazia');
+  } else if(zone.startsWith('tire')){
+    const w=t.tires[+zone.slice(4)]; AudioSys.play('cloth',h.point,.7);
+    if(!w.flat&&dmg>=14){ flatTire07(t,w); AudioSys.play('hiss',h.point,.9); emitNoise(h.point,6,'step',null); FX.puff(h.point,2,0x8a8478,.5,.7,V3(0,.4,0),.4);
+      if(t.flat>=2&&!t.tiresOut){ t.tiresOut=true; if(isP) limbTag('PNEUS · imobilizado'); if(t.state==='DRIVING'||t.state==='STARTING') stopTruck07(t); } else if(isP) limbTag('PNEU · furado');
+      syncTrucks07(); }
+    else if(isP) limbTag('PNEU');
+  }
+}
+function startLeak07(t,p){
+  if(t.leak) return; t.leak=1; const loc=t.g.worldToLocal(p.clone()); t.leakL=[Math.sign(loc.x||1)*1.0,Math.max(1.3,Math.min(2.6,loc.y)),clamp(loc.z,-3.4,.8)];
+  const pd=new T.Mesh(new T.CircleGeometry(1,20),M7.fuel); pd.rotation.x=-Math.PI/2; const lp=t2w(t,t.leakL[0]*1.4,0,t.leakL[2]); pd.position.set(lp.x,.03,lp.z); pd.scale.setScalar(.2); scene.add(pd); t.puddle=pd;
+  AudioSys.play('leak',p,1); syncTrucks07();
+}
+function ignite07(t,delay){
+  if(t.state==='BURNING'||t.state==='WRECK'||t.state==='GONE') return;
+  if(t.state==='DRIVING'||t.state==='STARTING') t.driverDead=true;
+  t.prev=t.state; t.state='BURNING'; t.burnT=delay===undefined?2.4:delay; AudioSys.play('flare',t2w(t,0,2,-1.2),.9); t.fireL.intensity=1.2;
+  if(G.flags.valve&&t.i===2) startTrail07();
+}
+function stopTruck07(t){ if(t.state==='DRIVING'||t.state==='STARTING'){ t.state='STOPPED'; AudioSys.play('clank',t2w(t,0,1.4,3.8),.7); } }
+function wreckVisual07(t){
+  for(const m of [t.tank,t.cab,t.hood]) m.material=M7.charred; t.g.traverse(o=>{ if(o.isMesh&&o.material===M7.cab) o.material=M7.charred; });
+  t.g.traverse(o=>{ if(o.isMesh&&o.material===M7.glass) o.visible=false; }); t.ch.visible=false; t.tank.position.y=1.78; t.tank.rotation.z=.12; t.g.rotation.z=(t.i%2?1:-1)*.05; for(const w of t.tires) flatTire07(t,w);
+  if(t.puddle) t.puddle.visible=false; t.fireL.intensity=2; t.fireLeft=150;
+}
+function truckExplode07(t){
+  if(t.state==='WRECK'||t.state==='GONE') return; t.state='WRECK'; t.speed=0; t.charge=false;
+  const p=t2w(t,0,1.9,-1.25);
+  explode(p,{r:9.5,dmgE:320,dmgP:125,src:'player',kind:'wreck'});
+  AudioSys.play('fireball',p,1.4);
+  for(let k=0;k<5;k++) FX.puff(V3(p.x+rnd(-1.6,1.6),p.y+.6+k*1.1,p.z+rnd(-1.6,1.6)),2,k<2?0xffc060:k<4?0xff7a28:0x8a3a18,2.8-k*.25,.8+k*.3,V3(rnd(-.4,.4),2.6+k*.9,rnd(-.4,.4)),.9);
+  FX.puff(V3(p.x,p.y+3.4,p.z),6,0x262220,3.4,6,V3(0,2.4,0),.62); FX.burst(p,34,0xffc060,13,1.3,9,1.5);
+  scorchMark(V3(t.x,.02,t.z),3.4); wreckVisual07(t);
+  if(settings.shake){ const P=G.player; P.shake=Math.min(1.6,P.shake+clamp(1-Math.hypot(P.pos.x-p.x,P.pos.z-p.z)/60,0,1)*1.2); }
+  syncTrucks07(); onWreck07();
+}
+function onWreck07(){
+  const R=G.refs, n=R.trucks.filter(t=>t.state==='WRECK').length, o=obj('trucks');
+  if(o){ o.text='Destrua os caminhões-tanque restantes ('+n+'/4)'; refreshObjectiveUI(); }
+  refreshCharges07();
+  if(n>=4){ for(const id of ['charges','detonate']) if(obj(id).state!=='done') complete(id,true); complete('trucks',true); refreshObjectiveUI(true); AudioSys.play('objective');
+    G.flags.allWrecked=true;
+    if(obj('cipher').state==='done') activate('escape'); else G.radioMsg('YASMINA','Os quatro estão queimando! Mas o livro de cifras — sem a foto, Londres continua surda. Galpão B, rápido.','warn');
+    G.flags.cpWreck=1.5; }
+}
+/* tambores e tanque elevado */
+function drums07(id,x0,x1,z0,z1,h,mat){
+  const solid=addSolidOnly(x0,x1,z0,z1,h,0,true); const list=[]; for(let x=x0+.32;x<x1-.1;x+=.64) for(let z=z0+.32;z<z1-.1;z+=.64) for(let y=0;y<h-.1;y+=.92) list.push([x,y+.45,z,.6,.9,.6,0]);
+  const im=instanced(new T.CylinderGeometry(.5,.5,1,10),mat,list); const s={id,x:(x0+x1)/2,z:(z0+z1)/2,hp:150,state:'OK',t:0,solid,im};
+  if(im){ im.userData.mat='metal'; im.userData.zoneHit=(h,o)=>{ if(s.state!=='OK') return; s.hp-=computeDamage(o.weapon.dmg,h.distance,o.weapon.falloff,1); AudioSys.play('clank',h.point,.7); emitNoise(h.point,7,'glass',null); if(o.shooter==='player'){ hitMarker('equip'); limbTag(s.hp<60?'TAMBORES · vazando':'TAMBORES'); } if(s.hp<=0) igniteDrums07(s,1.8); else if(s.hp<60&&Math.random()<.5) FX.burst(h.point,4,0x3a3020,1,.6,6); }; W.shootables.push(im); }
+  return s;
+}
+function igniteDrums07(s,delay){ if(s.state!=='OK') return; s.state='BURN'; s.t=delay; AudioSys.play('flare',V3(s.x,1,s.z),.7); }
+function drumsExplode07(s){
+  s.state='GONE'; if(s.im) s.im.visible=false; s.solid.active=false; G.flags['drums_'+s.id]=true;
+  explode(V3(s.x,.9,s.z),{r:6.5,dmgE:230,dmgP:90,src:'player',kind:'shell'}); AudioSys.play('fireball',V3(s.x,1,s.z),1);
+  for(let k=0;k<3;k++) FX.puff(V3(s.x,1+k,s.z),2,k<2?0xffa040:0x5a2a14,2-k*.2,.8+k*.3,V3(0,2.4+k,0),.85);
+  scorchMark(V3(s.x,.02,s.z),2.4); s.fireLeft=60;
+}
+function towerExplode07(){
+  const W_=G.refs.tower; if(W_.state==='GONE') return; W_.state='GONE'; G.flags.towerGone=true; W_.charge=false;
+  const p=V3(28,5.4,-18); explode(p,{r:13,dmgE:420,dmgP:150,src:'player',kind:'wreck'}); AudioSys.play('fireball',p,2);
+  for(let k=0;k<8;k++) FX.puff(V3(p.x+rnd(-2.4,2.4),p.y+k*1.4,p.z+rnd(-2.4,2.4)),3,k<3?0xffd070:k<6?0xff7a20:0x7a3010,4-k*.25,1+k*.35,V3(rnd(-.6,.6),3+k*1.1,rnd(-.6,.6)),.95);
+  FX.puff(V3(p.x,p.y+8,p.z),10,0x221e1c,5,8,V3(0,3,0),.7); FX.burst(p,60,0xffc060,16,1.6,9,1.8);
+  towerWreck07(); complete('tower'); G.radioMsg('YASMINA','O tanque elevado também! Isso foi ouvido em Kairouan.');
+  if(settings.shake) G.player.shake=Math.min(1.8,G.player.shake+1.2); syncTrucks07();
+}
+function towerWreck07(){ const W_=G.refs.tower; W_.tankM.visible=false; W_.wreckM.visible=true; for(const l of W_.legs) l.rotation.z=rnd(-.25,.25); W_.fireL.intensity=2.4; W_.fireLeft=200; W_.ch.visible=false; scorchMark(V3(28,.02,-18),4.5); }
+function startTrail07(){ const F=G.flags; if(F.trail||G.refs.tower.state==='GONE') return; F.trail=true; G.trailT07=0; G.radioMsg('ÉLISE','O fogo pegou na mangueira — está correndo para o tanque elevado!','warn'); }
+function onExplode07(pos,o){
+  const R=G.refs; if(!R||!R.trucks) return; const r=o.r||5; const pow=o.kind==='wreck'?240:o.kind==='shell'?200:o.kind==='nade'?150:130; const reach=r+2.5;
+  for(const t of R.trucks){ if(t.state==='WRECK'||t.state==='GONE') continue; const c=t2w(t,0,1.6,-1.25); const d=Math.max(0,Math.hypot(c.x-pos.x,c.z-pos.z)-1.1); if(d>reach) continue; const f=1-d/reach;
+    const wasLeak=!!t.leak||t.tankHp<=0; t.tankHp-=pow*f; t.engHp-=pow*f*.5;
+    if(f>.5) for(const w of t.tires) if(Math.random()<f) flatTire07(t,w); if(t.flat>=2) t.tiresOut=true; if(t.engHp<=0) t.engDead=true;
+    if(t.tankHp<115) startLeak07(t,c);
+    if(t.state==='BURNING') { t.burnT=Math.min(t.burnT,.4); continue; }
+    if(t.charge&&f>.4) ignite07(t,.15);
+    else if(f>.6||(wasLeak&&f>.25)||t.tankHp<=-60) ignite07(t,.5+Math.random()*1.1);
+    else if(t.state==='DRIVING'&&(t.engDead||t.tiresOut)) stopTruck07(t);
+  }
+  for(const s of R.drums){ if(s.state!=='OK') continue; const d=Math.max(0,Math.hypot(s.x-pos.x,s.z-pos.z)-1); if(d>r*.85) continue; s.hp-=pow*(1-d/(r*.85)); if(s.hp<=0) igniteDrums07(s,.45+Math.random()*.5); }
+  const T_=R.tower; if(T_.state!=='GONE'){ const d=Math.max(0,Math.hypot(28-pos.x,-18-pos.z)-1.6); if(d<r+1){ const f=1-d/(r+1); T_.hp-=pow*f; if(T_.charge&&f>.3) T_.burnT=Math.min(T_.burnT||9,.2); else if(T_.hp<=0||f>.5){ if(!(T_.burnT>0)) T_.burnT=.8+Math.random(); } } }
+}
+/* gerador e holofotes */
+function powerOff07(silent){
+  const F=G.flags; F.power=false;
+  for(const L of G.refs.floods){ L.broken=true; L.light.intensity=0; if(L.cone) L.cone.visible=false; L.lantern.material=hm(0x2a2824); }
+  if(!silent){ AudioSys.play('clank',V3(-13.5,1,2.2)); emitNoise(V3(-13.5,0,2.2),12,'lure',null); G.radioMsg('ÉLISE','Gerador desligado. O pátio dos caminhões ficou no escuro — alguém vai vir ver.','tip'); }
+}
+/* plantio, detonação e partida */
+function refreshCharges07(){
+  const R=G.refs, F=G.flags, o=obj('charges'); if(!o) return;
+  const covered=R.trucks.filter(t=>t.charge||t.state==='WRECK').length;
+  o.text='Plante cargas nos caminhões-tanque ('+covered+'/4)';
+  if(o.state==='active'){ const nx=nearestTruck07(t=>!t.charge&&t.state!=='WRECK'&&t.state!=='GONE'); if(nx){ const p=t2w(nx,-1.4,0,-1.7); o.marker={x:p.x,z:p.z}; } }
+  if(covered>=4&&o.state==='active'){ complete('charges'); if(!G.alarm&&obj('quiet').state==='active') complete('quiet');
+    const planted=R.trucks.filter(t=>t.charge).length; if(planted>0&&!F.detonated){ activate('detonate'); G.radioMsg('YASMINA','Quatro cargas. Volte ao bueiro e acione o detonador — de longe, Élise.'); } }
+  refreshObjectiveUI();
+}
+function nearestTruck07(pred){ const P=G.player.pos; let b=null,bd=1e9; for(const t of G.refs.trucks){ if(!pred(t)) continue; const d=Math.hypot(t.x-P.x,t.z-P.z); if(d<bd){ bd=d; b=t; } } return b; }
+function plantCharge07(t){
+  const F=G.flags; if(!(F.charges>0)||t.charge) return; F.charges--; t.charge=true; t.ch.visible=true; AudioSys.play('cloth'); AudioSys.play('unlock');
+  pickupMsg('Carga plantada · caminhão '+(t.i+1)); F.planted=(F.planted||0)+1;
+  if(F.planted===1) G.radioMsg('YASMINA','Boa. A espoleta está ligada ao fio do bueiro. Atenção: uma sentinela com luz que passe colada no tanque vai ver a carga.','tip');
+  syncTrucks07(); refreshCharges07(); cp07();
+}
+function detonate07(){
+  const F=G.flags, R=G.refs; if(F.detonated) return;
+  const list=R.trucks.filter(t=>t.charge&&t.state!=='WRECK'&&t.state!=='GONE').sort((a,b)=>a.i-b.i);
+  if(R.tower.charge&&R.tower.state!=='GONE') list.push(R.tower);
+  if(!list.length){ showHint('Nenhuma carga ligada ao fio.'); return; }
+  F.detonated=true; complete('detonate'); AudioSys.play('clank'); AudioSys.play('stamp');
+  G.radioMsg('ÉLISE','Fogo.');
+  G.seq07=list.map((t,k)=>({t:.6+k*.8,fn:()=>{ if(t===R.tower){ R.tower.burnT=.05; return; } const p=t2w(t,-1.05,1.5,-1.7); FX.burst(p,16,0xffe0a0,7,.25,4,1); ignite07(t,.04); }}));
+  const last=.6+list.length*.8;
+  G.seq07.push({t:last+1.4,fn:()=>{ if(!G.alarm) raiseAlarm(); }});
+  G.seq07.push({t:last+3.2,fn:()=>{ const n=R.trucks.filter(t=>t.state==='WRECK').length; if(n<4){ activate('trucks'); onWreck07(); G.radioMsg('YASMINA','Ainda há caminhão inteiro! Fure o tanque, use granada, atire nos tambores ao lado — não deixe sair pelo portão.','warn'); } else G.radioMsg('YASMINA','Dá para ver daqui! Quatro colunas de fogo. Saia daí — o acampamento inteiro acordou.'); cp07(); }});
+  G.seqT07=0; syncTrucks07();
+}
+function truckPath07(t){ return [[t.homeX,-10],[1.2,-19.5],[0,-29],[0,-40],[0,-60]]; }
+function startTruck07(t){ t.state='STARTING'; t.startT=2.4; t.pathI=0; AudioSys.play('engine',t2w(t,0,1,3),1); if(t.i===2&&G.flags.valve&&!G.flags.trail){ G.refs.hoseEnd.visible=false; } syncTrucks07(); }
+function driveTruck07(t,dt){
+  const path=truckPath07(t), wp=path[Math.min(t.pathI,path.length-1)];
+  const P=G.player; const fwd=V3(Math.sin(t.yaw),0,Math.cos(t.yaw));
+  const look=4.6+t.speed*.5, fx=t.x+fwd.x*look, fz=t.z+fwd.z*look, nx=t.x+fwd.x*3.2, nz=t.z+fwd.z*3.2;
+  let blocked=false; const segD=(px,pz)=>{ const ax=nx,az=nz,bx=fx,bz=fz,dx=bx-ax,dz=bz-az; const k=clamp(((px-ax)*dx+(pz-az)*dz)/(dx*dx+dz*dz),0,1); return Math.hypot(px-(ax+dx*k),pz-(az+dz*k)); };
+  if(!P.dead&&segD(P.pos.x,P.pos.z)<1.9) blocked=true;
+  for(const e of G.enemies){ if(!e.dead&&segD(e.pos.x,e.pos.z)<1.6){ blocked=true; break; } }
+  for(const o of G.refs.trucks){ if(o===t||o.state==='GONE') continue; const s=o.solid; if(fx>s.minX-.6&&fx<s.maxX+.6&&fz>s.minZ-.6&&fz<s.maxZ+.6){ blocked=true; break; } }
+  const gate=W.doors.gate; if(gate&&gate.state==='CLOSED'&&t.z<-14&&Math.abs(t.x)<6){ openDoor(gate,null); }
+  if(gate&&(gate.state==='CLOSED'||gate.state==='OPENING')&&t.z<-24&&t.z>-31) blocked=true;
+  const vmax=G.diff==='veterano'?6.2:G.diff==='recruta'?4.6:5.4;
+  t.speed=blocked?Math.max(0,t.speed-dt*9):Math.min(vmax,t.speed+dt*1.6);
+  if(blocked){ t.honkT-=dt; if(t.honkT<=0&&t.speed<.5){ t.honkT=2.4; AudioSys.play('honk',t2w(t,0,1.5,4),1); } }
+  const want=Math.atan2(wp[0]-t.x,wp[1]-t.z); const turn=clamp(angDiff(t.yaw,want),-1,1)*Math.min(1.1,.3+t.speed*.22)*dt; t.yaw+=turn;
+  t.x+=Math.sin(t.yaw)*t.speed*dt; t.z+=Math.cos(t.yaw)*t.speed*dt; setTruckPose07(t);
+  if(Math.hypot(wp[0]-t.x,wp[1]-t.z)<2.6) t.pathI++;
+  t.engT=(t.engT||0)-dt; if(t.engT<=0){ t.engT=.34; AudioSys.play('engine',t2w(t,0,1,3),.8); }
+  if(Math.random()<dt*6) FX.puff(t2w(t,.7,.5,-3.9),1,0x3a3632,.5,1.4,V3(0,.5,0),.35);
+  for(const w of t.tires) if(!w.flat) w.rotation.x+=t.speed*dt/.46;
+  if(t.z<-52){ t.state='GONE'; t.g.visible=false; t.solid.active=false; syncTrucks07(); missionFail('O comboio partiu','Um caminhão-tanque cruzou o portão de Oued el-Kebir. O combustível chegou ao front.'); }
+}
+function syncTrucks07(){
+  const R=G.refs; if(!R||!R.trucks) return;
+  G.flags.trk=JSON.stringify(R.trucks.map(t=>({s:t.state,x:+t.x.toFixed(2),z:+t.z.toFixed(2),y:+t.yaw.toFixed(3),th:Math.round(t.tankHp),eh:Math.round(t.engHp),fl:t.tires.map(w=>w.flat?1:0),c:t.charge?1:0,lk:t.leak?1:0,pi:t.pathI,dd:t.driverDead?1:0,ed:t.engDead?1:0})));
+  G.flags.twr=JSON.stringify({s:R.tower.state,hp:Math.round(R.tower.hp),c:R.tower.charge?1:0});
+}
+function cp07(){ syncTrucks07(); checkpoint(); }
+/* ---- dados ---- */
+const ENEMY_DEFS_07=[
+  {id:'g1',x:-3.6,z:-32,yaw:Math.PI,weapon:'rifle',helmet:true},
+  {id:'g2',x:4,z:-26.6,yaw:.3,weapon:'smg',helmet:true},
+  {id:'t1',x:-27.5,z:-27.5,yaw:Math.PI/4,weapon:'rifle',helmet:true,fixed:true},
+  {id:'t2',x:31.5,z:23.5,yaw:-2.2,weapon:'rifle',helmet:true,fixed:true},
+  {id:'p1',x:-27,z:10,weapon:'rifle',helmet:true,lantern:true,patrol:[[-27,10],[-27,-11],[-12.4,-11],[-11.8,-2],[-12.4,8.8],[-20,10.4]]},
+  {id:'p2',x:5.5,z:-2.6,weapon:'smg',lantern:true,patrol:[[5.5,-2.6],[5.5,10.4],[16,10.4],[26.6,10.4],[26.6,-2.6],[16,-2.6]]},
+  {id:'p3',x:31.5,z:-24,weapon:'rifle',helmet:true,patrol:[[31.5,-24],[31.5,-6],[31.5,19],[31.5,-6]]},
+  {id:'a1',x:-12.6,z:-17.4,yaw:.5,weapon:'rifle',helmet:true},
+  {id:'rt',x:-2.7,z:15.6,yaw:Math.PI/2,weapon:'pistol'},
+  {id:'ob',x:-8.8,z:16.6,weapon:'pistol',officer:true,patrol:[[-8.8,16.6],[-5.6,15],[-3.5,13.4],[-3.5,10.2],[-6.4,8.4],[-3.5,10.2],[-3.5,13.4],[-5.6,15]]},
+  {id:'fw',x:-22.6,z:6,weapon:'pistol',officer:true,patrol:[[-22.6,6],[-20.6,5],[-17,5],[-15.4,3.6],[-17,5],[-20.6,5]]},
+  {id:'m1',x:24.2,z:-1.6,yaw:0,weapon:'rifle'},
+  {id:'d1',x:20.4,z:18.8,yaw:0,weapon:'rifle',sleep:true},
+  {id:'d2',x:25.2,z:18.8,yaw:0,weapon:'smg',sleep:true},
+  {id:'s1',x:-10.2,z:-24.2,yaw:0,weapon:'rifle',sleep:true},
+  {id:'s2',x:-6,z:-24.2,yaw:0,weapon:'rifle',helmet:true,sleep:true},
+];
+let DAWN07=0;
+function light07(x,z){
+  let l=lerp(.2,.58,DAWN07);
+  if(x>-26&&x<-14&&z>-24&&z<-14) l=Math.min(l,.18);
+  else if(x>-12&&x<-1&&z>12&&z<22) l=Math.min(l,.3);
+  else if(x>-26&&x<-19&&z>2&&z<8) l=Math.min(l,.26);
+  const R=G.refs; if(R&&R.trucks){ for(const t of R.trucks) if((t.state==='WRECK'&&t.fireLeft>0)||t.state==='BURNING'){ const d=Math.hypot(x-t.x,z-t.z); if(d<12) l=Math.max(l,.82*(1-d/12)+.2); } if(R.tower&&R.tower.fireLeft>0){ const d=Math.hypot(x-28,z+18); if(d<16) l=Math.max(l,.85*(1-d/16)+.2); } }
+  return l;
+}
+function applyDawn07(k){
+  DAWN07=k; const R=G.refs; if(!R.hemi) return;
+  const c=(a,b)=>new T.Color(a).lerp(new T.Color(b),k);
+  R.hemi.color.copy(c(0x56648a,0xb0b4c8)); R.hemi.groundColor.copy(c(0x221e1c,0x6a5040)); R.hemi.intensity=lerp(.4,.62,k);
+  R.amb.color.copy(c(0x262c3e,0x5a4a48)); R.amb.intensity=lerp(.22,.3,k);
+  R.sun.color.copy(c(0x7a8ac0,0xffb070)); R.sun.intensity=lerp(.24,.95,k*k);
+  R.sun.position.set(lerp(-38,74,k)+2,lerp(52,12,k),lerp(26,-6,k));
+  scene.fog.color.copy(c(0x101622,0xa08070)); scene.fog.density=lerp(.017,.0095,k); scene.background.copy(scene.fog.color);
+  if(R.dawnSky) R.dawnSky.material.opacity=clamp(k*1.25-.1,0,1);
+}
+function buildLevel07(){
+  M5=mats05(); M6=mats06(); M7=mats07(); const M=M6, Q=M7; DAWN07=0;
+  scene.background=new T.Color(0x101622); scene.fog=new T.FogExp2(0x101622,.017);
+  skyDome(707,[[0,'#04070f'],[.3,'#0c1226'],[.45,'#1c2238'],[.5,'#2e2c3c'],[.53,'#1a1a20'],[1,'#0e0c0c']],[300,150,16],8);
+  const dawnSky=skyDome(708,[[0,'#2a3a5c'],[.3,'#5a6488'],[.43,'#c08a7a'],[.49,'#f6b06a'],[.52,'#d8905a'],[.55,'#5a4234'],[1,'#3a2a22']],null,14);
+  dawnSky.scale.setScalar(.96); dawnSky.material.transparent=true; dawnSky.material.opacity=0;
+  const hemi=new T.HemisphereLight(0x56648a,0x221e1c,.4); scene.add(hemi);
+  const sun=new T.DirectionalLight(0x7a8ac0,.24); sun.target.position.set(2,0,0); sun.position.set(-36,52,26); scene.add(sun); scene.add(sun.target);
+  const amb=new T.AmbientLight(0x262c3e,.22); scene.add(amb);
+  // ---- terreno ----
+  floorPlane(130,140,-8,-8,M.sand,'stone',0);
+  floorPlane(16,96,-45,4,M.dune,'stone',.008); floorPlane(64,56,2,-2,M.road,'stone',.014); floorPlane(7,40,0,-50,M.road,'stone',.012);
+  const rock=(x0,x1,z0,z1,h)=>addBlock(x0,x1,z0,z1,h,{mat:M.rock,surf:'stone',top:M.rock,seg:4});
+  rock(-62,48,-78,-70,7); rock(-62,-56,-70,58,7); rock(-62,48,52,58,6); rock(42,48,-70,52,7);
+  rock(-56,-52,-70,52,4.2); rock(-36,-33,-44,9,3.2); rock(-36,-33,19,52,3.2);
+  for(const [x,z,s] of [[-44,-30,5],[-42,10,4],[-47,40,4.5],[20,40,6],[-20,40,5],[36,-46,6],[-30,-50,5]]){ const d=new T.Mesh(new T.SphereGeometry(s,14,8,0,Math.PI*2,0,Math.PI/2),M.dune); d.scale.y=.24; d.position.set(x,0,z); scene.add(d); }
+  for(let i=0;i<34;i++){ const R=mulberry32(700+i); const x=-51+R()*14, z=-60+R()*108; if(Math.abs(z-14)<6&&x>-40) continue; const b=new T.Mesh(new T.SphereGeometry(.35+R()*.5,7,5),M.shrub); b.scale.y=.6; b.position.set(x,.12,z); scene.add(b); }
+  palm(-49,-6,6.4); palm(-50.5,22,7); palm(-38.6,40,5.8);
+  // carro de Yasmina e detonador
+  car(-46,46,true);
+  addMesh(BOX(.5,.42,.36),hm(0x4a3e2c),-38,.21,12,'wood'); addMesh(new T.CylinderGeometry(.03,.03,.5,6),MAT.darkMetal,-38,.66,12,'metal'); addMesh(BOX(.42,.05,.05),MAT.darkMetal,-38,.92,12,'metal');
+  { const pts=[[-38,12],[-35,13.6],[-32,14],[-29,14],[-24,12.6],[-13,6],[-4,3],[0,1]]; for(let k=0;k<pts.length-1;k++){ const a=pts[k],b=pts[k+1]; const L=Math.hypot(b[0]-a[0],b[1]-a[1]); const w=new T.Mesh(BOX(.03,.03,L),Q.wire); w.position.set((a[0]+b[0])/2,.04,(a[1]+b[1])/2); w.rotation.y=Math.atan2(b[0]-a[0],b[1]-a[1]); scene.add(w); } }
+  // ---- cerca do depósito ----
+  const fence=(x0,x1,z0,z1)=>{ const s=addSolidOnly(x0,x1,z0,z1,2.4); s.see=true; return s; };
+  fence(-30,-2.6,-30.05,-29.95); fence(2.6,34,-30.05,-29.95); fence(-30,34,25.95,26.05); fence(33.95,34.05,-30,26); fence(-30.05,-29.95,-30,12.8); fence(-30.05,-29.95,15.2,26);
+  { const posts=[]; for(let x=-30;x<=34;x+=2.5){ if(Math.abs(x)>2.4) posts.push([x,1.2,-30,.1,2.4,.1,0]); posts.push([x,1.2,26,.1,2.4,.1,0]); } for(let z=-30;z<=26;z+=2.5){ posts.push([34,1.2,z,.1,2.4,.1,0]); if(z<12.6||z>15.4) posts.push([-30,1.2,z,.1,2.4,.1,0]); } instanced(UNIT,M.wood,posts);
+    const wires=[]; for(const y of [.6,1.2,1.8,2.3]){ wires.push([-16.3,y,-30,27.4,.02,.02,0],[18.3,y,-30,31.4,.02,.02,0],[2,y,26,64,.02,.02,0],[34,y,-2,.02,.02,56,0],[-30,y,-8.6,.02,.02,42.8,0],[-30,y,20.6,.02,.02,10.8,0]); } instanced(UNIT,MAT.darkMetal,wires); }
+  for(const y of [.35,.9]){ const w=addMesh(BOX(.02,.02,1.2),MAT.darkMetal,-30.3,y,12.5,null); w.rotation.y=.6; const w2=addMesh(BOX(.02,.02,1.2),MAT.darkMetal,-30.3,y+.2,15.5,null); w2.rotation.y=-.5; }
+  { const c=new T.Mesh(new T.CylinderGeometry(.5,.5,3.4,14,1,true,0,Math.PI),new T.MeshLambertMaterial({map:TEX.lime5,color:0x9a948a,side:T.DoubleSide})); c.rotation.z=Math.PI/2; c.position.set(-30,0,11.5); scene.add(c); addMesh(new T.CircleGeometry(.46,12,0,Math.PI),hm(0x0a0a0a),-31.69,0,11.5,null).rotation.y=-Math.PI/2; }
+  poster(-7,1.5,-30.12,Math.PI,2.4,.9,(g,w,h)=>{ g.fillStyle='#e8dcc0'; g.fillRect(0,0,w,h); g.fillStyle='#8a1a10'; g.font='bold 22px sans-serif'; g.textAlign='center'; g.fillText('TREIBSTOFFLAGER',w/2,34); g.fillStyle='#1e1e1e'; g.font='bold 16px sans-serif'; g.fillText('RAUCHEN VERBOTEN · FEUER!',w/2,64); g.font='12px sans-serif'; g.fillText('Oued el-Kebir — Nachschub-Kp. 309',w/2,86); });
+  // portão
+  makeDoor('gate',{x:0,z:-30,y0:.9,w:5,d:.16,h:.16,mat:M.barrier,offset:V3(0,2.6,0),npc:false,nav:true,snd:'door'});
+  for(const x of [-2.8,2.8]){ addMesh(BOX(.3,1.1,.3),M.wood,x,.55,-30,'wood'); addSolidOnly(x-.15,x+.15,-30.15,-29.85,1.1); }
+  addBlock(5.2,7.4,-29.4,-27.2,2.5,{mat:M.wood,surf:'wood',top:MAT.roof,seg:1}); sandbags(-5.6,-3.8,-33.6,-33);
+  // torres de vigia
+  const towerW=(x,z)=>{ const s=addWalk(x-1.5,x+1.5,z-1.5,z+1.5,4.6,{mat:M.wood,top:M.wood,seg:1}); s.mesh.visible=false;
+    for(const [a,b] of [[-1.35,-1.35],[1.35,-1.35],[-1.35,1.35],[1.35,1.35]]) addMesh(BOX(.18,4.6,.18),M.wood,x+a,2.3,z+b,'wood');
+    addMesh(BOX(3.1,.18,3.1),M.wood,x,4.5,z,'wood'); for(const [a,b,w,d] of [[0,-1.5,3,.08],[0,1.5,3,.08],[-1.5,0,.08,3],[1.5,0,.08,3]]) addBlock(x+a-w/2,x+a+w/2,z+b-d/2,z+b+d/2,1,{y0:4.6,mat:M.wood,surf:'wood',seg:1,cover:true});
+    addMesh(BOX(3.4,.1,3.4),MAT.roof,x,6.9,z,'wood'); for(const [a,b] of [[-1.4,-1.4],[1.4,1.4]]) addMesh(BOX(.1,2.3,.1),M.wood,x+a,5.75,z+b,'wood');
+    for(let k=0;k<6;k++) addMesh(BOX(.5,.05,.05),M.wood,x+1.6,.5+k*.75,z,'wood'); };
+  towerW(-27.5,-27.5); towerW(31.5,23.5);
+  // ---- galpão A: arsenal ----
+  const wl=(axis,c0,c1,a0,a1,h,ops,mat)=>wallOpen(axis,c0,c1,a0,a1,h,ops,mat||Q.tin,{inner:{}});
+  wl('x',-24,-23.8,-26,-14,3.8,[]); wl('x',-14.2,-14,-26,-14,3.8,[]); wl('z',-26,-25.8,-23.8,-14.2,3.8,[]); wl('z',-14.2,-14,-23.8,-14.2,3.8,[{c:-19,w:1.4}]);
+  addBlock(-26.2,-13.8,-24.2,-13.8,.2,{y0:3.8,mat:MAT.roof,bottom:MAT.ceil,surf:'metal',seg:3});
+  makeDoor('arsenal',{x:-14.1,z:-19,w:.12,d:1.4,h:2.4,mat:Q.tinD,offset:V3(0,0,1.4),locked:true,npc:true,nav:true,snd:'door'});
+  addMesh(BOX(.06,.16,.1),hm(0x8a7a3a),-13.98,1.2,-19.5,'metal');
+  for(const [x,z] of [[-24.4,-15.4],[-22.8,-15.4],[-24.4,-19.4],[-22.4,-19.6]]) crate(x,z,1.1,1.05);
+  crate(-24.4,-15.4,1,1,1.05); crate(-17,-22.8,1.2,1.1); crate(-15.6,-22.8,1,.9); crate(-17,-15.4,1.2,1.1); crate(-17,-15.4,.9,.9,1.1);
+  addBlock(-21.6,-18.4,-23.8,-23.1,1.8,{mat:MAT.cabinet,surf:'metal',seg:1}); addBlock(-21.6,-18.4,-23.8,-23.1,.05,{y0:.9,mat:M.wood,surf:'wood',seg:1,solid:false});
+  const chg=addBlock(-25.4,-23.8,-23.6,-22.2,.7,{mat:M.wood,surf:'wood',cover:true,seg:1}); for(let k=0;k<5;k++) addMesh(BOX(.36,.22,.16),Q.charge,-25.1+k*.3,.81,-22.9,'wood');
+  poster(-24.6,1.6,-23.78,0,1.2,.6,(g,w,h)=>{ g.fillStyle='#d8c8a0'; g.fillRect(0,0,w,h); g.fillStyle='#8a1a10'; g.font='bold 22px sans-serif'; g.textAlign='center'; g.fillText('SPRENGMITTEL',w/2,40); g.fillStyle='#222'; g.font='13px sans-serif'; g.fillText('Zündmittel getrennt lagern',w/2,70); });
+  addBlock(-25.8,-25.5,-17.8,-16.2,1.6,{mat:M.wood,surf:'wood',seg:1}); for(let k=0;k<3;k++){ const s=addMesh(BOX(.08,.2,.8),hm(0x2a2a28),-25.4,1.1+k*.0,-17.4+k*.5,'metal'); s.rotation.x=.1; }
+  bulb('A1',-20,3.5,-19,6); W.lamps[W.lamps.length-1].base=.5; W.lamps[W.lamps.length-1].light.intensity=.5;
+  // ---- cabana do Feldwebel (Schirrmeisterei) ----
+  wl('x',2,2.2,-26,-19,3,[{c:-23,w:1.2,sill:1,top:2}],M.adobe); wl('x',7.8,8,-26,-19,3,[],M.adobe); wl('z',-26,-25.8,2.2,7.8,3,[],M.adobe); wl('z',-19.2,-19,2.2,7.8,3,[{c:5,w:1.1}],M.adobe);
+  addBlock(-26.2,-18.8,1.8,8.2,.2,{y0:3,mat:MAT.roof,bottom:MAT.ceil,surf:'wood',seg:2});
+  makeDoor('dfw',{x:-19.1,z:5,w:.1,d:1.1,h:2.3,mat:M5.door,offset:V3(0,0,-1.05),npc:true,nav:true});
+  addBlock(-23.6,-21.6,6.6,7.5,.78,{mat:M.wood,surf:'wood',cover:true,seg:1}); addBlock(-25.7,-25.2,2.4,4,1.8,{mat:MAT.cabinet,surf:'metal',seg:1});
+  addMesh(BOX(.04,.6,.9),hm(0x6a5034),-25.78,1.55,5.4,'wood'); const keyM=addMesh(BOX(.03,.12,.05),Q.key,-25.74,1.45,5.4,'metal');
+  for(let k=0;k<3;k++) addMesh(BOX(.03,.1,.04),hm(0x8a8a80),-25.74,1.5,5.1+k*.18*(k===1?2.6:1),'metal');
+  bulb('B1',-22.6,2.75,5,5); W.lamps[W.lamps.length-1].base=.55; W.lamps[W.lamps.length-1].light.intensity=.55;
+  // gerador
+  addBlock(-14.4,-12.6,1.6,2.8,1.25,{mat:MAT.stove,surf:'metal',cover:true,seg:1}); addMesh(new T.CylinderGeometry(.07,.07,1.2,8),MAT.darkMetal,-12.9,1.85,2.5,'metal');
+  // ---- galpão B: transmissões ----
+  wl('x',12,12.2,-12,-1,3.4,[{c:-3.5,w:1.2},{c:-9.4,w:1.4,sill:.9,top:2.1}]); wl('x',21.8,22,-12,-1,3.4,[]); wl('z',-12,-11.8,12.2,21.8,3.4,[]); wl('z',-1.2,-1,12.2,21.8,3.4,[{c:16.5,w:1.2,sill:1,top:2.1}]);
+  addGlass('bw1',-10.1,-8.7,.9,2.1,12.06,12.14); addGlass('bw2',-1.14,-1.06,1,2.1,15.9,17.1);
+  addBlock(-6.6,-6.4,12.2,14.45,3.4,{mat:Q.tin,surf:'metal',seg:1.5}); addBlock(-6.6,-6.4,15.55,21.8,3.4,{mat:Q.tin,surf:'metal',seg:1.5}); addBlock(-6.6,-6.4,14.45,15.55,1,{y0:2.4,mat:Q.tin,surf:'metal',seg:1});
+  addBlock(-12.2,-.8,11.8,22.2,.2,{y0:3.4,mat:MAT.roof,bottom:MAT.ceil,surf:'metal',seg:3});
+  makeDoor('dB',{x:-3.5,z:12.1,w:1.2,d:.1,h:2.3,mat:Q.tinD,offset:V3(1.15,0,0),npc:true,nav:true});
+  floorPlane(10.6,9.6,-6.5,17,M.tiles,'stone',.02);
+  addBlock(-2,-1.2,14,17.4,.8,{mat:M.wood,surf:'wood',cover:true,seg:1}); const radio7=addMesh(BOX(.45,.5,1.1),hm(0x3a3e34),-1.6,1.05,15.6,'metal'); addMesh(BOX(.4,.3,.5),hm(0x2e322a),-1.6,.95,14.5,'metal');
+  for(let k=0;k<5;k++) addMesh(new T.CylinderGeometry(.03,.03,.02,8),hm(0xd8c890),-1.83,1.16,15.15+k*.22,null).rotation.z=Math.PI/2;
+  addBlock(-6.2,-4.6,20.8,21.6,1.9,{mat:MAT.cabinet,surf:'metal',seg:1}); addBlock(-5.6,-2.6,19.2,20.2,.75,{mat:M.wood,surf:'wood',cover:true,seg:1});
+  poster(-3.6,1.9,21.78,Math.PI,2.4,1.3,(g,w,h)=>{ g.fillStyle='#d8cdb0'; g.fillRect(0,0,w,h); g.fillStyle='#2a2418'; g.font='bold 14px serif'; g.fillText('FUNKPLAN — NACHSCHUB SÜD',12,22); g.font='12px monospace'; ['Rufzeichen: KOBRA / ADLER 7','Wechsel 00.00 Uhr','Schlüssel: Heft "Mai"','Notfrequenz 3.880 kHz'].forEach((s,i)=>g.fillText(s,12,46+i*18)); });
+  // escritório do livro
+  addBlock(-11.4,-9.4,19.4,20.6,.78,{mat:M.wood,surf:'wood',cover:true,seg:1}); addBlock(-11.8,-11.2,13,15.6,1.9,{mat:MAT.cabinet,surf:'metal',seg:1});
+  const book=addMesh(BOX(.34,.05,.24),Q.book,-10.4,.805,20,'cloth'); addMesh(BOX(.3,.012,.2),hm(0xe8e0c8),-10.4,.836,20,null);
+  addMesh(new T.CylinderGeometry(.08,.12,.05,10),MAT.darkMetal,-9.75,.805,20.35,'metal');
+  chair(-10.4,18.7,0,M5.dark);
+  bulb('C1',-9,3.15,17,5); W.lamps[W.lamps.length-1].base=.75; W.lamps[W.lamps.length-1].light.intensity=.75;
+  bulb('C2',-3.6,3.15,16.5,5); W.lamps[W.lamps.length-1].base=.55; W.lamps[W.lamps.length-1].light.intensity=.55;
+  // ---- barracas ----
+  tent(-12,-4,-27.4,-21,3.2,new T.MeshLambertMaterial({color:0x8a7c5e,side:T.DoubleSide})); for(const x of [-11,-8,-5]) addBlock(x-.35,x+.35,-26.8,-25.4,.45,{mat:M.cot,surf:'cloth',seg:1});
+  tent(18,28,14,22,3.2,new T.MeshLambertMaterial({color:0x8e8062,side:T.DoubleSide})); for(const x of [19.2,22.8,26.8]) addBlock(x-.35,x+.35,20,21.6,.45,{mat:M.cot,surf:'cloth',seg:1});
+  // ---- pátio dos caminhões ----
+  const trucks=[2,9,16,23].map((x,i)=>{ const t=makeTanker07(i,x,4,Math.PI); t.homeX=x; return t; });
+  for(const t of trucks) addMesh(new T.CircleGeometry(1.4,14),hm(0x1e1a14),t.x+.3,.016,t.z-1.6,null).rotation.x=-Math.PI/2;
+  const drums=[drums07('A',11.6,13.4,2.6,5.4,1.8,M.drum),drums07('B',22.4,25,-21.2,-19.4,1.8,M.drumG),drums07('C',-4.6,-2.8,1,3.6,1.8,M.drum)];
+  sandbags(-1.6,1,-13.6,-12.8); crate(8,-12.6,1.1,1.05); crate(9.2,-12.4,1,.95); crate(15,-14.8,1.1,1.1); crate(-7.4,-8,1.2,1.1); crate(-6.2,-8.2,1,1);
+  car(13,17.6,false);
+  // tanque elevado
+  const tw={state:'OK',hp:300,charge:false,burnT:0,fireLeft:0,legs:[]};
+  for(const [a,b] of [[-1.4,-1.4],[1.4,-1.4],[-1.4,1.4],[1.4,1.4]]){ const l=addMesh(BOX(.22,4.2,.22),MAT.darkMetal,28+a,2.1,-18+b,'metal'); addSolidOnly(28+a-.14,28+a+.14,-18+b-.14,-18+b+.14,4.2); tw.legs.push(l); }
+  for(const y of [1.4,2.8]){ addMesh(BOX(3,.08,.08),MAT.darkMetal,28,y,-19.4,'metal'); addMesh(BOX(3,.08,.08),MAT.darkMetal,28,y,-16.6,'metal'); }
+  addMesh(BOX(3.3,.12,3.3),MAT.darkMetal,28,4.2,-18,'metal');
+  tw.tankM=addMesh(new T.CylinderGeometry(1.55,1.55,5.4,18),Q.tower,28,5.8,-18,'metal'); tw.tankM.rotation.z=Math.PI/2;
+  tw.tankM.userData.zoneHit=(h,o)=>{ if(tw.state==='GONE') return; const d=computeDamage(o.weapon.dmg,h.distance,o.weapon.falloff,1); tw.hp-=d; AudioSys.play('clank',h.point,.9); emitNoise(h.point,8,'glass',null); if(o.shooter==='player'){ hitMarker('equip'); limbTag(tw.hp<=0?'TANQUE ELEVADO · rompido':'TANQUE ELEVADO'); } if(tw.hp<180&&Math.random()<.6) FX.burst(h.point,5,0x2a2018,1.2,.8,6); if(tw.hp<=0&&!(tw.burnT>0)&&Math.random()<.22) tw.burnT=1.8; };
+  tw.wreckM=addMesh(BOX(4.6,1.2,2.6),Q.charred,28,4.6,-18,null); tw.wreckM.visible=false; tw.wreckM.rotation.z=.25;
+  for(let k=0;k<8;k++) addMesh(BOX(.42,.04,.04),MAT.darkMetal,29.6,.4+k*.5,-18,'metal');
+  tw.ch=new T.Group(); tw.ch.position.set(26.55,1.1,-16.6); tw.ch.add(new T.Mesh(BOX(.2,.3,.4),Q.charge)); tw.ch.visible=false; scene.add(tw.ch);
+  tw.fireL=new T.PointLight(0xff7a2a,0,30,1.6); tw.fireL.position.set(28,6,-18); scene.add(tw.fireL);
+  addMesh(new T.CylinderGeometry(.12,.12,.4,8),hm(0xa82a1a),27.2,1.2,-16.55,'metal').rotation.x=Math.PI/2;
+  poster(28,5.8,-16.42,0,2.8,.6,(g,w,h)=>{ g.fillStyle='#9a9a92'; g.fillRect(0,0,w,h); g.fillStyle='#8a1a10'; g.font='bold 26px sans-serif'; g.textAlign='center'; g.fillText('VERGASERKRAFTSTOFF',w/2,38); });
+  // mangueira do tanque elevado até o caminhão 3
+  const hosePts=[[27.2,-16.4],[24,-12],[20.6,-6.4],[19.4,-1.4],[17.6,1.6]]; const hose=[];
+  for(let k=0;k<hosePts.length-1;k++){ const a=hosePts[k],b=hosePts[k+1]; const L=Math.hypot(b[0]-a[0],b[1]-a[1]); const m=new T.Mesh(new T.CylinderGeometry(.07,.07,L,6),Q.hose); m.rotation.x=Math.PI/2; m.position.set((a[0]+b[0])/2,.07,(a[1]+b[1])/2); m.rotation.order='YXZ'; m.rotation.y=Math.atan2(b[0]-a[0],b[1]-a[1]); scene.add(m); hose.push(m); }
+  const hoseEnd=hose[hose.length-1];
+  // holofotes (gerador) e luz do portão
+  const floods=[]; for(const [id,x,z,ax,az] of [['F1',5.5,-4.6,0,.6],['F2',19.5,-4.6,0,.6],['F3',12.5,11,0,-.6],['F4',-5,9.6,0,.6],['F5',-12,-12,-.6,0]]){ const L=lampPost(id,x,z,ax,az); L.base=1.5; L.light.intensity=1.5; L.light.distance=17; L.r=11; floods.push(L); }
+  { const L=lampPost('F6',4.6,-31.6,0,.6); L.base=1.2; L.light.intensity=1.2; L.r=9; }
+  // ---- navegação ----
+  const N=[];
+  for(let x=-28.4;x<=32.6;x+=2.6) for(let z=-28.4;z<=24.6;z+=2.6) N.push({x,z});
+  for(let x=-25;x<=-15;x+=2) for(let z=-23;z<=-15;z+=2) N.push({x,z});
+  for(let x=-11;x<=-2;x+=1.8) for(let z=13;z<=21;z+=1.8) N.push({x,z});
+  for(let x=-25;x<=-20;x+=1.6) for(let z=3;z<=7;z+=1.6) N.push({x,z});
+  for(let x=-51;x<=-38;x+=4.2) for(let z=-66;z<=50;z+=4.2) N.push({x,z});
+  for(let x=-34;x<=40;x+=4.6) for(let z=-67;z<=-33;z+=4.6) N.push({x,z});
+  for(let x=37;x<=40.5;x+=3.5) for(let z=-30;z<=50;z+=4.5) N.push({x,z});
+  for(let x=-30;x<=36;x+=4.6) for(let z=29;z<=50;z+=4.6) N.push({x,z});
+  N.push({x:-3.6,z:-31.4},{x:3.6,z:-31.4},{x:-34.4,z:14},{x:-31.6,z:14},{x:-28.6,z:14},{x:0,z:-31.6},{x:0,z:-28.4},{x:-15,z:-19},{x:-12.9,z:-19},{x:-3.5,z:11},{x:-3.5,z:13.2},{x:-6.5,z:15},{x:-18.2,z:5},{x:-20,z:5});
+  W.nav.nodes=N.filter(n=>!insideSolid(n.x,n.z,.4)); W.nav.link=5.4; buildNav();
+  return {sun,hemi,amb,dawnSky,trucks,drums,tower:tw,hose,hoseEnd,hosePts,floods,keyM,book,radio7};
+}
+function objectives07(){ return [
+  {id:'enter',text:'Entre no depósito pelo bueiro cortado no uádi',state:'active',marker:{x:-30,z:14}},
+  {id:'arsenal',text:'Pegue as cargas de demolição no arsenal (galpão A)',state:'active',marker:{x:-13.4,z:-19}},
+  {id:'cipher',text:'Fotografe o livro de cifras no galpão B',state:'active',marker:{x:-10.4,z:20}},
+  {id:'charges',text:'Plante cargas nos caminhões-tanque (0/4)',state:'hidden',marker:{x:2,z:-1}},
+  {id:'detonate',text:'Volte ao bueiro e acione o detonador',state:'hidden',marker:{x:-38,z:12}},
+  {id:'trucks',text:'Destrua os caminhões-tanque restantes (0/4)',state:'hidden',marker:{x:2,z:-1}},
+  {id:'escape',text:'Desça o uádi até o carro de Yasmina',state:'hidden',marker:{x:-46,z:46}},
+  {id:'quiet',text:'Opcional: plante as quatro cargas sem soar o alarme',state:'active',optional:true},
+  {id:'book',text:'Opcional: deixe o livro de cifras no lugar — só a foto',state:'active',optional:true,autoDone:true},
+  {id:'tower',text:'Opcional: leve junto o tanque elevado de abastecimento',state:'active',optional:true},
+]; }
+function interact07(R){
+  const I=W.interactables, F=()=>G.flags;
+  for(const [id,x,z] of [['dfw',-19.1,5],['dB',-3.5,12.1]]) I.push(doorInteract(id,V3(x,1.2,z)));
+  I.push({id:'arsdoor',pt:()=>V3(-13.95,1.2,-19),r:2.4,skipSolid:()=>W.doors.arsenal.solid,
+    label:()=>{ const d=W.doors.arsenal; if(d.state==='LOCKED') return F().akey?'Destrancar o arsenal':'Forçar o cadeado do arsenal (segure — barulhento)'; return d.state==='CLOSED'?'Abrir porta':d.state==='OPEN'?'Fechar porta':null; },
+    hold:()=>W.doors.arsenal.state==='LOCKED'?(F().akey?.8:(G.diff==='veterano'?5:4)):0,
+    use:()=>{ const d=W.doors.arsenal; if(d.state==='LOCKED'){ if(!F().akey){ F().forced=true; AudioSys.play('clank',d.mesh.position,1.2); AudioSys.play('metal',d.mesh.position,1); emitNoise(V3(-14,0,-19),15,'lure',null); pickupMsg('Cadeado arrombado'); } else AudioSys.play('unlock'); d.state='CLOSED'; openDoor(d,null); cp07(); }
+      else if(d.state==='CLOSED') openDoor(d,null); else if(d.state==='OPEN') closeDoor(d); }});
+  I.push({id:'akey',pt:()=>V3(-25.7,1.45,5.4),r:2.2,label:()=>F().akey?null:'Pegar a chave do arsenal',
+    use:()=>{ F().akey=true; R.keyM.visible=false; AudioSys.play('pickup'); pickupMsg('Chave do arsenal'); const o=obj('arsenal'); if(o.state==='active'){ o.text='Pegue as cargas de demolição no arsenal (galpão A) — você tem a chave'; refreshObjectiveUI(); } cp07(); }});
+  I.push({id:'charges',pt:()=>V3(-24.6,.9,-22.9),r:2.3,label:()=>F().gotCharges?null:'Pegar as cargas de demolição',
+    use:()=>{ F().gotCharges=true; F().charges=G.diff==='recruta'?6:G.diff==='veterano'?4:5; AudioSys.play('pickup'); AudioSys.play('cloth'); pickupMsg('Cargas de demolição ×'+F().charges);
+      complete('arsenal'); activate('charges'); refreshCharges07();
+      G.radioMsg('ÉLISE',F().charges>4?'Cinco cargas com espoleta elétrica. Uma de sobra — o tanque elevado ia ficar bonito com ela.':'Quatro cargas. Nenhuma de sobra.'); cp07(); }});
+  I.push({id:'sten',pt:()=>V3(-25.4,1.2,-17),r:2.2,label:()=>F().gotSten?null:'Pegar a Sten capturada (submetralhadora)',
+    use:()=>{ F().gotSten=true; const P=G.player; if(!P.weapons.includes('smg')){ P.weapons.push('smg'); P.ammo.smg={mag:32,reserve:Math.round(64*D().pickups)}; } else { P.ammo.smg.reserve=Math.min(WEAPONS.smg.reserveMax,P.ammo.smg.reserve+64); } AudioSys.play('pickup'); pickupMsg('Sten Mk II (capturada) — tecla 3'); G.hud.ammoT=4; }});
+  R.trucks.forEach(t=>I.push({id:'plant'+t.i,pt:()=>t2w(t,-1.45,1.4,-1.7),r:2.3,skip:true,
+    label:()=>{ if(t.charge||t.state==='WRECK'||t.state==='GONE'||t.state==='BURNING'||!F().gotCharges) return null; if(t.state==='DRIVING'||t.state==='STARTING') return null; return F().charges>0?'Plantar carga no caminhão '+(t.i+1)+' (segure)':'Caminhão '+(t.i+1)+' — sem cargas na mochila'; },
+    locked:()=>!(F().charges>0), hold:()=>F().charges>0?(G.diff==='veterano'?3.8:3.2):0, use:()=>{ if(F().charges>0) plantCharge07(t); }}));
+  I.push({id:'plantT',pt:()=>V3(26.55,1.1,-16.4),r:2.3,label:()=>R.tower.charge||R.tower.state==='GONE'||!(F().charges>0)?null:'Plantar carga no pé do tanque elevado (segure)',hold:()=>3.2,
+    use:()=>{ F().charges--; R.tower.charge=true; R.tower.ch.visible=true; AudioSys.play('cloth'); pickupMsg('Carga plantada · tanque elevado'); cp07(); }});
+  I.push({id:'valve',pt:()=>V3(27.2,1.2,-16.5),r:2.2,label:()=>F().valve||R.tower.state==='GONE'?null:'Abrir a válvula da mangueira (segure)',hold:()=>2,
+    use:()=>{ F().valve=true; AudioSys.play('leak',V3(27.2,1,-16.5),1); pickupMsg('Válvula aberta — gasolina escorrendo pela mangueira'); G.radioMsg('ÉLISE','A mangueira vai até o caminhão 3. Se ele pegar fogo, o fogo sobe pela gasolina até aqui.','tip'); cp07(); }});
+  I.push({id:'gen',pt:()=>V3(-13.5,1.2,2.2),r:2.3,label:()=>F().power===false?null:'Desligar o gerador dos holofotes (segure)',hold:()=>1.6,use:()=>{ powerOff07(false); cp07(); }});
+  I.push({id:'takebook',pt:()=>V3(-10.4,.86,20),r:1.9,label:()=>F().bookTaken?null:'Levar o livro de cifras (eles vão dar falta)',hold:()=>1.2,
+    use:()=>{ F().bookTaken=true; R.book.visible=false; for(const t of W.photo) if(t.id==='cipher') t.taken=true; failObjective('book'); complete('cipher'); AudioSys.play('pickup'); pickupMsg('Livro de cifras');
+      G.radioMsg('YASMINA','Você levou o livro? Ao amanhecer vão dar falta e trocar todas as cifras — Londres fica surda de novo. Bom, agora está feito.','warn'); if(F().allWrecked) activate('escape'); cp07(); }});
+  I.push({id:'det',pt:()=>V3(-38,.7,12),r:2.4,label:()=>{ if(F().detonated) return null; const n=R.trucks.filter(t=>t.charge&&t.state!=='WRECK').length+(R.tower.charge&&R.tower.state!=='GONE'?1:0); return n?'Acionar o detonador ('+n+(n===1?' carga)':' cargas)'):'Detonador — nenhuma carga ligada ao fio'; },
+    locked:()=>!(R.trucks.some(t=>t.charge&&t.state!=='WRECK')||R.tower.charge), hold:()=>.9, use:()=>detonate07()});
+  I.push({id:'car7',pt:()=>V3(-46,1.2,46),r:3.2,skip:true,label:()=>obj('escape').state==='active'?'Entrar no carro de Yasmina':'Yasmina: “Ainda não — os caminhões e o livro primeiro.”',locked:()=>obj('escape').state!=='active',
+    use:()=>{ if(obj('escape').state==='active') missionComplete(); }});
+}
+function pickups07(){
+  addPickup('a_nade1',-20.4,-23.45,'nade',2,.98); addPickup('a_nade2',-19.4,-23.45,'nade',1,.98); addPickup('a_med1',-15.6,-15.6,'med',35,.1);
+  addPickup('a_pis1',-22.6,7.05,'pistol',8,.82); addPickup('a_med2',-5.2,19.7,'med',30,.8); addPickup('a_sil1',-1.6,16.9,'silenced',6,.83);
+  addPickup('a_med3',27.4,17.4,'med',35,.1); addPickup('a_smg1',6,-27.6,'smg',32,.1); addPickup('a_med4',-44,-12,'med',40,.1);
+  G.player.nades=G.player.nades||0;
+}
+function photos07(){ W.photo.push({id:'cipher',label:'Livro de cifras (Schlüsselheft “Mai”)',pos:V3(-10.4,.84,20),normal:V3(0,1,0),max:2.6,obj:'cipher',size:.28,
+  msg:'Schlüsselheft de maio, página por página. Londres vai ler o Afrika Korps até o fim da campanha — desde que o livro continue aqui.',after:()=>{ if(G.flags.allWrecked) activate('escape'); }}); }
+function update07(dt){
+  const P=G.player, F=G.flags, R=G.refs;
+  if(!F.i1&&G.introT>.8){ F.i1=true; G.radioMsg('YASMINA','Estou com o carro no fim do uádi. Cortei o arame do bueiro ontem à noite. Cargas no arsenal, livro de cifras no galpão B. O comboio parte quando o sol nascer.','tip'); }
+  if(!F.i2&&G.introT>10){ F.i2=true; G.radioMsg('DICA','Os holofotes do pátio dependem do gerador ao lado da cabana do Feldwebel. Caminhão: tanque, motor, pneus e cabine são alvos diferentes.','tip'); }
+  // amanhecer
+  const total=G.diff==='recruta'?840:G.diff==='veterano'?540:660;
+  if(!F.allWrecked) F.dawnT=(F.dawnT||0)+dt; const dawn=clamp((F.dawnT||0)/total,0,1); applyDawn07(dawn);
+  if(!F.allWrecked&&!F.depart){ const s=Math.max(0,total-(F.dawnT||0)); G.progress={label:'Amanhecer — o comboio parte em '+Math.floor(s/60)+':'+String(Math.floor(s%60)).padStart(2,'0'),v:1-dawn}; }
+  else if(F.depart&&!F.allWrecked){ const n=R.trucks.filter(t=>t.state==='DRIVING'||t.state==='STARTING').length; G.progress={label:n?'Caminhão a caminho do portão!':'Comboio partindo — próximo caminhão em '+Math.max(0,Math.ceil(F.departT))+' s',v:n?1:clamp(F.departT/16,0,1)}; }
+  else G.progress=null;
+  if(!F.dawnMsg&&dawn>.75&&!F.allWrecked){ F.dawnMsg=true; G.radioMsg('YASMINA','O céu está clareando no leste. Daqui a pouco os motoristas acordam.','warn'); }
+  // entrada
+  if(obj('enter').state==='active'&&P.pos.x>-29.2&&P.pos.x<33.8&&P.pos.z>-29.8&&P.pos.z<25.8){ complete('enter'); G.radioMsg('ÉLISE','Dentro.'); cp07(); }
+  // partida do comboio
+  if(!F.depart&&!F.allWrecked&&(dawn>=1||G.alarm)){ F.depart=true; F.departT=G.alarm?14:6; activate('trucks'); onWreck07();
+    G.radioMsg('RÁDIO','“Motoristas aos caminhões! Kolonne 7, partida imediata!”','warn'); setTimeout(()=>{ if(G&&G.levelId==='07'&&!G.ending) G.radioMsg('DICA','Caminhão em movimento: motor, dois pneus ou o motorista o param. Tanque furado + fogo o destrói.','tip'); },3500); }
+  if(F.depart&&!F.allWrecked){ F.departT-=dt; if(F.departT<=0){ const nx=R.trucks.find(t=>t.state==='PARKED'&&!t.engDead&&!t.tiresOut&&!t.driverDead); if(nx){ startTruck07(nx); G.radioMsg('ALERTA','O caminhão '+(nx.i+1)+' ligou o motor!','warn'); } F.departT=G.diff==='veterano'?12:G.diff==='recruta'?20:16; } }
+  // descoberta de cargas
+  for(const t of R.trucks){ if(!t.charge||(t.state!=='PARKED'&&t.state!=='STOPPED')) { if(t.discE){ susMark(t.discE,null); t.discE=null; } t.disc=0; continue; }
+    const cp=t2w(t,-1.1,1.5,-1.7); let who=null;
+    for(const e of G.enemies){ if(e.dead||e.asleep||e.state==='COMBAT'||e.state==='RADIO') continue; const d=Math.hypot(e.pos.x-cp.x,e.pos.z-cp.z); if(d>3) continue;
+      const lit=lightAt(cp.x,cp.z)>.45||(e.h.lanternLight&&!e.lanternBroken); if(!lit) continue; if(Math.abs(angDiff(e.yaw+e.headYaw,Math.atan2(cp.x-e.pos.x,cp.z-e.pos.z)))>1.1) continue; who=e; break; }
+    if(who){ t.disc+=dt*(G.diff==='veterano'?1.25:G.diff==='recruta'?.7:1); t.discE=who; susMark(who,'q'); if(t.disc>1.4){ t.charge=false; t.ch.visible=false; susMark(who,'x'); t.discE=null; F.found=(F.found||0)+1; F.charges=F.charges||0;
+        G.radioMsg('SENTINELA','“Sprengladung! Uma carga no tanque do caminhão '+(t.i+1)+'!”','warn'); AudioSys.play('shout',who.pos); who.enterCombat(who.pos.x,who.pos.z,true); if(!G.alarm) raiseAlarm(); syncTrucks07(); refreshCharges07(); setTimeout(()=>{ if(who.mark) who.mark.visible=false; },2500); } }
+    else { t.disc=Math.max(0,t.disc-dt*.5); if(t.discE&&t.disc<=0){ susMark(t.discE,null); t.discE=null; } } }
+  // vazamento percebido
+  for(const t of R.trucks){ if(!t.leak||t.leakSeen||t.state==='WRECK') continue; for(const e of G.enemies){ if(e.dead||e.asleep||e.state==='COMBAT') continue; if(Math.hypot(e.pos.x-t.x,e.pos.z-t.z)<7&&lightAt(t.x,t.z)>.35){ t.leakSeen=true; e.awareness=Math.max(e.awareness,.6); e.toInvestigate(t.x+1.8,t.z); G.radioMsg('SENTINELA','“Benzin! O caminhão '+(t.i+1)+' está vazando!”'); break; } } }
+  // caminhões
+  for(const t of R.trucks){
+    if(t.state==='STARTING'){ t.startT-=dt; if(Math.random()<dt*8) FX.puff(t2w(t,.7,.5,-3.9),1,0x3a3632,.6,1.6,V3(0,.6,0),.45); if(t.startT<=0) t.state='DRIVING'; }
+    if(t.state==='DRIVING') driveTruck07(t,dt);
+    if(t.state==='STOPPED'&&t.speed>0){ t.speed=Math.max(0,t.speed-dt*6); t.x+=Math.sin(t.yaw)*t.speed*dt; t.z+=Math.cos(t.yaw)*t.speed*dt; setTruckPose07(t); if(t.speed===0) syncTrucks07(); }
+    if(t.state==='BURNING'){ if(t.speed>0){ t.speed=Math.max(0,t.speed-dt*5); t.x+=Math.sin(t.yaw)*t.speed*dt; t.z+=Math.cos(t.yaw)*t.speed*dt; setTruckPose07(t); }
+      t.burnT-=dt; const top=t2w(t,0,3,-1.25); t.fireL.intensity=1.4+Math.random()*.8; if(Math.random()<dt*22) FX.puff(V3(top.x+rnd(-.8,.8),top.y,top.z+rnd(-.8,.8)),1,Math.random()<.6?0xff8a30:0xffc060,.9,.5,V3(0,2.2,0),.85); if(Math.random()<dt*6) FX.puff(top,1,0x2a2622,1.4,2.6,V3(0,1.8,0),.5); if(Math.random()<dt*3) AudioSys.play('flare',top,.4);
+      if(t.burnT<=0) truckExplode07(t); }
+    if(t.leak&&t.state!=='WRECK'){ if(t.puddle&&t.puddle.scale.x<2.3) t.puddle.scale.setScalar(Math.min(2.3,t.puddle.scale.x+dt*.08)); if(Math.random()<dt*10){ const p=t2w(t,t.leakL[0],t.leakL[1],t.leakL[2]); FX.burst(p,1,0x4a3c22,.8,.45,7,.3); } }
+    if(t.state==='WRECK'&&t.fireLeft>0){ t.fireLeft-=dt; t.smokeT-=dt; const top=t2w(t,0,2.4,-1.25); if(t.smokeT<=0){ t.smokeT=.12; FX.puff(V3(top.x+rnd(-.9,.9),top.y+.4,top.z+rnd(-.9,.9)),1,0x221e1c,1.8,4.2,V3(rnd(-.3,.3),1.8,rnd(-.3,.3)),.55); if(Math.random()<.7) FX.puff(V3(top.x+rnd(-.9,.9),top.y,top.z+rnd(-.9,.9)),1,Math.random()<.5?0xff9a40:0xff6a20,.9,.45,V3(0,1.6,0),.8); }
+      t.fireL.intensity=(1.6+Math.sin(simTime*17+t.i)*.35+Math.random()*.3)*clamp(t.fireLeft/30,.25,1);
+      if(!P.dead&&Math.hypot(P.pos.x-top.x,P.pos.z-top.z)<2.7){ G.deathCause='explosion'; hurtPlayer(16*dt,top); } }
+  }
+  for(const s of R.drums){ if(s.state==='BURN'){ s.t-=dt; if(Math.random()<dt*16) FX.puff(V3(s.x+rnd(-.8,.8),1.9,s.z+rnd(-.8,.8)),1,0xff8a30,.7,.45,V3(0,1.6,0),.8); if(s.t<=0) drumsExplode07(s); }
+    else if(s.state==='GONE'&&s.fireLeft>0){ s.fireLeft-=dt; if(Math.random()<dt*7) FX.puff(V3(s.x+rnd(-1,1),.6,s.z+rnd(-1,1)),1,Math.random()<.5?0xff8a30:0x2a2420,Math.random()<.5?.7:1.4,Math.random()<.5?.5:2.6,V3(0,1.4,0),.6); } }
+  // tanque elevado
+  const TW=R.tower; if(TW.state!=='GONE'&&TW.burnT>0){ TW.burnT-=dt; if(Math.random()<dt*14) FX.puff(V3(28+rnd(-2,2),7.2,-18+rnd(-1,1)),1,0xff8a30,1,.5,V3(0,2,0),.8); if(TW.burnT<=0) towerExplode07(); }
+  if(TW.state==='GONE'&&TW.fireLeft>0){ TW.fireLeft-=dt; if(Math.random()<dt*9) FX.puff(V3(28+rnd(-2,2),4.4+rnd(0,1),-18+rnd(-1.5,1.5)),1,Math.random()<.5?0xff9a40:0x221e1c,Math.random()<.5?1.2:2.4,Math.random()<.5?.6:5,V3(0,2,0),.6); TW.fireL.intensity=2+Math.random()*.6; }
+  if(F.valve&&TW.state!=='GONE'&&!F.trail&&Math.random()<dt*3){ const p=R.hosePts[R.hosePts.length-1]; FX.burst(V3(p[0],.15,p[1]),1,0x4a3c22,.5,.4,7,.3); }
+  if(F.trail&&TW.state!=='GONE'){ G.trailT07=(G.trailT07||0)+dt; const pts=R.hosePts, k=clamp(1-G.trailT07/3.4,0,1)*(pts.length-1); const i0=Math.floor(Math.min(k,pts.length-2)), f=k-i0; const a=pts[i0],b=pts[i0+1]; const p=V3(lerp(a[0],b[0],f),.25,lerp(a[1],b[1],f));
+    for(let n=0;n<2;n++) FX.puff(V3(p.x+rnd(-.2,.2),.3,p.z+rnd(-.2,.2)),1,0xff9a40,.55,.5,V3(0,1.2,0),.85); if(Math.random()<dt*4) AudioSys.play('flare',p,.5);
+    if(G.trailT07>=3.4&&!(TW.burnT>0)) TW.burnT=.3; }
+  // sequência da detonação
+  if(G.seq07){ G.seqT07+=dt; for(const ev of G.seq07){ if(!ev.done&&G.seqT07>=ev.t){ ev.done=true; ev.fn(); } } if(G.seq07.every(e=>e.done)) G.seq07=null; }
+  if(F.cpWreck>0){ F.cpWreck-=dt; if(F.cpWreck<=0){ F.cpWreck=0; cp07(); } }
+  // marcador dos caminhões
+  F.mkT=(F.mkT||0)-dt; if(F.mkT<=0){ F.mkT=.8; const o=obj('trucks'); if(o.state==='active'){ const nx=nearestTruck07(t=>t.state!=='WRECK'&&t.state!=='GONE'); if(nx){ o.marker={x:nx.x,z:nx.z}; refreshObjectiveUI(); } } if(obj('charges').state==='active') refreshCharges07(); }
+  if(F.allWrecked&&obj('cipher').state==='done'&&obj('escape').state==='hidden') activate('escape');
+  if(G.alarm&&!F.detonated&&!F.alarmEarly) F.alarmEarly=true;
+  if(G.alarm&&obj('quiet').state==='active') failObjective('quiet');
+  if(G.alarm&&!F.gateOpen){ F.gateOpen=true; const gd=W.doors.gate; if(gd&&gd.state==='CLOSED') openDoor(gd,null); }
+  // gerador: ronco enquanto ligado
+  if(F.power!==false){ F.genT=(F.genT||0)-dt; if(F.genT<=0){ F.genT=.42; if(Math.hypot(P.pos.x+13.5,P.pos.z-2.2)<16) AudioSys.play('engine',V3(-13.5,1,2.2),.22); } }
+}
+function updateHUD07(dt){
+  const el=$('#convChip'); if(!G||G.levelId!=='07'||!G.refs.trucks){ if(el) el.hidden=true; return; } el.hidden=false; const R=G.refs, F=G.flags;
+  const cls=t=>t.state==='WRECK'?'wreck':t.state==='BURNING'?'burn':(t.state==='DRIVING'||t.state==='STARTING')?'mov':(t.engDead||t.tiresOut||t.driverDead||t.state==='STOPPED')?'dis':t.charge?'chg':'';
+  const sig=R.trucks.map(t=>cls(t)+(t.leak?'L':'')).join(',')+'|'+(F.charges||0)+'|'+(F.depart?1:0);
+  if(el.dataset.sig===sig) return; el.dataset.sig=sig;
+  const wrecks=R.trucks.filter(t=>t.state==='WRECK').length;
+  el.className='disg conv '+(wrecks>=4?'ok':F.depart?'bad':'');
+  $('#convState').textContent=wrecks>=4?'destruído':F.depart?'partindo':'estacionado';
+  $('#convRow').innerHTML=R.trucks.map(t=>'<span class="trk '+cls(t)+'">'+(t.i+1)+(t.charge?'·C':'')+(t.leak&&t.state!=='WRECK'?'·V':'')+'</span>').join('');
+  $('#convSub').textContent=F.gotCharges?'Cargas na mochila: '+(F.charges||0):'Cargas: no arsenal';
+}
+function restore07(s){
+  const F=G.flags, R=G.refs;
+  if(F.power===false) powerOff07(true);
+  if(F.akey) R.keyM.visible=false; if(F.bookTaken) R.book.visible=false;
+  for(const d of R.drums) if(F['drums_'+d.id]){ d.state='GONE'; if(d.im) d.im.visible=false; d.solid.active=false; }
+  if(F.trk){ const A=JSON.parse(F.trk); A.forEach((a,i)=>{ const t=R.trucks[i]; t.x=a.x; t.z=a.z; t.yaw=a.y; setTruckPose07(t); t.tankHp=a.th; t.engHp=a.eh; t.engDead=!!a.ed; t.driverDead=!!a.dd; t.pathI=a.pi||0;
+      a.fl.forEach((f,k)=>{ if(f) flatTire07(t,t.tires[k]); }); if(t.flat>=2) t.tiresOut=true; if(a.c){ t.charge=true; t.ch.visible=true; }
+      if(a.lk) startLeak07(t,t2w(t,-1,1.8,-1.2));
+      if(a.s==='WRECK'){ t.state='WRECK'; wreckVisual07(t); scorchMark(V3(t.x,.02,t.z),3.4); }
+      else if(a.s==='BURNING'){ t.state='PARKED'; ignite07(t,1.2); }
+      else if(a.s==='DRIVING'||a.s==='STARTING'){ t.state='DRIVING'; t.speed=0; }
+      else t.state=a.s==='GONE'?'PARKED':a.s; }); }
+  if(F.twr){ const a=JSON.parse(F.twr); R.tower.hp=a.hp; if(a.c){ R.tower.charge=true; R.tower.ch.visible=true; } if(a.s==='GONE'){ R.tower.state='GONE'; towerWreck07(); } }
+  if(F.detonated) G.seq07=null;
+  syncTrucks07();
+  G.player.nades=G.player.nades||0;
+}
+function drawMap07(g,w,h){
+  g.fillStyle='#e6d6b8'; g.fillRect(0,0,w,h); const S=w/100, X=x=>(x+56)*S, Z=z=>(z+40)*S;
+  const rect=(x0,x1,z0,z1,fill,stroke)=>{ g.fillStyle=fill; g.fillRect(X(x0),Z(z0),(x1-x0)*S,(z1-z0)*S); if(stroke){ g.strokeStyle=stroke; g.lineWidth=2; g.strokeRect(X(x0),Z(z0),(x1-x0)*S,(z1-z0)*S); } };
+  rect(-52,-36,-40,52,'#d8c49c',null); rect(-30,34,-30,26,'#ddd0b0','#5a4a32');
+  rect(-26,-14,-24,-14,'#b8a07a','#4a3a22'); rect(-26,-19,2,8,'#c4ae88','#4a3a22'); rect(-12,-1,12,22,'#b8a07a','#4a3a22'); rect(-12,-4,-27.4,-21,'#cbb894',null); rect(18,28,14,22,'#cbb894',null);
+  g.fillStyle='#6a5a3a'; for(const x of [2,9,16,23]) g.fillRect(X(x-1.1),Z(-.4),2.2*S,8.2*S);
+  g.fillStyle='#8a2a1a'; g.beginPath(); g.arc(X(28),Z(-18),2.2*S,0,7); g.fill(); g.fillStyle='#3a3020'; for(const [x,z] of [[12.5,4],[23.7,-20.3],[-3.7,2.3]]){ g.beginPath(); g.arc(X(x),Z(z),.9*S,0,7); g.fill(); }
+  g.strokeStyle='#2a2418'; g.lineWidth=1.5; g.setLineDash([3,3]); g.beginPath(); g.moveTo(X(27.2),Z(-16.4)); g.lineTo(X(24),Z(-12)); g.lineTo(X(20.6),Z(-6.4)); g.lineTo(X(17.6),Z(1.6)); g.stroke(); g.setLineDash([]);
+  g.fillStyle='#2a2418'; g.textAlign='center'; const t=(s,x,z,f)=>{ g.font=f||'12px serif'; g.fillText(s,X(x),Z(z)); };
+  t('A — arsenal',-20,-19); t('B — transmissões',-6.5,17.4); t('Feldwebel',-22.5,5.4,'11px serif'); t('(chave)',-22.5,6.9,'italic 10px serif'); t('gerador',-13.5,0.4,'italic 11px serif');
+  t('KOLONNE 7',12.5,10,'bold 13px serif'); for(const x of [2,9,16,23]) t(String((x-2)/7+1),x,-1.6,'bold 11px serif'); t('tanque elevado',28,-21.6,'11px serif'); t('mangueira',23.5,-9,'italic 10px serif'); t('tambores',12.5,6.6,'italic 10px serif');
+  t('barracas',-8,-21.6,'11px serif'); t('motoristas',23,17.6,'11px serif'); t('portão',0,-32,'11px serif'); t('UÁDI',-44,0,'bold 14px serif'); t('bueiro',-32,11.6,'italic 11px serif'); t('detonador',-42,10,'italic 11px serif'); t('carro',-46,49,'italic 11px serif');
+  g.fillStyle='#4a3a22'; for(const [x,z] of [[-27.5,-27.5],[31.5,23.5]]){ g.fillRect(X(x)-4,Z(z)-4,8,8); } t('torre',-27.5,-30.4,'10px serif'); t('torre',31.5,28,'10px serif');
+  g.strokeStyle='#8a2a1a'; g.lineWidth=2; g.setLineDash([5,4]); g.beginPath(); g.moveTo(X(-44),Z(40)); g.lineTo(X(-44),Z(14)); g.lineTo(X(-30),Z(14)); g.stroke(); g.setLineDash([]);
+}
+DOCS.planta07={title:'Oued el-Kebir',sub:'Croqui de Yasmina — parque de combustível da Nachschub-Kp. 309',map:'07',body:'',pencil:'Arame do bueiro já cortado. O fio do detonador passa por ali. Os caminhões ficam lado a lado, de frente para o portão.'};
+DOCS.nota07={title:'Bilhete de Yasmina',sub:'escrito a lápis, atrás de um maço de cigarros',body:`O Feldwebel guarda a chave do arsenal num
+quadro de pregos na cabana dele. Ele sai
+de vez em quando para ver o gerador.
+Sem chave: o cadeado cede com o pé de
+cabra, mas faz barulho.
+
+Os tambores entre o 2 e o 3 estão cheios.
+Se um caminhão for, o vizinho vai junto.
+
+O 3 abastece pela mangueira do tanque
+elevado. Válvula no pé da torre.
+
+O livro de cifras fica no escritório do
+galpão B. Fotografe. NÃO leve — se sumir,
+trocam as cifras no mesmo dia.`,pencil:'Comboio parte às 05h30, com o sol.'};
+LEVELS['07']={id:'07',num:7,op:'Operação 7',name:'Areias em Chamas',place:'Oued el-Kebir, Tunísia central',prev:'06',
+  loadout:{weapons:['silenced','pistol'],ammo:{silenced:{mag:6,reserve:12},pistol:{mag:8,reserve:16}},cur:'silenced',camera:true},baseLight:.22,lightFn:light07,tropical:true,shadows:true,bloomTh:.78,grenades:true,
+  build:()=>{ const r=buildLevel07(); photos07(); return r; },enemies:ENEMY_DEFS_07,ally:null,start:{x:-44,z:36,yaw:-.12},startDocs:['planta07','nota07'],drawMap:drawMap07,
+  reinf:[{id:'n1',x:-9,z:-23,weapon:'smg',helmet:true,nades:1},{id:'n2',x:-6.4,z:-22.6,weapon:'rifle',helmet:true},{id:'n3',x:2,z:-44,weapon:'rifle',helmet:true},{id:'n4',x:-2,z:-46,weapon:'smg',helmet:true,nades:1}],
+  radio:{x:-2.7,z:15.6,fx:-1.6,fz:15.6},radioRun:'O operador corre para o rádio do galpão B!',alarmPos:V3(-1.6,1.4,15.6),alarmText:'Alarme em Oued el-Kebir! A guarnição corre para o pátio dos caminhões.',alarmObjective:null,
+  alarmYes:'O depósito acordou antes da hora. ',alarmLate:'O depósito só acordou com as explosões. ',alarmNo:'',alarmOk:()=>!!(G&&G.flags.detonated&&!G.flags.alarmEarly),deathText:'A guarnição de Oued el-Kebir cercou o pátio dos caminhões.',
+  objectives:objectives07,interact:interact07,pickups:pickups07,update:update07,restore:restore07,onExplode:onExplode07,
+  resultTitle:'Areias em chamas',outro:['YASMINA','Quatro colunas de fumaça no retrovisor. Sem gasolina, os Panzer do setor sul vão esperar parados.'],menuCam:{cx:-40,cz:24,y:4,tx:0,tz:2},ambient:'dawn',
+  mist:{n:14,x0:-52,x1:36,z0:-40,z1:50,color:0x6a7088},
+  briefing:{meta:'TUNÍSIA CENTRAL — 29 DE ABRIL DE 1943 — 04h40',paras:['A foto do quadro no Bordj el-Hamra deu a rota: a Kolonne 7 — quatro caminhões-tanque com 18 mil litros de gasolina — passa a noite no depósito de Oued el-Kebir e parte com o sol para abastecer os blindados do setor sul.','Élise entra pelo bueiro do uádi, onde Yasmina cortou o arame. No arsenal estão as cargas de demolição; no galpão de transmissões, o livro de cifras de maio. Fotografe o livro sem levá-lo, prenda uma carga em cada caminhão e acione o detonador do lado de fora. Se o depósito acordar, o comboio tenta sair pelo portão — e nenhum caminhão pode passar.'],list:['Entrar pelo bueiro; cargas no arsenal (chave com o Feldwebel)','Fotografar o livro de cifras no galpão B — sem levá-lo','Cargas nos quatro caminhões, detonador no uádi, fuga com Yasmina']}};
+LEVEL_ORDER.push('07');
+
+
+/* =========================================================
+   AJUSTES — corpos que somem, reiniciar fase,
+   inspeção de documentos (fase 6) com passe na tela
+   ========================================================= */
+Enemy.prototype.fadeBody=function(){
+  const t=this.deathT-5; if(t<=0) return;
+  this.h.root.position.y-=Math.min(1,t)*.75;
+  if(t>=1){ this.gone=true; this.h.root.visible=false; const me=this; W.shootables=W.shootables.filter(m=>m.userData.char!==me);
+    if(this.h.lanternLight) this.h.lanternLight.intensity=0; if(this.mark) this.mark.visible=false; }
+};
+function restartLevel(){ if(!G) return; const id=G.levelId, d=G.diff, keep=settings.difficulty; store.del('sdp_checkpoint'); settings.difficulty=d; startPlaying(null,id); settings.difficulty=keep; }
+/* ---- inspeção ---- */
+function clearInspect(e,line){
+  e.sus=0; e.clearedT=simTime; e.waitT2=0; G.inspector=null; G.escort=null; e.aimTarget=0; e.toReturn(); G.stats.inspections=(G.stats.inspections||0)+1;
+  G.radioMsg('SENTINELA',line||(G.cred>=2?'“Passe vermelho, carimbo do comandante… Certo. Pode seguir.”':'“Intérprete da Intendência, assinado pelo major… Certo. Pode seguir.”'));
+}
+function showPapers(e){
+  if(!e||e.dead||!disguiseOn()||G.papers) return; const P=G.player;
+  const d=Math.hypot(P.pos.x-e.pos.x,P.pos.z-e.pos.z); if(d>3.8){ showHint('Chegue mais perto do guarda para entregar o passe.'); return; }
+  if(!P.holster){ P.holster=true; P.adsT=0; e.sus=Math.min(.95,(e.sus||0)+.12); }
+  if(G.camMode) toggleCamera();
+  AudioSys.play('cloth'); G.papers={e,t:0,dur:G.diff==='veterano'?2.8:2.2}; e.waitT2=0; e.reached=true; papersCard(true);
+}
+function papersCard(on,ok){
+  const el=$('#papersCard'); if(!el) return;
+  if(on){ const red=G.cred>=2; el.className='papers'+(red?' red':''); el.innerHTML='<div class="pc-h">PASSIERSCHEIN · Nr. 0417</div><div class="pc-n">MOREL, Élise</div><div class="pc-r">Dolmetscherin — Intendantur Tunis</div>'
+      +'<div class="pc-z">'+(red?'Zutritt: <b>Hof · Stab · Turm · Treibstofflager</b>':'Zutritt: <b>Hof · Stab · Kantine</b>')+'</div><div class="pc-s">gez. Maj. A. Kessel</div>'+(red?'<div class="pc-red">SPERRGEBIET</div>':'')+'<div class="pc-stamp">INTENDANTUR<br>TUNIS</div>';
+    el.hidden=false; void el.offsetWidth; el.classList.add('show'); }
+  else { const hide=()=>{ el.classList.remove('show'); setTimeout(()=>{ if(!G||!G.papers) el.hidden=true; },300); };
+    if(ok!==undefined){ el.classList.add(ok?'okd':'bad'); setTimeout(()=>{ if(!G||!G.papers) hide(); },950); } else hide(); }
+}
+function inspectTick(dt){
+  if(!G||!G.disguise) return; const P=G.player;
+  const S=G.papers;
+  if(S){ const e=S.e; if(!disguiseOn()||e.dead){ G.papers=null; papersCard(false); return; }
+    S.t+=dt; e.waitT2=0; const d=Math.hypot(P.pos.x-e.pos.x,P.pos.z-e.pos.z);
+    if(d>4.6){ G.papers=null; papersCard(false,false); blowDisguise(e,'fuga'); return; }
+    if(S.t>=S.dur){ G.papers=null; const zl=G.level.zoneAt(P.pos.x,P.pos.z,P.pos.y);
+      if(zl<=G.cred){ papersCard(false,true); clearInspect(e); }
+      else if(!G.flags.zoneWarned){ papersCard(false,false); G.flags.zoneWarned=1; G.escort={e,t:G.diff==='veterano'?8:G.diff==='recruta'?14:11};
+        G.radioMsg('SENTINELA','“Este passe não vale aqui — área restrita! Volte para o pátio. Agora.”','warn'); AudioSys.play('shout',e.pos); }
+      else { papersCard(false,false); blowDisguise(e,'credencial'); } } }
+  const E=G.escort;
+  if(E){ if(!disguiseOn()||E.e.dead){ G.escort=null; return; } E.t-=dt; const zl=G.level.zoneAt(P.pos.x,P.pos.z,P.pos.y);
+    if(zl<=G.cred){ clearInspect(E.e,'“Assim está melhor. Sem passe vermelho, não quero ver você lá de novo.”'); }
+    else if(E.t<=0){ G.escort=null; blowDisguise(E.e,'credencial'); } }
+}
+function inspectHUD(){
+  const box=$('#inspBox'); if(!box) return; const e=G&&G.inspector;
+  if(!G||!G.disguise||!disguiseOn()||!e||e.dead){ box.hidden=true; return; }
+  const P=G.player, d=Math.hypot(P.pos.x-e.pos.x,P.pos.z-e.pos.z); let t,s,v,cls='';
+  if(G.escort){ t='Área restrita'; s='Volte para uma área do seu passe'; v=G.escort.t/(G.diff==='veterano'?8:G.diff==='recruta'?14:11); cls='bad'; }
+  else if(G.papers){ t='O guarda examina os papéis…'; s='Fique perto e não se mexa muito'; v=G.papers.t/G.papers.dur; cls='go'; }
+  else if(!e.reached&&d>3.8){ t='Inspeção de documentos'; s=(P.holster?'Pare e espere o guarda chegar':'Guarde a arma (H) e espere o guarda'); v=1; }
+  else { t='“Documentos!”'; s=(APP.touch?'USAR':'E')+' — entregar o passe'+(P.holster?'':' (a arma será guardada)'); v=clamp(1-(e.waitT2||0)/7,0,1); cls='warn'; }
+  box.hidden=false; box.className='insp '+cls; $('#inspT').textContent=t; $('#inspS').textContent=s; $('#inspB').style.width=(v*100).toFixed(1)+'%';
+}
+
+
+/* =========================================================
+   OPERAÇÃO 8 — Bir Zitoun / Henchir Souar (30/04/1943, 13h)
+   fuzil com luneta, visão ampliada, aliada Yasmina,
+   defesa da retirada até a patrulha do LRDG
+   ========================================================= */
+WEAPONS.rifle={id:'rifle',name:'Lee-Enfield Nº 4 (T)',cat:'Fuzil com luneta',mode:'FERROLHO',auto:false,scope:true,rpm:46,dmg:120,mag:5,reserveMax:40,reload:{out:.45,in:2.3,end:2.9},spreadHip:3.4,spreadADS:.04,bloom:1.4,recoil:2.4,recoilX:.3,adsTime:.32,noise:46,falloff:[70,170,.8],fovADS:15,ammoName:'munição .303'};
+EW.mg={dmg:8,interval:.075,burst:[7,14],pause:[1,1.8],mag:75,reload:4.2,spread:2.4,noise:46,len:.62,drop:{type:'smg',n:24}};
+function buildVM08(B,M){
+  const g=new T.Group(); const wood=new T.MeshPhongMaterial({color:0x6a4a2c,shininess:14,specular:0x151515});
+  B(g,.05,.07,.62,0,-.02,-.12,wood); B(g,.045,.12,.2,0,-.07,.22,wood,-.2); B(g,.022,.022,.5,0,.01,-.62,M.gun); B(g,.03,.03,.16,0,.02,-.34,M.gun);
+  const sc=new T.Mesh(new T.CylinderGeometry(.022,.022,.3,10),M.gun); sc.rotation.x=Math.PI/2; sc.position.set(0,.075,-.08); g.add(sc);
+  for(const z of [-.24,.08]){ const r=new T.Mesh(new T.CylinderGeometry(.028,.028,.05,10),M.gun); r.rotation.x=Math.PI/2; r.position.set(0,.075,z); g.add(r); }
+  B(g,.012,.04,.012,.03,.02,.02,M.gun); const bolt=new T.Mesh(new T.SphereGeometry(.014,8,6),M.gun); bolt.position.set(.045,.03,.03); g.add(bolt);
+  const mag=new T.Group(); g.add(mag); B(mag,.035,.07,.06,0,-.08,-.05,M.gun);
+  B(g,.05,.07,.08,0,-.07,.1,M.skin); B(g,.062,.062,.3,.03,-.12,.26,M.sleeve,-.25); B(g,.05,.06,.07,-.02,-.06,-.36,M.skin); B(g,.06,.06,.3,-.07,-.11,-.22,M.sleeve,-.5);
+  const muzzle=new T.Object3D(); muzzle.position.set(0,.01,-.88); g.add(muzzle);
+  VM.models.rifle={g,mag,muzzle,hip:V3(.15,-.13,-.36),ads:V3(0,-.075,-.3),magHome:mag.position.clone()};
+}
+function scoped(){ const P=G.player, w=WEAPONS[P.cur]; const on=!!(w&&w.scope&&P.adsT>.86&&!G.camMode&&!P.dead&&!P.holster); const el=$('#scope'); if(el&&el.hidden===on) el.hidden=!on; const ch=$('#crosshair'); if(ch) ch.style.visibility=on?'hidden':''; return on; }
+/* ---- veículos que se movem ---- */
+function makeCargo08(x,z,yaw,lrdg){
+  const g=new T.Group(); g.position.set(x,0,z); g.rotation.y=yaw; scene.add(g);
+  const v={g,x,z,yaw,speed:0,pathI:0,state:'IDLE',lrdg:!!lrdg};
+  const col=lrdg?0xc8a48c:0x8a8064, body=hm(col), dark=hm(0x2a2824);
+  const part=(w,h,d,px,py,pz,m,surf)=>{ const o=new T.Mesh(BOX(w,h,d),m); o.position.set(px,py,pz); o.userData.mat=surf||'metal'; g.add(o); W.shootables.push(o); return o; };
+  part(2,.3,7.6,0,.8,.2,dark); part(2.2,1.3,1.6,0,1.65,2.4,body); part(1.7,.8,1.1,0,1.3,3.75,body);
+  if(lrdg){ part(2.2,.6,4.6,0,1.25,-1.4,body,'wood'); for(const s of [-1,1]) part(.06,.5,4.4,s*1.08,1.8,-1.4,body,'wood'); const gun=new T.Group(); gun.position.set(0,2.2,-.2); g.add(gun); const b=new T.Mesh(new T.CylinderGeometry(.035,.035,.9,8),dark); b.rotation.x=Math.PI/2; b.position.z=.4; gun.add(b); const dr=new T.Mesh(new T.CylinderGeometry(.13,.13,.05,12),dark); dr.position.set(0,.12,.1); gun.add(dr); gun.add(new T.Mesh(BOX(.06,.5,.06),dark)); v.gun=gun;
+    for(const k of [-2.6,-1.8]) part(.5,.5,.5,.5,1.7,k,hm(0x6a6a50),'wood'); part(.9,.06,.3,0,2.45,2.4,hm(0x3a3a2e)); }
+  else { part(2.2,.5,4.6,0,1.2,-1.4,body,'wood'); const cv=new T.Mesh(new T.CylinderGeometry(1.15,1.15,4.6,12,1,true,-Math.PI/2,Math.PI),hm(0x7a7458)); cv.material.side=T.DoubleSide; cv.rotation.x=Math.PI/2; cv.position.set(0,1.5,-1.4); cv.scale.y=1; g.add(cv); }
+  v.tires=[]; for(const [a,b] of [[-1,-2.6],[1,-2.6],[-1,-1.5],[1,-1.5],[-1,3.5],[1,3.5]]){ const w=new T.Mesh(new T.CylinderGeometry(.44,.44,.28,12),MAT.tire); w.rotation.z=Math.PI/2; w.position.set(a*1.0,.44,b); g.add(w); v.tires.push(w); }
+  v.solid=addSolidOnly(0,0,0,0,2.6,0,true); truckBox07(v); return v;
+}
+function driveVeh08(v,dt){
+  const path=v.path, wp=path[Math.min(v.pathI,path.length-1)], P=G.player;
+  const fx=Math.sin(v.yaw), fz=Math.cos(v.yaw), ax=v.x+fx*5, az=v.z+fz*5;
+  const blocked=!P.dead&&Math.hypot(P.pos.x-ax,P.pos.z-az)<2.8;
+  const last=v.pathI>=path.length-1, dist=Math.hypot(wp[0]-v.x,wp[1]-v.z);
+  const vmax=last?Math.min(9,dist*.9+.5):9;
+  v.speed=blocked?Math.max(0,v.speed-dt*10):Math.min(vmax,v.speed+dt*3);
+  const want=Math.atan2(wp[0]-v.x,wp[1]-v.z); v.yaw+=clamp(angDiff(v.yaw,want),-1,1)*Math.min(1.2,.3+v.speed*.2)*dt;
+  v.x+=Math.sin(v.yaw)*v.speed*dt; v.z+=Math.cos(v.yaw)*v.speed*dt; setTruckPose07(v);
+  for(const w of v.tires) w.rotation.x+=v.speed*dt/.44;
+  v.engT=(v.engT||0)-dt; if(v.engT<=0){ v.engT=.35; AudioSys.play('engine',V3(v.x,1,v.z),.9); }
+  if(Math.random()<dt*8&&v.speed>2) FX.puff(t2w(v,rnd(-1,1),.3,-4),1,0xc8b08a,1.2,1.6,V3(0,.5,0),.35);
+  if(dist<2.4){ if(last){ v.speed=0; v.state='ARRIVED'; return true; } v.pathI++; }
+  return false;
+}
+/* ---- dados ---- */
+const ENEMY_DEFS_08=[
+  {id:'spot',x:-15.5,z:-13.5,yaw:-Math.PI/2-.2,weapon:'rifle',helmet:true,fixed:true,sight:1.45},
+  {id:'mg1',x:-22.6,z:2,yaw:-Math.PI/2,weapon:'smg',helmet:true,fixed:true,mg:true},
+  {id:'mg2',x:4,z:23,yaw:0,weapon:'smg',helmet:true,fixed:true,mg:true},
+  {id:'ten',x:-4,z:9.4,yaw:Math.PI/2,weapon:'pistol',officer:true},
+  {id:'g1',x:3.8,z:9,yaw:-Math.PI/2,weapon:'rifle',helmet:true},
+  {id:'p1',x:-21,z:-19,weapon:'rifle',helmet:true,patrol:[[-21,-19],[21,-19],[21,19],[-21,19]]},
+  {id:'p2',x:-9,z:-1,weapon:'smg',patrol:[[-9,-1],[9,-1.4],[9,-9],[-9,-9]]},
+  {id:'w1',x:-1.4,z:3.4,yaw:2.6,weapon:'rifle'},
+  {id:'r1',x:11.6,z:-21,yaw:-1.2,weapon:'rifle'},
+  {id:'r2',x:14,z:-25.6,yaw:2.8,weapon:'rifle',helmet:true,sleep:true},
+  {id:'pl1',x:-58,z:-22,weapon:'rifle',helmet:true,patrol:[[-58,-22],[-46,4],[-58,30],[-46,4]]},
+  {id:'pl2',x:41,z:-8,yaw:-.4,weapon:'rifle',helmet:true},
+  {id:'h1',x:73.4,z:24,yaw:Math.PI,weapon:'rifle'},
+];
+let BUSH08=[];
+function light08(x,z){
+  for(const b of BUSH08){ const dx=x-b[0], dz=z-b[1]; if(dx*dx+dz*dz<b[2]*b[2]) return .24; }
+  if(x>6&&x<12&&z>6&&z<12) return .4; if(x>-8&&x<0&&z>6&&z<12.4) return .5;
+  return .88;
+}
+function buildLevel08(){
+  M5=mats05(); M6=mats06(); const M=M6;
+  scene.background=new T.Color(0xc8d0d8); scene.fog=new T.FogExp2(0xd8ccb4,.0042);
+  skyDome(808,[[0,'#3e6a9c'],[.3,'#6a94bc'],[.44,'#b8c8d4'],[.5,'#e8dcc4'],[.53,'#c8a882'],[1,'#8a6a4a']],null,6);
+  scene.add(new T.HemisphereLight(0xc8d8f0,0xa88a64,.72));
+  const sun=new T.DirectionalLight(0xfff0d8,1.15); sun.target.position.set(0,0,0); sun.position.set(-34,80,26); scene.add(sun); scene.add(sun.target);
+  scene.add(new T.AmbientLight(0x7a6a5a,.34));
+  // ---- terreno ----
+  floorPlane(290,210,10,-2,M.sand,'stone',0);
+  floorPlane(6,80,40,-55,M.road,'stone',.01); floorPlane(40,5,26,24,M.road,'stone',.011); floorPlane(76,46,88,0,M.road,'stone',.012);
+  const rock=(x0,x1,z0,z1,h)=>addBlock(x0,x1,z0,z1,h,{mat:M.rock,surf:'stone',top:M.rock,seg:4});
+  rock(-128,36,-104,-96,5); rock(44,146,-104,-96,5); rock(-128,146,96,104,4.5); rock(-128,-118,-96,96,9); rock(138,146,-96,-12,4.5); rock(138,146,12,96,4.5);
+  addSolidOnly(36,44,-108,-107.6,6); addSolidOnly(150,150.4,-12,12,6);
+  for(const [x,z,s] of [[-40,-70,9],[10,-75,8],[60,-70,10],[100,-60,7],[-30,70,9],[30,72,8],[120,60,9],[-60,60,7],[80,80,6]]){ const d=new T.Mesh(new T.SphereGeometry(s,16,8,0,Math.PI*2,0,Math.PI/2),M.dune); d.scale.y=.22; d.position.set(x,0,z); scene.add(d); }
+  // planalto (crista) a oeste
+  addWalk(-118,-80,-50,46,4.2,{mat:M.rock,top:M.rock,seg:4});
+  stairSteps('x',-80,1,-30,-26.8,4.0,20,M.rock,M.rock); stairSteps('x',-80,1,24,27.2,4.0,20,M.rock,M.rock);
+  const boulder=(x,z,s,h,y0)=>{ const m=new T.Mesh(new T.DodecahedronGeometry(s,0),M.rock); m.scale.set(1,h/s/2,1); m.position.set(x,(y0||0)+h*.45,z); m.rotation.y=x*.7; m.userData.mat='stone'; scene.add(m); W.shootables.push(m); addSolidOnly(x-s*.75,x+s*.75,z-s*.75,z+s*.75,h*.9,y0||0,true); };
+  for(const [x,z,s,h] of [[-86,-14,1.4,1.5],[-84,8,1.6,1.4],[-88,22,1.2,1.3],[-98,-30,1.8,2],[-100,14,1.5,1.6],[-84,-38,1.3,1.4],[-96,36,1.6,1.8]]) boulder(x,z,s,h,4.2);
+  for(const [x,z,s,h] of [[-62,-6,1.5,1.4],[-52,20,1.3,1.2],[-44,-24,1.6,1.5],[-34,6,1.2,1.1],[-66,34,1.4,1.3],[-28,-30,1.5,1.4],[-38,32,1.3,1.2],[26,-34,1.6,1.5],[30,8,1.3,1.2],[46,26,1.4,1.3],[56,-30,1.5,1.4],[34,40,1.6,1.6],[-70,-34,1.4,1.4]]) boulder(x,z,s,h,0);
+  // arbustos de espinho (camuflagem)
+  BUSH08=[]; const bush=(x,z,r)=>{ BUSH08.push([x,z,r]); const R=mulberry32(Math.round(x*31+z*7)); for(let k=0;k<4;k++){ const m=new T.Mesh(new T.SphereGeometry(r*(.45+R()*.25),7,5),M.shrub); m.scale.y=.55; m.position.set(x+(R()-.5)*r*.9,.25+R()*.25,z+(R()-.5)*r*.9); scene.add(m); } };
+  for(const [x,z,r] of [[-72,-14,1.7],[-68,12,1.6],[-60,-30,1.8],[-56,6,1.6],[-50,-12,1.7],[-48,28,1.5],[-42,-4,1.8],[-36,18,1.6],[-32,-16,1.5],[-28,26,1.7],[-26,-6,1.5],[-62,40,1.6],[-74,26,1.5],[24,-12,1.6],[28,20,1.7],[36,-22,1.5],[48,6,1.8],[52,-16,1.6],[44,34,1.5],[58,22,1.6],[64,40,1.7],[34,-44,1.6],[-14,30,1.6],[14,30,1.5],[-30,-40,1.6]]) bush(x,z,r);
+  // caminhão do LRDG emboscado + sargento morto
+  { const ch=hm(0x262220), pk=hm(0x7a5a48), Y=4.2;
+    addBlock(-95,-87.6,-6.9,-5.1,.22,{y0:Y+.5,mat:ch,surf:'metal',seg:1}); addBlock(-95,-90.6,-7.1,-4.9,.12,{y0:Y+.72,mat:pk,surf:'wood',seg:1});
+    for(const z of [-7.1,-5.02]) addBlock(-95,-90.6,z,z+.08,.5,{y0:Y+.84,mat:pk,surf:'wood',seg:1}); addBlock(-95.08,-95,-7.1,-4.9,.5,{y0:Y+.84,mat:pk,surf:'wood',seg:1});
+    addBlock(-90.4,-89,-7,-5,.55,{y0:Y+.72,mat:ch,surf:'metal',seg:1}); addBlock(-89,-87.6,-6.7,-5.3,.7,{y0:Y+.72,mat:pk,surf:'metal',seg:1}); addBlock(-89.05,-88.95,-6.9,-5.1,.5,{y0:Y+1.42,mat:ch,surf:'metal',seg:1,solid:false});
+    addSolidOnly(-95.1,-87.5,-7.2,-4.8,1.5,Y,true);
+    for(const [a,b,fl] of [[-93.6,-7.25,1],[-93.6,-4.75,0],[-88.4,-7.25,0],[-88.4,-4.75,1]]){ const w=addMesh(new T.CylinderGeometry(.44,.44,.26,10),MAT.tire,a,Y+(fl?.3:.44),b,'metal'); w.rotation.x=Math.PI/2; if(fl) w.scale.z=.7; }
+    for(let k=0;k<6;k++) FX&&0;
+    const vk=new T.Mesh(new T.CylinderGeometry(.03,.03,.9,8),ch); vk.rotation.z=1.2; vk.position.set(-91.6,Y+1.6,-6); scene.add(vk);
+    for(let k=0;k<4;k++) addMesh(BOX(.5,.4,.6),hm(0x5a5a46),-96.2+k*.2,4.4,-9+k*.7,'wood').rotation.y=k;
+    const body=new T.Group(); body.position.set(-91.6,4.32,-9.2); body.rotation.y=.4; const kh=hm(0xa8946a); const bp=(w,h,d,x,y,z,m)=>{ const o=new T.Mesh(BOX(w,h,d),m||kh); o.position.set(x,y,z); body.add(o); };
+    bp(.4,.2,.7,0,0,0); bp(.18,.16,.2,0,.02,.48,hm(0xb88a64)); bp(.2,.16,.24,0,.08,.48,hm(0x8a7a50)); bp(.14,.12,.6,-.12,0,-.64,hm(0x8a7a5a)); bp(.14,.12,.6,.12,0,-.64,hm(0x8a7a5a)); bp(.5,.1,.12,-.3,.02,.2); scene.add(body);
+    addMesh(BOX(.5,.36,.32),hm(0x3e4234),-92.6,4.4,-8.2,'metal'); addMesh(new T.CylinderGeometry(.01,.01,1.6,4),MAT.darkMetal,-92.5,5.2,-8.2,null); }
+  const rifleM=new T.Group(); rifleM.position.set(-91,4.26,-8.6); rifleM.rotation.y=1.1; { const a=new T.Mesh(BOX(.06,.06,1.1),hm(0x5a3e24)); rifleM.add(a); const s=new T.Mesh(new T.CylinderGeometry(.025,.025,.3,8),hm(0x222222)); s.rotation.x=Math.PI/2; s.position.set(0,.06,.05); rifleM.add(s); } scene.add(rifleM);
+  // ---- ruínas de Bir Zitoun ----
+  const sw=(x0,x1,z0,z1,h)=>addBlock(x0,x1,z0,z1,h,{mat:M.adobe,surf:'stone',top:M.lime,seg:2,cover:h<1.6});
+  sw(-18,-6,-16.6,-16,3.4); sw(-3,6,-16.6,-16,1.2); sw(9,18,-16.6,-16,2.6); sw(-18,-17.4,-16,-6,3); sw(-18,-17.4,-1,8,1.1); sw(-18,-17.4,12,16.6,2.2);
+  sw(-14,-4,16,16.6,1.3); sw(0,9,16,16.6,2.8); sw(13,18,16,16.6,1.2); sw(17.4,18,-12,-3,2.4); sw(17.4,18,2,10,1.2); sw(17.4,18,13,16,3);
+  addWalk(-18,-13,-16,-11,5,{mat:M.adobe,top:M.lime,seg:2}); for(const [a,b] of [[-17.8,-15.8],[-13.2,-15.8],[-17.8,-11.2],[-13.2,-11.2]]) addBlock(a-.2,a+.2,b-.2,b+.2,.7,{y0:5,mat:M.adobe,surf:'stone',seg:1});
+  for(const [x,h] of [[-10,3.6],[-6,1.4],[-2,3.6],[2,2.2],[6,3.6],[10,.9]]){ addMesh(new T.CylinderGeometry(.42,.48,h,12),M.lime,x,h/2,-4.4,'stone'); addSolidOnly(x-.45,x+.45,-4.85,-3.95,h,0,true); if(h>3) addMesh(BOX(1.1,.3,1.1),M.lime,x,h+.15,-4.4,'stone'); }
+  addMesh(BOX(4.6,.5,1),M.lime,-4,3.85,-4.4,'stone'); addMesh(new T.CylinderGeometry(.5,.5,.9,12),M.lime,-7,.45,-8.6,'stone').rotation.z=Math.PI/2; addSolidOnly(-7.45,-6.55,-9.1,-8.1,.9,0,true);
+  addMesh(new T.CylinderGeometry(1.1,1.2,.9,16),M.lime,-2,.45,1,'stone'); addSolidOnly(-3,-1,0,2,.9,0,true); addMesh(BOX(.12,1.6,.12),M.wood,-2.9,.8,1,'wood'); addMesh(BOX(.12,1.6,.12),M.wood,-1.1,.8,1,'wood'); addMesh(BOX(2,.1,.1),M.wood,-2,1.6,1,'wood');
+  // cisterna (cela de Yasmina)
+  wallOpen('x',6,6.2,6,12,3,[],M.adobeD,{inner:{}}); wallOpen('x',11.8,12,6,12,3,[],M.adobeD,{inner:{}}); wallOpen('z',11.8,12,6.2,11.8,3,[{c:9,w:.8,sill:1.6,top:2.2}],M.adobeD,{inner:{}}); wallOpen('z',6,6.2,6.2,11.8,3,[{c:9,w:1.3}],M.adobeD,{inner:{}});
+  addBlock(5.8,12.2,5.8,12.2,.3,{y0:3,mat:M.adobe,bottom:MAT.ceil,surf:'stone',seg:2});
+  makeDoor('cell',{x:6.1,z:9,w:.1,d:1.3,h:2.3,mat:MAT.darkMetal,offset:V3(0,0,1.3),locked:true,npc:false,nav:true,snd:'door'});
+  for(let k=0;k<5;k++) addMesh(BOX(.04,2.2,.04),MAT.darkMetal,5.98,1.1,8.5+k*.25,null);
+  addBlock(10.8,11.8,10.4,11.8,.45,{mat:M.cot,surf:'cloth',seg:1}); addMesh(BOX(.5,.4,.4),hm(0x6a5a40),7,.2,11.3,'wood');
+  // barraca do oficial
+  tent(-8,0,6,12.4,3,new T.MeshLambertMaterial({color:0xb8a882,side:T.DoubleSide})); addBlock(-6.6,-4.4,10.6,11.6,.78,{mat:M.wood,surf:'wood',cover:true,seg:1}); const radio8=addMesh(BOX(.6,.45,.4),hm(0x3a3e34),-4,1.0,11.2,'metal');
+  // ninhos de metralhadora
+  const nest=(x,z,open)=>{ for(let a=0;a<12;a++){ const t=a/12*Math.PI*2; if(Math.abs(angDiff(t,open))<.5) continue; const bx=x+Math.sin(t)*1.9, bz=z+Math.cos(t)*1.9; sandbags(bx-.5,bx+.5,bz-.5,bz+.5,.95); } const mg=new T.Group(); mg.position.set(x+Math.sin(open)*1.4,1.05,z+Math.cos(open)*1.4); const b=new T.Mesh(new T.CylinderGeometry(.03,.035,1.1,8),hm(0x222222)); b.rotation.x=Math.PI/2; b.position.z=.3; mg.add(b); mg.rotation.y=open; scene.add(mg); };
+  nest(-22.6,2,-Math.PI/2); nest(4,23,0);
+  truck04(14,-23); crate(10,-24,1.1,1); crate(10,-25.2,1,.9); car(-24,-12,true);
+  // ---- pista de Henchir Souar ----
+  for(let x=52;x<=124;x+=8){ addMesh(BOX(.6,.25,.6),M.lime,x,.12,-18,'stone'); addMesh(BOX(.6,.25,.6),M.lime,x,.12,18,'stone'); }
+  const hutW=(x0,x1,z0,z1,h)=>addBlock(x0,x1,z0,z1,h,{mat:M.adobeD,surf:'stone',top:M.adobe,seg:2,cover:true});
+  hutW(70,77,26,26.5,1.4); hutW(70,70.5,26.5,33,1.2); hutW(76.5,77,26.5,30,1.6); hutW(70.5,74,32.5,33,1.1);
+  { const f=new T.Mesh(new T.CylinderGeometry(.9,.6,9,10),hm(0x6a6a58)); f.rotation.z=Math.PI/2; f.rotation.y=.4; f.position.set(92,.8,-30); scene.add(f); W.shootables.push(f); f.userData.mat='metal'; addSolidOnly(87.6,96.4,-32.4,-27.6,1.6,0,true);
+    const wg=new T.Mesh(BOX(11,.16,1.8),hm(0x5a5a4a)); wg.position.set(91,.3,-28.6); wg.rotation.y=.4; wg.rotation.z=.12; scene.add(wg); }
+  drums(58,60.6,28,30.4,1.8,M.drum); sandbags(84,88,8,9); sandbags(96,100,-9,-8); crate(64,6,1.2,1.1); crate(112,10,1.1,1); sandbags(104,108,24,25);
+  addMesh(BOX(.12,6,.12),M.wood,124,3,24,'wood'); { const ws=new T.Mesh(new T.ConeGeometry(.35,1.6,8,1,true),hm(0xd86a3a)); ws.rotation.z=Math.PI/2; ws.position.set(124.8,5.6,24); scene.add(ws); }
+  const pots=[]; for(const [x,z] of [[62,-14],[108,-14]]){ const m=addMesh(new T.CylinderGeometry(.2,.2,.4,10),hm(0x4a5a3a),x,.2,z,'metal'); pots.push({x,z,m}); }
+  // veículos
+  const lrdg=[makeCargo08(168,-5,-Math.PI/2,true),makeCargo08(176,6,-Math.PI/2,true)]; lrdg[0].path=[[140,-5],[118,-6]]; lrdg[1].path=[[140,6],[112,7]]; for(const v of lrdg){ v.g.visible=false; v.solid.active=false; }
+  // ---- navegação ----
+  const N=[];
+  for(let x=-112;x<=-84;x+=6) for(let z=-46;z<=42;z+=6) N.push({x,z});
+  for(let k=0;k<20;k++){ N.push({x:-80+.36*k+.18,z:-28.4}); N.push({x:-80+.36*k+.18,z:25.6}); } N.push({x:-81.6,z:-28.4},{x:-81.6,z:25.6},{x:-71.6,z:-28.4},{x:-71.6,z:25.6});
+  for(let x=-72;x<=134;x+=7) for(let z=-90;z<=90;z+=7) N.push({x,z});
+  for(let x=-21;x<=21;x+=2.6) for(let z=-20;z<=20;z+=2.6) N.push({x,z});
+  N.push({x:9,z:9},{x:7.4,z:9},{x:4.6,z:9},{x:9.2,z:7.2},{x:9.2,z:10.8});
+  W.nav.nodes=N.filter(n=>!insideSolid(n.x,n.z,.45)); W.nav.link=7.6; buildNav();
+  return {sun,radio8,rifleM,pots,lrdg,trucks8:[]};
+}
+function objectives08(){ return [
+  {id:'radio',text:'Use o rádio do caminhão do LRDG emboscado, no alto da crista',state:'active',marker:{x:-92.6,z:-8.2}},
+  {id:'yasmina',text:'Liberte Yasmina na cisterna de Bir Zitoun',state:'hidden',marker:{x:6,z:9}},
+  {id:'smoke',text:'Com Yasmina, acenda as duas latas de fumaça na pista de Henchir Souar (0/2)',state:'hidden',marker:{x:62,z:-14}},
+  {id:'hold',text:'Resista até a patrulha do LRDG chegar',state:'hidden'},
+  {id:'board',text:'Embarque com Yasmina no caminhão do LRDG',state:'hidden',marker:{x:112,z:7}},
+  {id:'sniper',text:'Opcional: abata o observador da atalaia a mais de 80 m',state:'active',optional:true},
+  {id:'mgs',text:'Opcional: cale as duas metralhadoras de Bir Zitoun',state:'active',optional:true},
+  {id:'quietRescue',text:'Opcional: solte Yasmina sem soar o alarme',state:'active',optional:true},
+]; }
+function giveRifle08(){ const P=G.player; if(!P.weapons.includes('rifle')) P.weapons.push('rifle'); const a=P.ammo.rifle=P.ammo.rifle||{mag:0,reserve:0}; a.mag=5; a.reserve=Math.min(WEAPONS.rifle.reserveMax,a.reserve+Math.round(20*D().pickups)); G.hud.ammoT=4; }
+function interact08(R){
+  const I=W.interactables, F=()=>G.flags;
+  I.push({id:'rifle8',pt:()=>V3(-91,4.4,-8.6),r:2.4,label:()=>F().gotRifle?null:'Pegar o fuzil com luneta do sargento',
+    use:()=>{ F().gotRifle=true; R.rifleM.visible=false; giveRifle08(); switchWeapon('rifle'); AudioSys.play('pickup'); pickupMsg('Lee-Enfield Nº 4 (T) — tecla 5');
+      G.radioMsg('DICA','Botão direito mira pela luneta. A bala da .303 derruba a mais de 100 m, mas o tiro é ouvido de longe.','tip'); cp08(); }});
+  I.push({id:'radio8w',pt:()=>V3(-92.6,4.5,-8.2),r:2.4,hold:()=>2.6,label:()=>obj('radio').state==='active'?'Chamar a patrulha Y2 no rádio (segure)':null,
+    use:()=>{ complete('radio'); activate('yasmina'); AudioSys.play('morse'); F().called=true;
+      G.radioMsg('Y2 (LRDG)','“Tocha, aqui Y2. Pegamos vocês na pista velha de Henchir Souar, a leste das ruínas. Marquem com duas fumaças quando estiverem lá.”');
+      setTimeout(()=>{ if(G&&G.levelId==='08'&&!G.ending) G.radioMsg('ÉLISE','Não sem a Yasmina. Ela está na cisterna de Bir Zitoun.'); },5200); cp08(); }});
+  I.push({id:'cellkey',pt:()=>{ const k=F().keySpot; return k?V3(k[0],.3,k[1]):V3(0,-99,0); },r:2.2,label:()=>F().keySpot&&!F().cellKey?'Pegar a chave da cisterna':null,
+    use:()=>{ F().cellKey=true; if(G.keyMesh8) G.keyMesh8.visible=false; AudioSys.play('pickup'); pickupMsg('Chave da cisterna'); }});
+  I.push({id:'celldoor',pt:()=>V3(5.9,1.2,9),r:2.4,skipSolid:()=>W.doors.cell.solid,
+    label:()=>{ const d=W.doors.cell; if(d.state!=='LOCKED') return null; return F().cellKey?'Abrir a grade com a chave':'Forçar o cadeado da grade (segure — barulhento)'; },
+    hold:()=>F().cellKey?.8:(G.diff==='veterano'?5:4),
+    use:()=>{ const d=W.doors.cell; if(!F().cellKey){ AudioSys.play('clank',d.mesh.position,1.3); AudioSys.play('metal',d.mesh.position,1); emitNoise(V3(6,0,9),16,'lure',null); pickupMsg('Cadeado arrombado'); } else AudioSys.play('unlock'); d.state='CLOSED'; openDoor(d,null); }});
+  I.push({id:'yas',pt:()=>{ const A=G.ally; return V3(A.pos.x,A.pos.y+1.1,A.pos.z); },r:2.4,skip:true,
+    label:()=>{ const A=G.ally; if(!A) return null; if(A.downed) return 'Reanimar Yasmina'; if(!A.joined&&W.doors.cell.state!=='LOCKED') return 'Soltar Yasmina'; return null; },
+    hold:()=>G.ally.downed?1.6:0,
+    use:()=>{ const A=G.ally; if(A.downed){ A.revive(); return; } A.joined=true; A.mode='FOLLOW'; A.hidden=false; complete('yasmina'); activate('smoke'); if(!G.alarm&&obj('quietRescue').state==='active') complete('quietRescue');
+      G.radioMsg('YASMINA','Élise! Achei que você estava no fundo do uádi. Me dá um fuzil — tirei um Carcano do guarda. Para onde?'); setTimeout(()=>{ if(G&&G.levelId==='08'&&!G.ending) G.radioMsg('ÉLISE','Pista velha de Henchir Souar, a leste. O LRDG vem nos buscar. (G: Yasmina segue / espera)'); },4800); cp08(); }});
+  R.pots.forEach((p,i)=>I.push({id:'pot'+i,pt:()=>V3(p.x,.5,p.z),r:2.3,hold:()=>1.2,label:()=>obj('smoke').state==='active'&&!F()['pot'+i]?'Acender a lata de fumaça (segure)':null,
+    use:()=>{ F()['pot'+i]=true; F().potN=(F().potN||0)+1; AudioSys.play('flare',V3(p.x,.5,p.z)); pickupMsg('Fumaça '+F().potN+'/2'); const o=obj('smoke'); o.text='Com Yasmina, acenda as duas latas de fumaça na pista de Henchir Souar ('+F().potN+'/2)';
+      if(F().potN>=2){ complete('smoke'); activate('hold'); F().holdT=0; G.radioMsg('Y2 (LRDG)','“Vemos as duas fumaças. Aguentem firme — estamos chegando pelo leste.”','warn'); setTimeout(()=>{ if(G&&G.levelId==='08'&&!G.ending) G.radioMsg('YASMINA','Caminhões na estrada do norte! Eles também viram a fumaça.','warn'); },3000); cp08(); }
+      else { const nx=R.pots.find((q,j)=>!F()['pot'+j]); if(nx){ o.marker={x:nx.x,z:nx.z}; } refreshObjectiveUI(); } }}));
+  I.push({id:'board',pt:()=>{ const v=R.lrdg[1]; return V3(v.x,1.6,v.z); },r:4,skip:true,
+    label:()=>{ if(obj('board').state!=='active') return null; const A=G.ally; if(A.downed) return 'Yasmina está caída — reanime-a primeiro'; if(Math.hypot(A.pos.x-G.player.pos.x,A.pos.z-G.player.pos.z)>25) return 'Espere Yasmina (G: chamar)'; return 'Embarcar no caminhão do LRDG'; },
+    locked:()=>{ const A=G.ally; return A.downed||Math.hypot(A.pos.x-G.player.pos.x,A.pos.z-G.player.pos.z)>25; },
+    use:()=>{ const A=G.ally; if(A.downed||Math.hypot(A.pos.x-G.player.pos.x,A.pos.z-G.player.pos.z)>25){ if(A.mode!=='FOLLOW') toggleAlly(); return; } missionComplete(); }});
+}
+function pickups08(){
+  addPickup('d_nade1',-93.4,-9.6,'nade',2,4.3); addPickup('d_med1',-95.6,-8.8,'med',35,4.3); addPickup('d_rif1',-98,-7,'rifle',10,4.3);
+  addPickup('d_med2',-5.4,11.1,'med',35,.85); addPickup('d_pis1',-6,11.2,'pistol',8,.85); addPickup('d_smg1',12,-24,'smg',32,.1); addPickup('d_rif2',-15.6,-13.6,'rifle',10,5.05);
+  addPickup('d_med3',72,30,'med',40,.1); addPickup('d_smg2',74.6,28,'smg',32,.1); addPickup('d_nade2',73.2,31.6,'nade',2,.1); addPickup('d_rif3',86,8.6,'rifle',10,.1); addPickup('d_med4',98,-9.6,'med',35,.1);
+  G.player.nades=G.player.nades||0;
+}
+function wave08(k){
+  const R=G.refs, defs=[
+    {path:[[40,-110],[40,-50],[56,-40],[64,-36]],men:[['smg',1],['rifle',0],['rifle',0],['smg',0],['rifle',1]]},
+    {path:[[-74,30],[-20,30],[20,30],[40,26],[52,20]],men:[['rifle',0],['smg',1],['rifle',0],['rifle',0],['smg',0]]},
+  ][k];
+  if(!defs) return; const p=defs.path; const v=makeCargo08(p[0][0],p[0][1],Math.atan2(p[1][0]-p[0][0],p[1][1]-p[0][1]),false); v.path=p.slice(1); v.state='DRIVE'; v.men=defs.men; v.k=k; R.trucks8.push(v);
+}
+function unload08(v){
+  v.men.forEach(([w,n],i)=>{ const p=t2w(v,(i%2?1:-1)*1.4,0,-4.6-Math.floor(i/2)*1.1); const e=spawnEnemy04({id:'w'+v.k+'_'+i,x:p.x,z:p.z,weapon:w,helmet:true,nades:n},true); if(e) e.reactionT+=i*.25; });
+  AudioSys.play('shout',V3(v.x,1,v.z)); G.radioMsg('YASMINA',v.k===0?'Desembarcaram ao norte da pista!':'Mais um caminhão, vindo das ruínas — oeste!','warn');
+}
+function footWave08(){ const P=G.player; [['rifle',1,92,84],['smg',0,96,86],['rifle',0,88,88],['smg',1,100,82]].forEach(([w,n,x,z],i)=>{ spawnEnemy04({id:'f'+i,x,z,weapon:w,helmet:true,nades:n},true); }); G.radioMsg('YASMINA','Infantaria pelo sul, rente ao chão! Estão tentando nos cercar.','warn'); }
+function update08(dt){
+  const P=G.player, F=G.flags, R=G.refs, A=G.ally;
+  if(!F.mgSet){ F.mgSet=true; for(const e of G.enemies) if(e.def.mg){ e.ew=EW.mg; e.mag=EW.mg.mag; } }
+  else for(const e of G.enemies) if(e.def.mg&&e.ew!==EW.mg){ e.ew=EW.mg; }
+  if(!F.i1&&G.introT>.8){ F.i1=true; G.radioMsg('ÉLISE','O carro capotou no uádi e levaram a Yasmina para Bir Zitoun. Lá embaixo, ao lado do caminhão inglês emboscado, deve ter um rádio.','tip'); }
+  if(!F.i2&&G.introT>9){ F.i2=true; G.radioMsg('DICA','No deserto eles enxergam longe. Agachada dentro de um arbusto de espinhos você quase some; de pé, no descampado, não.','tip'); }
+  // chave do tenente
+  const ten=G.enemies.find(e=>e.id==='ten'); if(ten&&ten.dead&&!F.keySpot){ F.keySpot=[+ten.pos.x.toFixed(2),+ten.pos.z.toFixed(2)]; spawnKey08(); if(obj('yasmina').state==='active') G.radioMsg('ÉLISE','O tenente caiu. A chave da cisterna deve estar com ele.','tip'); }
+  // observador e metralhadoras
+  const sp=G.enemies.find(e=>e.id==='spot'); if(sp&&sp.dead&&!F.spotDone){ F.spotDone=true; const d=Math.hypot(P.pos.x-sp.pos.x,P.pos.z-sp.pos.z); if(d>80&&sp.lastHitBy==='player'){ complete('sniper'); pickupMsg('Observador abatido a '+Math.round(d)+' m'); } else failObjective('sniper'); }
+  if(obj('mgs').state==='active'&&G.enemies.filter(e=>e.def.mg).every(e=>e.dead)) complete('mgs');
+  if(G.alarm&&obj('quietRescue').state==='active') failObjective('quietRescue');
+  // fumaça
+  R.pots.forEach((p,i)=>{ if(!F['pot'+i]) return; if(Math.random()<dt*10) FX.puff(V3(p.x+rnd(-.2,.2),.6,p.z+rnd(-.2,.2)),1,i?0xe86a3a:0xd8d0c0,1.6,6,V3(rnd(.6,1.2),1.6,rnd(-.3,.3)),.55); });
+  // defesa
+  if(obj('hold').state==='active'){
+    const total=G.diff==='recruta'?100:G.diff==='veterano'?150:125; F.holdT=(F.holdT||0)+dt; const left=Math.max(0,total-F.holdT);
+    G.progress={label:'Patrulha do LRDG chega em '+Math.floor(left/60)+':'+String(Math.floor(left%60)).padStart(2,'0'),v:1-F.holdT/total};
+    if(!F.w0&&F.holdT>5){ F.w0=true; wave08(0); if(!G.alarm) raiseAlarm(); }
+    if(!F.w1&&F.holdT>total*.36){ F.w1=true; wave08(1); }
+    if(!F.w2&&F.holdT>total*.62){ F.w2=true; footWave08(); }
+    if(!F.lrdgGo&&F.holdT>total-13){ F.lrdgGo=true; for(const v of R.lrdg){ v.g.visible=true; v.solid.active=true; v.state='DRIVE'; } G.radioMsg('Y2 (LRDG)','“Tocha, estamos vendo vocês. Cabeça baixa!”'); }
+    if(F.holdT>=total&&!F.arrivedMsg){ F.arrivedMsg=true; }
+  }
+  for(const v of R.trucks8){ if(v.state==='DRIVE'&&driveVeh08(v,dt)){ unload08(v); v.state='EMPTY'; } }
+  for(const v of R.lrdg){ if(v.state==='DRIVE'&&driveVeh08(v,dt)){ v.state='FIRE'; v.fireT=0; } }
+  if(R.lrdg.every(v=>v.state==='FIRE'||v.state==='DONE')&&R.lrdg[0].state==='FIRE'){
+    for(const v of R.lrdg){ v.fireT+=dt; v.cd=(v.cd||0)-dt; if(v.cd>0) continue; v.cd=.12;
+      let best=null,bd=95; for(const e of G.enemies){ if(e.dead) continue; const d=Math.hypot(e.pos.x-v.x,e.pos.z-v.z); if(d<bd){ bd=d; best=e; } }
+      const m=t2w(v,0,2.3,.4); if(best){ const tp=V3(best.pos.x+rnd(-.6,.6),best.pos.y+1.1,best.pos.z+rnd(-.6,.6)); FX.tracer(m,tp); AudioSys.play('eshot',m,.7); v.gun.lookAt(tp); if(Math.random()<.16) best.takeDamage({dmg:45,region:'chest',dir:V3().subVectors(tp,m).normalize(),point:tp,shooter:'lrdg'}); } }
+    if(!F.boardOn&&(R.lrdg[0].fireT>9||G.enemies.every(e=>e.dead))){ F.boardOn=true; complete('hold'); activate('board'); G.progress=null; G.radioMsg('Y2 (LRDG)','“Subam! Vamos embora antes que mandem os blindados.”'); if(A&&!A.downed&&A.mode!=='FOLLOW') toggleAlly(); cp08(); }
+  }
+  // marcador de fumaça
+  if(obj('smoke').state==='active'&&A&&A.joined&&!F.smokeHint&&Math.hypot(P.pos.x-62,P.pos.z+14)<30){ F.smokeHint=true; G.radioMsg('YASMINA','Duas latas, uma em cada ponta da pista. Depois é só aguentar.'); }
+}
+function spawnKey08(){ const k=G.flags.keySpot; if(!k||G.flags.cellKey) return; const m=new T.Mesh(BOX(.1,.03,.24),hm(0xc8a040)); m.position.set(k[0],.05,k[1]); scene.add(m); G.keyMesh8=m; const l=new T.PointLight(0xffd080,.5,2.5,2); l.position.set(k[0],.5,k[1]); }
+function cp08(){ checkpoint(); }
+function restore08(s){
+  const F=G.flags, R=G.refs, A=G.ally;
+  if(F.gotRifle) R.rifleM.visible=false; if(F.keySpot) spawnKey08();
+  if(A&&A.joined){ A.hidden=false; }
+  F.mgSet=false;
+  if(F.boardOn){ for(const v of R.lrdg){ v.g.visible=true; v.solid.active=true; v.x=v.path[v.path.length-1][0]; v.z=v.path[v.path.length-1][1]; setTruckPose07(v); v.state='DONE'; } }
+  else if(obj('hold').state==='active'){ F.lrdgGo=false; }
+}
+function drawMap08(g,w,h){
+  g.fillStyle='#e8dcc0'; g.fillRect(0,0,w,h); const S=w/260, X=x=>(x+120)*S, Z=z=>(z+100)*S;
+  const rect=(x0,x1,z0,z1,fill,stroke)=>{ g.fillStyle=fill; g.fillRect(X(x0),Z(z0),(x1-x0)*S,(z1-z0)*S); if(stroke){ g.strokeStyle=stroke; g.lineWidth=2; g.strokeRect(X(x0),Z(z0),(x1-x0)*S,(z1-z0)*S); } };
+  rect(-118,-80,-50,46,'#b8a07a','#6a5232'); rect(-18,18,-16.6,16.6,'#d8c8a4','#5a4a32'); rect(6,12,6,12,'#8a7a5a',null); rect(50,126,-20,20,'#d4c4a0','#8a7a5a'); rect(38,42,-100,-10,'#cbb894',null); rect(6,46,22,26,'#cbb894',null);
+  g.fillStyle='#7a8a4a'; for(const b of BUSH08){ g.beginPath(); g.arc(X(b[0]),Z(b[1]),Math.max(2,b[2]*S),0,7); g.fill(); }
+  g.fillStyle='#2a2418'; g.textAlign='center'; const t=(s,x,z,f)=>{ g.font=f||'12px serif'; g.fillText(s,X(x),Z(z)); };
+  t('CRISTA',-99,-20,'bold 13px serif'); t('caminhão do LRDG',-92,-1,'11px serif'); t('BIR ZITOUN',0,-21,'bold 13px serif'); t('cisterna',9,15.4,'10px serif'); t('atalaia',-15.5,-18,'10px serif');
+  t('HENCHIR SOUAR — pista velha',88,-24,'bold 12px serif'); t('estrada do norte',44,-70,'italic 11px serif'); t('casebre',73.5,38,'10px serif'); t('LRDG ⟶',130,2,'italic 12px serif');
+  g.fillStyle='#8a2a1a'; for(const [x,z] of [[-22.6,2],[4,23]]){ g.beginPath(); g.arc(X(x),Z(z),4,0,7); g.fill(); } t('MG',-27,0,'bold 10px serif'); t('MG',4,29,'bold 10px serif');
+  g.fillStyle='#6a6a6a'; for(const [x,z] of [[62,-14],[108,-14]]){ g.beginPath(); g.arc(X(x),Z(z),4,0,7); g.fill(); } t('fumaça',85,-12,'italic 11px serif');
+  g.fillStyle='#4a6a3a'; g.font='italic 11px serif'; g.fillText('arbustos: agachada, ninguém vê',X(-40),Z(56));
+}
+DOCS.mapa08={title:'Bir Zitoun e Henchir Souar',sub:'Croqui do LRDG — achado no caminhão emboscado',map:'08',body:'',pencil:'Atalaia na esquina NO das ruínas: o observador vê a crista inteira. MG voltada para o oeste.'};
+LEVELS['08']={id:'08',num:8,op:'Operação 8',name:'Uma Aliada no Deserto',place:'Bir Zitoun, Tunísia central',prev:'07',
+  loadout:{weapons:['silenced','pistol'],ammo:{silenced:{mag:6,reserve:12},pistol:{mag:8,reserve:16}},cur:'silenced',camera:true},baseLight:.88,lightFn:light08,tropical:true,shadows:true,bloomTh:.92,grenades:true,sightMul:1.6,
+  build:buildLevel08,enemies:ENEMY_DEFS_08,
+  ally:{id:'yas',x:10.2,z:9.6,yaw:-Math.PI/2,caged:true,name:'YASMINA',title:'Yasmina',hp:160,range:70,dmg:46,look:{uniform:0x2e3a52,pants:0x5a4a3a,skin:0xb88a64,hair:0x140e0a,cap:null,weapon:'rifle'},failTitle:'Yasmina não resistiu',failText:'Yasmina ficou caída tempo demais na areia.'},
+  start:{x:-106,z:18,yaw:-Math.PI/2},startDocs:['mapa08'],drawMap:drawMap08,
+  reinf:[{id:'n1',x:12,z:-26,weapon:'rifle',helmet:true},{id:'n2',x:16,z:-27,weapon:'smg',helmet:true,nades:1},{id:'n3',x:18,z:-24,weapon:'rifle',helmet:true}],
+  radio:{x:-4,z:10.2,fx:-4,fz:11.2},radioRun:'O tenente corre para o rádio da barraca!',alarmPos:V3(-4,1.2,11),alarmText:'Alarme em Bir Zitoun! Os soldados descansando perto do caminhão pegam as armas.',alarmObjective:null,
+  alarmYes:'Bir Zitoun deu o alarme. ',alarmLate:'O alarme só veio na pista, com a fumaça. ',alarmNo:'',alarmOk:()=>!!(G&&G.flags.potN>=2&&!G.flags.alarmEarly8),
+  deathText:'A guarnição de Bir Zitoun cercou a pista de Henchir Souar.',
+  objectives:objectives08,interact:interact08,pickups:pickups08,update:(dt)=>{ if(G.alarm&&!(G.flags.potN>=2)) G.flags.alarmEarly8=true; update08(dt); },restore:restore08,
+  resultTitle:'Fim da campanha africana',outro:['YASMINA','Olha o pó atrás de nós, Élise… Daqui a uma semana não sobra um alemão na Tunísia. E nós duas vamos estar longe.'],menuCam:{cx:-100,cz:30,y:6,tx:0,tz:0},ambient:'desert',
+  mist:null,
+  briefing:{meta:'TUNÍSIA CENTRAL — 30 DE ABRIL DE 1943 — 13h10',paras:['Na fuga de Oued el-Kebir, um carro blindado alcançou o carro de Yasmina na planície. Élise caiu no uádi; Yasmina foi levada para Bir Zitoun, um posto de observação montado nas ruínas romanas de uma cisterna.','Ao meio-dia o deserto não esconde ninguém: a visão vai longe, as pedras são poucas e só os arbustos de espinho servem de abrigo. Do alto da crista, um caminhão do LRDG emboscado ainda tem rádio — e o fuzil com luneta do sargento. Chame a patrulha Y2, tire Yasmina da cisterna e segure a pista velha de Henchir Souar até os caminhões ingleses chegarem.'],list:['Rádio e fuzil no caminhão do LRDG, na crista','Libertar Yasmina na cisterna de Bir Zitoun','Duas fumaças na pista e resistir até o LRDG']}};
+LEVEL_ORDER.push('08');
+
+window.__SDP8={wave08,footWave08,giveRifle08,scoped};
+window.__SDP9={restartLevel,inspectTick,showPapers};
+window.__SDP7={detonate07,plantCharge07,truckExplode07,ignite07,startTruck07,powerOff07,applyDawn07,t2w,syncTrucks07};
+
 
 
 /* =========================================================
@@ -4780,6 +5712,7 @@ addEventListener('keydown',e=>{
     case 'Digit2': input.selectPressed='smg'; break;
     case 'Digit3': input.selectPressed='silenced'; break;
     case 'Digit4': input.selectPressed='pzf'; break;
+    case 'Digit5': input.selectPressed='rifle'; break;
     case 'KeyX': throwGrenade(); break;
     case 'KeyH': toggleHolster(); break;
     case 'KeyV': toggleCamera(); break;
@@ -4806,7 +5739,7 @@ addEventListener('wheel',e=>{ if(playing()&&Math.abs(e.deltaY)>4) input.swapPres
 addEventListener('mousemove',e=>{
   if(APP.state!=='PLAYING'||UI.frozen()||!G||G.player.dead) return;
   if(!APP.locked && !APP.noLock) return;
-  const s=.0022*settings.sens*(G.player.adsT>.5?.65:1);
+  const s=.0022*settings.sens*(G.player.adsT>.5?.65:1)*(G.player.adsT>.5&&WEAPONS[G.player.cur].scope?.3:1);
   G.player.yaw-=e.movementX*s; G.player.pitch+=(settings.invertY?1:-1)*e.movementY*s; G.player.pitch=clamp(G.player.pitch,-1.45,1.45);
 });
 function requestLock(){
@@ -4913,8 +5846,8 @@ function updateInteraction(dt){
 }
 function toggleAlly(){
   const A=G&&G.ally; if(!A||!A.joined||A.downed) return;
-  if(A.mode==='FOLLOW'){ A.mode='WAIT'; A.waitPos={x:A.pos.x,z:A.pos.z}; G.radioMsg('LUCIEN','Fico aqui. Chame quando precisar.'); }
-  else { A.mode='FOLLOW'; G.radioMsg('LUCIEN','Estou com você.'); }
+  if(A.mode==='FOLLOW'){ A.mode='WAIT'; A.waitPos={x:A.pos.x,z:A.pos.z}; G.radioMsg(A.nm,'Fico aqui. Chame quando precisar.'); }
+  else { A.mode='FOLLOW'; G.radioMsg(A.nm,'Estou com você.'); }
 }
 
 /* =========================================================
@@ -5021,9 +5954,9 @@ function updateHUD(dt){
   // aliado
   $('#lampTag').hidden=!P.lantern;
   const A=G.ally, ac=$('#allyChip'); ac.hidden=!(A&&(A.joined||A.downed));
-  if(!ac.hidden){ ac.classList.toggle('down',A.downed); $('#allyText').textContent=A.downed?`Lucien caído · ${Math.ceil(A.downT)} s`:`Lucien · ${A.mode==='FOLLOW'?'seguindo':'aguardando'}`; $('#allyHp').style.width=(A.hp/A.maxHp*100)+'%'; ac.classList.toggle('is-faded',preset==='cinematic'&&!A.downed&&!tab); }
+  if(!ac.hidden){ ac.classList.toggle('down',A.downed); $('#allyText').textContent=A.downed?`${A.nmT} no chão · ${Math.ceil(A.downT)} s`:`${A.nmT} · ${A.mode==='FOLLOW'?'seguindo':'aguardando'}`; $('#allyHp').style.width=(A.hp/A.maxHp*100)+'%'; ac.classList.toggle('is-faded',preset==='cinematic'&&!A.downed&&!tab); }
   for(const d of dmgArcs) if(d.busy){ const rel=angDiff(-P.yaw,d.bearing); d.el.style.transform=`rotate(${rel}rad)`; }
-  drawCompass(); updateRadio(dt); updateHUD04(dt); updateHUD06(dt);
+  drawCompass(); updateRadio(dt); updateHUD04(dt); updateHUD06(dt); updateHUD07(dt);
 }
 
 /* =========================================================
@@ -5081,7 +6014,7 @@ function updateCamera(dt){
 function updateViewmodel(dt){
   const P=G.player, m=VM.models[P.cur]; if(!m) return;
   VM.root.position.copy(camera.position); VM.root.quaternion.copy(camera.quaternion);
-  VM.root.visible=!P.dead&&!P.holster;
+  VM.root.visible=!P.dead&&!P.holster&&!scoped();
   VM.kick=lerp(VM.kick,0,1-Math.exp(-dt*14)); VM.kickRot=lerp(VM.kickRot,0,1-Math.exp(-dt*12));
   const s=P.wpn; let lower=0, rotZ=0, rotX=0;
   if(s.state==='SWITCH') lower=s.t<.28?s.t/.28:1-(s.t-.28)/.28;
@@ -5165,7 +6098,7 @@ function startPlaying(save,levelId){
 }
 function syncOptions(){
   $('#oSens').value=settings.sens; $('#oFov').value=settings.fov; $('#oInvert').checked=settings.invertY; $('#oHud').value=settings.hud; $('#oHit').checked=settings.hitmarkers;
-  $('#oAds').checked=settings.adsToggle; $('#oCrouch').checked=settings.crouchToggle; $('#oBob').checked=settings.bob; $('#oShake').checked=settings.shake; $('#oHelmet').checked=settings.helmetSave; $('#oBlood').value=settings.blood; $('#oQuality').value=settings.quality; $('#oVol').value=settings.volume; $('#oMus').value=settings.music;
+  $('#oAds').checked=settings.adsToggle; $('#oCrouch').checked=settings.crouchToggle; $('#oBob').checked=settings.bob; $('#oShake').checked=settings.shake; $('#oHelmet').checked=settings.helmetSave; $('#oBlood').value=settings.blood; $('#oBodies').value=settings.bodies||'somem'; $('#oQuality').value=settings.quality; $('#oVol').value=settings.volume; $('#oMus').value=settings.music;
 }
 function bindOptions(){
   const on=(id,ev,fn)=>$(id).addEventListener(ev,fn);
@@ -5173,7 +6106,7 @@ function bindOptions(){
   on('#oInvert','change',e=>{settings.invertY=e.target.checked;saveSettings();}); on('#oHud','change',e=>{settings.hud=e.target.value;$('#hud').className='hud preset-'+settings.hud;saveSettings();});
   on('#oHit','change',e=>{settings.hitmarkers=e.target.checked;saveSettings();}); on('#oAds','change',e=>{settings.adsToggle=e.target.checked;input.ads=false;input.adsToggled=false;saveSettings();});
   on('#oCrouch','change',e=>{settings.crouchToggle=e.target.checked;saveSettings();}); on('#oBob','change',e=>{settings.bob=e.target.checked;saveSettings();});
-  on('#oShake','change',e=>{settings.shake=e.target.checked;saveSettings();}); on('#oHelmet','change',e=>{settings.helmetSave=e.target.checked;saveSettings();}); on('#oBlood','change',e=>{settings.blood=e.target.value;saveSettings();});
+  on('#oShake','change',e=>{settings.shake=e.target.checked;saveSettings();}); on('#oHelmet','change',e=>{settings.helmetSave=e.target.checked;saveSettings();}); on('#oBlood','change',e=>{settings.blood=e.target.value;saveSettings();}); on('#oBodies','change',e=>{settings.bodies=e.target.value;saveSettings();});
   on('#oQuality','change',e=>{settings.quality=e.target.value;resize();saveSettings();});
   on('#oVol','input',e=>{settings.volume=+e.target.value;AudioSys.applyVolume();saveSettings();}); on('#oMus','input',e=>{settings.music=+e.target.value;AudioSys.applyVolume();saveSettings();});
 }
@@ -5191,11 +6124,12 @@ function bindScreens(){
   $('#bResume').onclick=resumeGame;
   $('#bPOptions').onclick=()=>{ syncOptions(); UI.show('options'); }; $('#bPHelp').onclick=()=>UI.show('help');
   $('#bCheckpoint').onclick=()=>{ if(G&&G.cp) startPlaying(G.cp); };
+  $('#bRestart').onclick=()=>{ const b=$('#bRestart'); if(!b.dataset.c){ b.dataset.c='1'; b.textContent='Confirmar: recomeçar do início?'; clearTimeout(b._t); b._t=setTimeout(()=>{ b.dataset.c=''; b.textContent='Reiniciar a fase'; },4000); return; } b.dataset.c=''; b.textContent='Reiniciar a fase'; restartLevel(); };
   $('#bQuit').onclick=()=>{ G=null; goMenu(); };
   $('#bAgain').onclick=()=>{ UI.closeAll(); openBriefing(G.levelId); };
   $('#bResMenu').onclick=()=>{ G=null; goMenu(); };
   $('#bRetryCp').onclick=()=>{ const cp=G&&G.cp; if(cp) startPlaying(cp); };
-  $('#bRetryAll').onclick=()=>startPlaying(null,G.levelId);
+  $('#bRetryAll').onclick=()=>restartLevel();
   $('#bFailMenu').onclick=()=>{ G=null; goMenu(); };
 }
 
