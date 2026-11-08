@@ -1972,7 +1972,7 @@ function updatePlayerWeapon(dt){
   // arma encostada na parede: baixa a arma e bloqueia o disparo
   const eye=camera.position, f=V3(0,0,-1).applyQuaternion(camera.quaternion);
   const hit=segFirst(eye.x,eye.y,eye.z,eye.x+f.x*.6,eye.y+f.y*.6,eye.z+f.z*.6); s.wallBlock=!!hit;
-  if(P.holster&&!G.camMode){ P.adsT=0; if(input.firePressed||input.selectPressed||input.swapPressed) drawWeapon(input.selectPressed); return; }
+  if(P.holster&&!G.camMode){ P.adsT=0; if(input.selectPressed||input.swapPressed||(input.firePressed&&!disguiseOn())) drawWeapon(input.selectPressed); else if(input.firePressed&&simTime-(G.holsterHintT||-99)>4){ G.holsterHintT=simTime; showHint('Arma guardada — aperte H (ou ARMA) para sacar. Sob disfarce, sacar chama atenção.'); } return; }
   if(G.camMode){ P.adsT=Math.max(0,P.adsT-dt*8); if((input.fire||input.firePressed)&&!s.camLatch){ s.camLatch=true; takePhoto(); } if(!input.fire) s.camLatch=false; return; }
   const fire=input.fire||input.firePressed;
   switch(s.state){
@@ -2159,7 +2159,7 @@ function emitNoise(pos,radius,kind,src){
     if(e.asleep){ if(kind==='gunshot'||kind==='glass'||kind==='enemyshot'||d<2.2) e.wake(); else continue; }
     if(e.state==='COMBAT'||e.state==='RADIO'){ if(kind==='gunshot'&&!e.canSeeTarget) e.lastKnown={x:pos.x,z:pos.z}; continue; }
     if(e.state==='DISARMED'||e.state==='RECOVER') continue;
-    if(kind==='step'){ e.awareness+=.18; if(e.awareness>.35) e.toInvestigate(pos.x,pos.z); }
+    if(kind==='step'){ if(disguiseOn()) continue; e.awareness+=.18; if(e.awareness>.35) e.toInvestigate(pos.x,pos.z); }
     else if(kind==='muffled'){ e.awareness=Math.min(.95,e.awareness+.45); e.toInvestigate(pos.x,pos.z); }
     else if(kind==='lure'){ e.awareness=Math.min(.9,e.awareness+.3); e.toInvestigate(pos.x,pos.z); }
     else if(kind==='enemyshot'){ e.alertLevel=1; e.awareness=Math.max(e.awareness,.7); e.toInvestigate(src?src.pos.x:pos.x,src?src.pos.z:pos.z); }
@@ -4443,24 +4443,29 @@ Enemy.prototype.disguiseThink=function(pv,dP,dt){
     if(simTime-(G.lastFireT||-99)<.7&&dP<40){ blowDisguise(this,'tiro'); return; }
     if(simTime-(G.koT||-99)<.8&&dP<25){ blowDisguise(this,'ataque'); return; }
   }
-  let f=0;
+  let fn=0, ff=0, top=0, why='';
+  const add=(far,v,w)=>{ if(far) ff+=v; else fn+=v; if(v>top){ top=v; why=w; } };
   if(pv>0){
     const zl=G.level.zoneAt(P.pos.x,P.pos.z,P.pos.y);
-    if(zl>G.cred&&!G.escort) f+=.8;
+    if(zl>G.cred&&!G.escort) add(0,.5,'área fora do seu passe');
     const mv=Math.hypot(P.vx,P.vz);
-    if(P.sprinting) f+=.45; else if(P.crouch>.5&&mv>.4) f+=.32;
-    if(!P.holster) f+=simTime-(G.drawT||-99)<1.5?1.5:.85;
-    if(G.camMode){ const facing=Math.abs(angDiff(this.yaw+this.headYaw,Math.atan2(P.pos.x-this.pos.x,P.pos.z-this.pos.z)))<.75; f+=facing?1.7:.5; }
-    if(simTime-(G.photoT||-99)<1&&dP<14) f+=2.2;
-    if(dP<2.1){ this.closeT=(this.closeT||0)+dt; if(this.closeT>3.2) f+=.35; } else this.closeT=0;
-    for(const c of G.enemies){ if(c.dead&&!c.gone&&Math.hypot(c.pos.x-P.pos.x,c.pos.z-P.pos.z)<4.5){ f+=.9; break; } }
-    if(curInteract&&curInteract.sus&&holdT>0&&dP<16) f+=curInteract.sus;
+    if(P.sprinting) add(0,.2,'correndo'); else if(P.crouch>.5&&mv>.4) add(0,.14,'andando agachada');
+    if(!P.holster) add(1,simTime-(G.drawT||-99)<1.5?1.1:.55,'arma à mostra');
+    if(G.camMode){ const facing=Math.abs(angDiff(this.yaw+this.headYaw,Math.atan2(P.pos.x-this.pos.x,P.pos.z-this.pos.z)))<.75; add(1,facing?1.3:.35,'câmera na mão'); }
+    if(simTime-(G.photoT||-99)<1&&dP<14) add(1,1.8,'fotografando');
+    const calm=this.state==='IDLE'||this.state==='PATROL';
+    if(dP<2.1&&calm&&this!==G.inspector){ this.closeT=(this.closeT||0)+dt; if(this.closeT>4.5) add(0,.25,'colada nele'); } else this.closeT=0;
+    for(const c of G.enemies){ if(c.dead&&!c.gone&&Math.hypot(c.pos.x-P.pos.x,c.pos.z-P.pos.z)<4.5){ add(1,.9,'perto de um corpo'); break; } }
+    if(curInteract&&curInteract.sus&&holdT>0&&dP<16) add(1,curInteract.sus,'mexendo onde não devia');
   }
-  if(f>0){ const mult=clamp(1.6-dP/16,.35,1.4)*D().perception; this.sus=Math.min(1.2,(this.sus||0)+f*mult*dt); }
-  else this.sus=Math.max(0,(this.sus||0)-.1*dt);
+  const vouched=simTime-(this.clearedT||-99)<30||simTime-(this.vouchT||-99)<20; if(vouched) fn=0;
+  const near=clamp(1.35-dP/13,0,1.2), far=dP<30?Math.max(near,.3):0, pk=D().perception;
+  const gain=(fn*near+ff*far)*pk;
+  if(gain>0){ this.sus=Math.min(1.2,(this.sus||0)+gain*dt); this.susWhy=why; }
+  else this.sus=Math.max(0,(this.sus||0)-.24*dt);
   if(this.sus>=1&&this===G.inspector) this.sus=.95;
   if(this.sus>=1){ blowDisguise(this,curInteract&&curInteract.susWhy&&holdT>0?curInteract.susWhy:'suspeita'); return; }
-  if(this.sus>=.5&&this.state!=='INSPECT'&&!G.inspector&&simTime-(this.clearedT||-99)>20&&this.hasWeapon) this.startInspect();
+  if(this.sus>=.62&&this.state!=='INSPECT'&&!G.inspector&&simTime-(this.clearedT||-99)>25&&this.hasWeapon) this.startInspect();
 };
 Enemy.prototype.startInspect=function(){
   this.wake(); this.releaseCover(); this.state='INSPECT'; this.inspectT=0; this.waitT2=0; this.reached=false; this.repathT=0; this.aimTarget=.35; this.path=null; G.inspector=this;
@@ -4491,9 +4496,10 @@ function updateHUD06(dt){
   let st='seguro', cls='ok';
   if(G.disguise.blown){ st='comprometido'; cls='bad'; }
   else if(G.inspector){ st='inspeção'; cls='warn'; }
-  else { let m=0; for(const e of G.enemies) if(!e.dead) m=Math.max(m,e.sus||0); if(m>.22){ st='suspeita'; cls='warn'; } }
+  let m=0, mw=''; for(const e of G.enemies) if(!e.dead&&(e.sus||0)>m){ m=e.sus; mw=e.susWhy||''; }
+  if(!G.disguise.blown&&!G.inspector&&m>.22){ st='suspeita'; cls='warn'; }
   el.className='disg '+cls; $('#disgState').textContent=st;
-  $('#disgSub').textContent='Credencial '+(G.cred>=2?'vermelha':'branca')+(P.holster?' · arma guardada (H)':' · arma à mostra');
+  $('#disgSub').textContent=(st==='suspeita'&&mw?'Desconfiam: '+mw+' · ':'')+'Credencial '+(G.cred>=2?'vermelha':'branca')+(P.holster?' · arma guardada (H)':' · arma à mostra');
   for(const e of G.enemies){ if(e.dead||G.disguise.blown){ if(e.mark) e.mark.visible=false; continue; } susMark(e,e.state==='INSPECT'?'x':(e.sus>.25?'q':null)); }
 }
 
@@ -5358,7 +5364,8 @@ Enemy.prototype.fadeBody=function(){
 function restartLevel(){ if(!G) return; const id=G.levelId, d=G.diff, keep=settings.difficulty; store.del('sdp_checkpoint'); settings.difficulty=d; startPlaying(null,id); settings.difficulty=keep; }
 /* ---- inspeção ---- */
 function clearInspect(e,line){
-  e.sus=0; e.clearedT=simTime; e.waitT2=0; G.inspector=null; G.escort=null; e.aimTarget=0; e.toReturn(); G.stats.inspections=(G.stats.inspections||0)+1;
+  e.sus=0; e.clearedT=simTime; e.waitT2=0; e.closeT=0; e.awareness=0; e.alertLevel=0; e.susWhy=''; G.inspector=null; G.escort=null; e.aimTarget=0; e.toReturn();
+  const P=G.player; for(const o of G.enemies){ if(o===e||o.dead) continue; o.closeT=0; if(Math.hypot(o.pos.x-P.pos.x,o.pos.z-P.pos.z)<18){ o.sus=(o.sus||0)*.4; o.vouchT=simTime; } } G.stats.inspections=(G.stats.inspections||0)+1;
   G.radioMsg('SENTINELA',line||(G.cred>=2?'“Passe vermelho, carimbo do comandante… Certo. Pode seguir.”':'“Intérprete da Intendência, assinado pelo major… Certo. Pode seguir.”'));
 }
 function showPapers(e){
