@@ -21,4 +21,4 @@ Navegador moderno com WebGL (Chrome, Edge, Firefox, Safari). Se ficar lento, use
 O progresso e os checkpoints ficam salvos no próprio navegador (localStorage).
 
 Bibliotecas carregadas por CDN: three.js r128 (cdnjs) e fontes do Google Fonts.
-Versão gerada em 2026-11-08.
+Versão gerada em 2026-11-09.
