@@ -1,24 +1,28 @@
 # Medalha de Honra
 
-FPS de espionagem na Segunda Guerra Mundial, com campanha entre Paris, Norte da África e outras regiões da Europa, feito em Three.js.
-Arquivo único: `index.html` — sem build, sem dependências locais.
+FPS histórico de espionagem em Three.js/WebGL, distribuído pelo GitHub Pages.
 
-## Publicar no GitHub Pages
-1. Crie um repositório (por exemplo `medalha-de-honra`) e envie **`index.html`** e **`.nojekyll`** para a raiz.
-2. No repositório: **Settings → Pages → Build and deployment → Source: Deploy from a branch**,
-   branch `main`, pasta `/ (root)` → **Save**.
-3. Em 1–2 minutos o jogo fica em `https://jogoiarexx-blip.github.io/medalha-de-honra/`.
+## Estrutura
 
-Para atualizar, é só substituir o `index.html` e fazer commit.
+- `index.html`: documento HTML, telas, menus e referências a arquivos externos.
+- `assets/css/game.css`: estilos da interface, menus, HUD e acessibilidade.
+- `assets/js/`: sistemas e campanhas divididos por responsabilidade, carregados em ordem numérica.
+- `assets/audio/trilha_sombras_de_paris.mp3`: demonstração da trilha sonora. A música adaptativa do jogo é sintetizada pelo JavaScript.
+- `assets/images/`: pasta para futuras texturas e artes.
+- `assets/models/`: pasta para futuros modelos GLB.
 
-## Controles (teclado e mouse)
-WASD mover · Shift correr · C agachar · Espaço pular · Botão esquerdo atirar · Botão direito mirar ·
-R recarregar · 1–4 armas · E interagir (segure quando pedido) · V câmera · G/X granada · H guardar a arma ·
-M planta · J diário · Esc pausa. Também funciona com controle e em tela de toque.
+## Compatibilidade
 
-## Requisitos
-Navegador moderno com WebGL (Chrome, Edge, Firefox, Safari). Se ficar lento, use Opções → Qualidade baixa.
-O progresso e os checkpoints ficam salvos no próprio navegador (localStorage).
+Os módulos são scripts clássicos, **não** ES Modules, porque o jogo original usa um ambiente compartilhado. A ordem em `index.html` é importante e precisa ser mantida. Não adicione `async` às tags. O estado de campanha e os saves continuam em `localStorage` nas mesmas chaves.
 
-Bibliotecas carregadas por CDN: three.js r128 (cdnjs) e fontes do Google Fonts.
-Versão gerada em 2026-11-09.
+Não é necessário npm, Vite ou compilação. Execute por um servidor HTTP local, por exemplo `python -m http.server 8000`, e abra `http://localhost:8000`. Para publicar, envie toda a estrutura para o branch `main` e use GitHub Pages com raiz `/`.
+
+**Atenção:** Three.js r128 e as fontes ainda vêm de CDN e exigem rede na primeira execução. Os demais sistemas e a música adaptativa ficam no código local do projeto.
+
+## Testes
+
+`node --check assets/js/00-core.js` valida a sintaxe de um arquivo; verifique todos os módulos após mudanças. Teste o menu, primeira fase, combate, salvamento/carregamento e as 27 operações.
+
+## Fonte de inspiração
+
+Projeto independente inspirado em jogos históricos de espionagem. Para redistribuição, verifique os direitos sobre nomes e marcas de terceiros.
