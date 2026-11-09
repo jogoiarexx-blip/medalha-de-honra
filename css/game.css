@@ -277,3 +277,7 @@ button{font:inherit;color:inherit}
 .tsmall button[hidden]{display:none}
 @media (max-height:520px){ .tsmall{top:calc(124px + env(safe-area-inset-top,0px));flex-wrap:wrap;justify-content:flex-end;max-width:56vw;gap:6px} .tsmall button{width:42px;height:42px;font-size:11px} }
 .is-touch .disg{left:calc(18px + env(safe-area-inset-left,0px));right:auto;top:auto;bottom:calc(128px + env(safe-area-inset-bottom,0px));min-width:170px}
+
+/* Ativação de áudio exigida pelos navegadores: discreta e acessível. */
+#bMusic[hidden]{display:none!important}
+#bMusic.music-activate{border-color:rgba(217,164,65,.65);color:var(--amber);}

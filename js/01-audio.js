@@ -55,7 +55,7 @@ const MUS={ready:false,step:0,next:0,bpm:72,state:'menu',region:'paris',bar:0,
     if(kind==='win'){ [[0,4,7],[5,9,12],[7,11,14],[12,16,19]].forEach((ch,i)=>this.brass(b,ch,t+i*.45,i===3?2.2:.42,.05)); this.timp(b,this.hz(0,-2),t+1.35,.4); }
     if(kind==='lose'){ this.pad(b,[0,3,6],t,2.5,.04); this.note(b,this.hz(0,-2),t,2,{gain:.15,att:.01,rel:1.8,waves:[['sawtooth',1,0]],lp:300}); } },
   // ---------- sequenciador ----------
-  update(dt){ if(!this.ready) return; const c=this.c; this.mix(); const s=this.state; const bpm=s==='combat'?132:s==='tension'?88:s==='menu'?72:66; const spb=60/bpm/2; // colcheias
+  update(dt){ if(!this.ready || !this.c || this.c.state!=='running') return; const c=this.c; this.mix(); const s=this.state; const bpm=s==='combat'?132:s==='tension'?88:s==='menu'?72:66; const spb=60/bpm/2; // colcheias
     while(this.next<c.currentTime+.25){ this.play(this.step,this.next,spb); this.step++; this.next+=spb; } },
   play(i,t,spb){ const L=this.L, sc=this.SC[this.region]||this.SC.paris; const bar=Math.floor(i/8), beat=i%8;
     const prog=this.state==='combat'?this.PROGC:this.PROG, ch=prog[bar%4];
@@ -83,7 +83,7 @@ const MUS={ready:false,step:0,next:0,bpm:72,state:'menu',region:'paris',bar:0,
 const AudioSys={
   ctx:null,
   init(){
-    if(this.ctx){ if(this.ctx.state==='suspended') this.ctx.resume(); return; }
+    if(this.ctx){ if(this.ctx.state==='suspended'){ const p=this.ctx.resume(); if(p&&typeof p.catch==='function') p.catch(()=>{}); } return; }
     const AC=window.AudioContext||window.webkitAudioContext; if(!AC) return;
     try{ this.ctx=new AC(); }catch(e){ return; }
     const c=this.ctx;
