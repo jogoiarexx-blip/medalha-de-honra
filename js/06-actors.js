@@ -115,7 +115,7 @@ const HGRIP={
   pistol:{R:[0,-.055,.04],L:[.03,-.07,.03],idle:[-.08,.0,.2,1.05,-.1],aim:[-.03,.29,.43,0,0]}};
 const _ikV=new T.Vector3(), _ikW=new T.Vector3(), _ikE=new T.Vector3(), _ikA=new T.Vector3(), _ikP=new T.Vector3(), _ikQ=new T.Quaternion(), _ikQ2=new T.Quaternion(), _ikT=new T.Vector3();
 function ikArm(sh,el,wr,tx,ty,tz,px,py,pz){
-  const L1=.3, L2=.32; _ikV.set(tx-sh.position.x,ty-sh.position.y,tz-sh.position.z); let d=_ikV.length(); if(d<1e-4) return; const dc=clamp(d,.14,L1+L2-.004);
+  const L1=-el.position.y, L2=(wr?-wr.position.y:.27)+.05; _ikV.set(tx-sh.position.x,ty-sh.position.y,tz-sh.position.z); let d=_ikV.length(); if(d<1e-4) return; const dc=clamp(d,.14,L1+L2-.004);
   const cosA=clamp((L1*L1+L2*L2-dc*dc)/(2*L1*L2),-1,1), bend=Math.PI-Math.acos(cosA);
   el.rotation.set(-bend,0,0);
   _ikW.set(0,-L1-L2*Math.cos(bend),L2*Math.sin(bend)).normalize(); _ikV.multiplyScalar(1/d);

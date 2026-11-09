@@ -84,7 +84,7 @@ function makeHuman(look,owner){
   shadowGeo=shadowGeo||new T.CircleGeometry(.42,10);
   const sh=new T.Mesh(shadowGeo,MAT.shadow); sh.rotation.x=-Math.PI/2; sh.position.y=.015; root.add(sh);
   const _H={wtype:look.weapon||null,root,g,parts,hitMeshes,helmet,helmetMeshes,cap,capMeshes,weapon,weaponMeshes,muzzle,lanternLight,lanternGlass,lanternMeshes,weaponHome:weapon?{pos:weapon.position.clone(),rot:weapon.rotation.clone()}:null};
-  if(settings.chars!=='classico') h2Build(_H,look,owner); return _H;
+  if(settings.chars==='modelo'&&mzOK(look)) mzBuild(_H,look,owner); else if(settings.chars!=='classico') h2Build(_H,look,owner); return _H;
 }
 /* =========================================================
    PERSONAGENS v2 — corpo contínuo com pele (SkinnedMesh presa ao
@@ -257,6 +257,62 @@ function h2Build(h,look,owner){ const P=h.parts, g=h.g, root=h.root; const boots
     const vis=[[h2Gun(wk,'metal'),metalW],[h2Gun(wk,'wood'),wood],[h2Gun(wk,'dark'),dark]]; for(const [geo,mat] of vis){ if(!geo.attributes.position.count) continue; const m=new T.Mesh(geo,mat); h.weapon.add(m); } }
 }
 
+/* =========================================================
+   MODELO 3D DO SOLDADO (feito pelo jogador no Meshy) — malha
+   reduzida para ~12 mil triângulos, esqueleto Mixamo convertido
+   para os 16 ossos do jogo e textura repintada por fase/uniforme.
+   O capacete é uma peça separada (pode voar com o tiro); sem
+   capacete aparece o cabelo curto e o quepe/boina do jogo.
+   ========================================================= */
+const MZ={geo:null,hgeo:null,sgeo:null,img:null,mask:null,ready:false,pend:[],tex:new Map(),mat:new Map()};
+function mzBytes(s){ const b=atob(s), u=new Uint8Array(b.length); for(let i=0;i<b.length;i++) u[i]=b.charCodeAt(i); return u.buffer; }
+function mzGeo(p,n,uv,x,si,sw){ const g=new T.BufferGeometry(); const P=new Int16Array(mzBytes(p)), pf=new Float32Array(P.length); for(let i=0;i<P.length;i++) pf[i]=P[i]/16384; g.setAttribute('position',new T.BufferAttribute(pf,3));
+  if(n){ const N=new Int8Array(mzBytes(n)), nf=new Float32Array(N.length); for(let i=0;i<N.length;i++) nf[i]=N[i]/127; g.setAttribute('normal',new T.BufferAttribute(nf,3)); }
+  if(uv){ const U=new Uint16Array(mzBytes(uv)), uf=new Float32Array(U.length); for(let i=0;i<U.length;i++) uf[i]=U[i]/65535; g.setAttribute('uv',new T.BufferAttribute(uf,2)); }
+  g.setIndex(new T.BufferAttribute(new Uint16Array(mzBytes(x)),1));
+  if(si){ g.setAttribute('skinIndex',new T.BufferAttribute(new Uint8Array(mzBytes(si)),4)); g.setAttribute('skinWeight',new T.BufferAttribute(new Uint8Array(mzBytes(sw)),4,true)); }
+  if(!n) g.computeVertexNormals(); g.computeBoundingSphere(); return g; }
+function mzInit(){ if(MZ.geo||typeof MZ_DATA==='undefined') return; const D=MZ_DATA;
+  MZ.geo=mzGeo(D.bp,D.bn,D.bu,D.bx,D.bi,D.bw); MZ.hgeo=mzGeo(D.hp,D.hn,D.hu,D.hx); MZ.sgeo=mzGeo(D.sp,null,null,D.sx);
+  let n=0; const done=()=>{ if(++n<2) return; const c=document.createElement('canvas'); c.width=c.height=512; const g=c.getContext('2d'); g.drawImage(MZ.maskImg,0,0,512,512); MZ.mask=g.getImageData(0,0,512,512).data; MZ.ready=true; const p=MZ.pend; MZ.pend=[]; for(const f of p) f(); };
+  MZ.img=new Image(); MZ.img.onload=done; MZ.img.src='data:image/jpeg;base64,'+D.tex; MZ.maskImg=new Image(); MZ.maskImg.onload=done; MZ.maskImg.src='data:image/png;base64,'+D.mask; }
+function mzRGB(c){ return [(c>>16&255)/255,(c>>8&255)/255,(c&255)/255]; }
+function mzMute(c){ const l=.299*c[0]+.587*c[1]+.114*c[2]; return c.map(v=>(v*.8+l*.2)*.93); }
+function mzSkinOdd(c){ const [r,g,b]=mzRGB(c); return !(r>g&&g>=b*.95&&r-b>.12); }   // pele "não humana" (zumbi, robô)
+function mzPaint(cv,tex,look){ const S=1024, g=cv.getContext('2d'); g.drawImage(MZ.img,0,0,S,S); const im=g.getImageData(0,0,S,S), d=im.data, M=MZ.mask, D=MZ_DATA;
+  const U=mzMute(mzRGB(look.uniform)), P=mzMute(mzRGB(look.pants!=null?look.pants:look.uniform)), H=mzMute(mzRGB(look.helmetColor||0x3d443a)), Lu=D.Lu, Lh=D.Lh;
+  const oddSkin=look.skin!=null&&mzSkinOdd(look.skin), SK=mzRGB(look.skin||0xc9a07a), SR=D.skinRef, sk=[SK[0]/SR[0]*.82,SK[1]/SR[1]*.82,SK[2]/SR[2]*.82];
+  for(let y=0;y<S;y++){ const my=(y>>1)*512; for(let x=0;x<S;x++){ const mi=(my+(x>>1))*4, i=(y*S+x)*4; const u=M[mi]/255, h=M[mi+1]/255;
+      let r=d[i], gg=d[i+1], b=d[i+2]; const l=(.299*r+.587*gg+.114*b)/255;
+      if(u>.004){ const p=M[mi+2]/255, k=l/Lu*255; const tr=(U[0]+(P[0]-U[0])*p)*k, tg=(U[1]+(P[1]-U[1])*p)*k, tb=(U[2]+(P[2]-U[2])*p)*k; r+=(tr-r)*u; gg+=(tg-gg)*u; b+=(tb-b)*u; }
+      if(h>.004){ const k=l/Lh*255*.92; r+=(H[0]*k-r)*h; gg+=(H[1]*k-gg)*h; b+=(H[2]*k-b)*h; }
+      else if(oddSkin&&u<.3){ const rr=r/255, g2=gg/255, bb=b/255; if(rr>g2&&g2>bb&&rr-bb>.15&&rr>.3){ r*=sk[0]; gg*=sk[1]; b*=sk[2]; } }
+      d[i]=r; d[i+1]=gg; d[i+2]=b; } }
+  g.putImageData(im,0,0); tex.needsUpdate=true; }
+function mzTex(look){ const key=[look.uniform,look.pants,look.helmetColor||0,look.skin!=null&&mzSkinOdd(look.skin)?look.skin:0].join('|'); if(MZ.tex.has(key)) return MZ.tex.get(key);
+  const cv=document.createElement('canvas'); cv.width=cv.height=1024; const g=cv.getContext('2d'); g.fillStyle='#'+(look.uniform>>>0).toString(16).padStart(6,'0'); g.fillRect(0,0,1024,1024);
+  const t=new T.CanvasTexture(cv); t.flipY=false; t.anisotropy=4; MZ.tex.set(key,t); const job=()=>mzPaint(cv,t,look); if(MZ.ready) job(); else MZ.pend.push(job); return t; }
+function mzMat(look,skinned){ const t=mzTex(look), k=t.uuid+(skinned?'s':''); if(MZ.mat.has(k)) return MZ.mat.get(k);
+  const o={map:t}; if(skinned) o.skinning=true; const m=MAT_HQ?new T.MeshPhongMaterial(Object.assign(o,{shininess:7,specular:0x141414})):new T.MeshLambertMaterial(o); MZ.mat.set(k,m); return m; }
+function mzOK(look){ return typeof MZ_DATA!=='undefined'&&!look.noMz; }
+function mzBuild(h,look,owner){ mzInit(); const P=h.parts, g=h.g, root=h.root, K=MZ_DATA.sk;
+  for(const k in P){ const m=P[k]; for(const c of m.children.slice()) if(c.isMesh&&!c.userData.region) m.remove(c); m.material=H2_HIDE; }
+  for(const gn of ['pelvis','spine','chest','shL','shR','head']){ const G_=g[gn]; if(!G_) continue; for(const c of G_.children.slice()) if(c.isMesh&&!(c.userData&&c.userData.region)&&!c.userData.mat) G_.remove(c); }
+  // proporções do modelo (ombros mais estreitos, braços e tornozelos do Meshy)
+  for(const [s,sg] of [['L',1],['R',-1]]){ g['sh'+s].position.set(sg*K.shL[0],K.shL[1]-1.24,K.shL[2]); g['el'+s].position.set(0,K.elL[1]-K.shL[1],0); g['wr'+s].position.set(0,K.wrL[1]-K.elL[1],0); g['an'+s].position.set(0,K.anL[1]-K.knL[1],0); }
+  root.updateMatrixWorld(true); const bones=H2_BONES.map(b=>g[b]);
+  const body=new T.SkinnedMesh(MZ.geo,mzMat(look,true)); body.frustumCulled=false; root.add(body); body.updateMatrixWorld(true);
+  const inv=bones.map(b=>new T.Matrix4().copy(b.matrixWorld).invert()); body.bind(new T.Skeleton(bones,inv),body.matrixWorld); h.body=body; h.mz=true; h.lod=[];
+  const hairM=h2Mat(look.hair||0x2e2117,'hair',false); const scalp=new T.Mesh(MZ.sgeo,hairM); g.head.add(scalp); h.scalp=scalp;
+  if(h.helmet){ const [shell,brim]=h.helmetMeshes; shell.material=H2_HIDE; if(brim) brim.material=H2_HIDE; for(const c of h.helmet.children.slice()) if(c!==shell&&c!==brim) h.helmet.remove(c);
+    const hm_=new T.Mesh(MZ.hgeo,mzMat(look,false)); h.helmet.add(hm_); scalp.visible=false; }
+  if(h.cap){ for(const c of h.cap.children.slice()) h.cap.remove(c); const cm=h2Mat(look.capColor||(look.cap==='beret'?0x1d1d22:look.cap==='officer'?0x3a3e36:0x4a5040),'cloth',false); const m=new T.Mesh(h2CapGeo(look.cap==='officer'?'officer':look.cap==='beret'?'beret':'field'),cm); m.position.y=look.cap==="beret"?-.06:look.cap==="officer"?-.075:-.08; m.scale.set(.94,1,.96); h.cap.add(m); m.userData={char:owner,region:'equipment',equip:'cap'};
+    if(look.cap==='officer'){ const v=new T.Mesh(H2.geo.get('visor')||(H2.geo.set('visor',(()=>{ const q=new T.CylinderGeometry(.1,.1,.008,20,1,false,-Math.PI/2,Math.PI); q.scale(1,1,.55); return q; })()),H2.geo.get('visor')),h2Mat(0x121212,'leather',false)); v.position.set(0,-.091,.09); v.rotation.x=.32; h.cap.add(v); }
+    h.capMeshes.length=0; h.cap.traverse(o=>{ if(o.isMesh){ o.userData={char:owner,region:'equipment',equip:'cap'}; h.capMeshes.push(o); } }); }
+  if(h.weapon&&h.wtype){ for(const m of h.weaponMeshes) m.material=H2_HIDE; const wk=h.wtype; const metalW=h2Mat(0x26282a,'metal',false), wood=h2Mat(0x4e3420,'leather',false), dark=h2Mat(0x141414,'dark',false);
+    for(const [geo,mat] of [[h2Gun(wk,'metal'),metalW],[h2Gun(wk,'wood'),wood],[h2Gun(wk,'dark'),dark]]){ if(!geo.attributes.position.count) continue; h.weapon.add(new T.Mesh(geo,mat)); } }
+}
+mzInit();
 /* =========================================================
    VISUAL DOS PERSONAGENS — low poly facetado (membros cônicos,
    rosto pintado, capacete com jugular); o esqueleto e as caixas

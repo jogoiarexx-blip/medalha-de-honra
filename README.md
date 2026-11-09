@@ -10,6 +10,7 @@ FPS histórico de espionagem em Three.js/WebGL, distribuído pelo GitHub Pages.
 - `audio/trilha_sombras_de_paris.mp3`: demonstração da trilha sonora. A música adaptativa do jogo é sintetizada pelo JavaScript.
 - `assets/images/`: pasta para futuras texturas e artes.
 - `assets/models/`: pasta para futuros modelos GLB.
+- `js/modelos/soldado-meshy-dados.js`: o soldado 3D (modelo feito no Meshy) já otimizado para o jogo — carregado antes dos outros módulos.
 
 ## Compatibilidade
 
@@ -36,3 +37,12 @@ Projeto independente inspirado em jogos históricos de espionagem. Para redistri
 - Todos os arquivos JavaScript e os áudios estão fora da pasta `assets/`. A pasta `assets/` contém somente imagens/modelos.
 
 Verifique o comportamento em um navegador com áudio: abrir menu, clicar Ativar trilha sonora, iniciar missão, aproximar-se de um inimigo e testar combate, volume e retorno ao menu.
+
+## Soldado 3D (modelo do Meshy)
+
+- O soldado enviado pelo autor (GLB com rig Mixamo, ~230 mil triângulos) foi reduzido para **~12 mil triângulos**, mantendo as UVs e a textura.
+- O esqueleto Mixamo (66 ossos) foi convertido para os **16 ossos do jogo**; braços, pernas e tronco foram ajustados às proporções do jogo, então todas as animações existentes (andar, mirar, agachar, deitar, render-se, morrer) funcionam sem mudanças.
+- **Textura por fase:** a textura original é repintada no navegador a partir das cores de cada inimigo (`uniform`, `pants`, `helmetColor`, `skin`): cinza-campo em Paris, cáqui no deserto, uniformes italianos, branco na neve, oficiais escuros etc. Uma máscara separa túnica, calça e capacete; pele, botas e cinto ficam como no original. Peles "não humanas" (zumbi, robô) também são tingidas.
+- O capacete é uma peça separada: quando um tiro derruba o capacete, ele voa e aparece o cabelo. Oficiais e soldados de quepe/boina usam o mesmo corpo com o quepe do jogo.
+- Em **Opções → Personagens** dá para escolher entre *Modelo 3D (soldado novo)*, *Detalhados* e *Clássicos (blocos)*.
+- As caixas de acerto não mudaram: tiros na cabeça, capacete, desarme e rendição funcionam como antes.

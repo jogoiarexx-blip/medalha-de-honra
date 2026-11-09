@@ -192,7 +192,7 @@
         <label for="oHelmet">Capacete salva do 1º tiro na cabeça</label><input id="oHelmet" type="checkbox">
         <label for="oBlood">Sangue</label><select id="oBlood"><option value="discreto">Discreto</option><option value="off">Desligado</option></select>
         <label for="oBodies">Corpos <small style="display:block;font-size:12px;opacity:.75">Sumir deixa o jogo mais leve, mas guardas não acham mais corpos depois disso.</small></label><select id="oBodies"><option value="somem">Somem após 5 s</option><option value="ficam">Ficam no chão</option></select>
-        <label for="oChars">Personagens <small style="display:block;font-size:12px;opacity:.75">Detalhados ou o visual clássico de blocos. Muda na hora a sala do menu; nas fases, vale ao iniciar a missão.</small></label><select id="oChars"><option value="detalhado">Detalhados</option><option value="classico">Clássicos (blocos)</option></select>
+        <label for="oChars">Personagens <small style="display:block;font-size:12px;opacity:.75">Modelo 3D com textura por fase, detalhados ou o visual clássico de blocos. Muda na hora a sala do menu; nas fases, vale ao iniciar a missão.</small></label><select id="oChars"><option value="modelo">Modelo 3D (soldado novo)</option><option value="detalhado">Detalhados</option><option value="classico">Clássicos (blocos)</option></select>
         <label for="oQuality">Qualidade gráfica <small style="display:block;font-size:12px;opacity:.75">Médio e Alto: luz por pixel, relevo, brilho e névoa. Vale na próxima missão.</small></label><select id="oQuality"><option value="baixo">Baixo</option><option value="medio">Médio</option><option value="alto">Alto</option></select>
         <label for="oVol">Volume de efeitos</label><input id="oVol" type="range" min="0" max="1" step="0.05">
         <label for="oMus">Volume da música</label><input id="oMus" type="range" min="0" max="1" step="0.05">
@@ -282,6 +282,7 @@
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="js/modelos/soldado-meshy-dados.js"></script>
 <script src="js/00-core.js"></script>
 <script src="js/01-audio.js"></script>
 <script src="js/02-renderer.js"></script>

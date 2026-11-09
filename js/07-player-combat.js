@@ -290,7 +290,7 @@ function detachHelmet(ch,n,dir,impulse){
   if(ch.helmetState!=='ATTACHED') return;
   ch.helmetState='DETACHED';
   ensureMatrices();
-  const g=ch.h.helmet; removeShootables(ch.h.helmetMeshes); scene.attach(g);
+  const g=ch.h.helmet; removeShootables(ch.h.helmetMeshes); scene.attach(g); if(ch.h.scalp) ch.h.scalp.visible=true;
   const out=V3().copy(n).multiplyScalar(.65).addScaledVector(UP,.4).addScaledVector(dir,.15).normalize();
   const sp=clamp(CFG.helmet.minSpeed+impulse*.08,CFG.helmet.minSpeed,CFG.helmet.maxSpeed);
   let axis=V3().crossVectors(out,UP); if(axis.lengthSq()<1e-4) axis.set(1,0,0); axis.normalize().multiplyScalar(rnd(4,10));

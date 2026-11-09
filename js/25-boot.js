@@ -40,6 +40,6 @@ function boot(){
   $('#boot').remove();
   goMenu();
   requestAnimationFrame(frame);
-  window.__SDP={LEVELS,openBriefing,renderOps,get G(){return G;},W,APP,UI,startPlaying,resolveShot,settings,simStep,WEAPONS,camera,input,keys,goMenu,snapshot,openDoc};
+  window.__SDP={LEVELS,openBriefing,renderOps,get G(){return G;},W,APP,UI,startPlaying,resolveShot,settings,simStep,WEAPONS,camera,input,keys,goMenu,snapshot,openDoc,Enemy,makeHuman,MZ,get scene(){return scene;}};
 }
 boot();

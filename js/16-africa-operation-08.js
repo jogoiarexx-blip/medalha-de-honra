@@ -268,7 +268,7 @@ DOCS.mapa08={title:'Bir Zitoun e Henchir Souar',sub:'Croqui do LRDG — achado n
 LEVELS['08']={id:'08',num:8,op:'Operação 8',name:'Uma Aliada no Deserto',place:'Bir Zitoun, Tunísia central',prev:'07',
   loadout:{weapons:['silenced','pistol'],ammo:{silenced:{mag:6,reserve:12},pistol:{mag:8,reserve:16}},cur:'silenced',camera:true},baseLight:.88,lightFn:light08,tropical:true,shadows:true,bloomTh:.92,grenades:true,sightMul:1.6,
   build:buildLevel08,enemies:ENEMY_DEFS_08,
-  ally:{id:'yas',x:10.2,z:9.6,yaw:-Math.PI/2,caged:true,name:'YASMINA',title:'Yasmina',hp:160,range:70,dmg:46,look:{uniform:0x2e3a52,pants:0x5a4a3a,skin:0xb88a64,hair:0x140e0a,cap:null,weapon:'rifle'},failTitle:'Yasmina não resistiu',failText:'Yasmina ficou caída tempo demais na areia.'},
+  ally:{id:'yas',x:10.2,z:9.6,yaw:-Math.PI/2,caged:true,name:'YASMINA',title:'Yasmina',hp:160,range:70,dmg:46,look:{noMz:true,uniform:0x2e3a52,pants:0x5a4a3a,skin:0xb88a64,hair:0x140e0a,cap:null,weapon:'rifle'},failTitle:'Yasmina não resistiu',failText:'Yasmina ficou caída tempo demais na areia.'},
   start:{x:-106,z:18,yaw:-Math.PI/2},startDocs:['mapa08'],drawMap:drawMap08,
   reinf:[{id:'n1',x:12,z:-26,weapon:'rifle',helmet:true},{id:'n2',x:16,z:-27,weapon:'smg',helmet:true,nades:1},{id:'n3',x:18,z:-24,weapon:'rifle',helmet:true}],
   radio:{x:-4,z:10.2,fx:-4,fz:11.2},radioRun:'O tenente corre para o rádio da barraca!',alarmPos:V3(-4,1.2,11),alarmText:'Alarme em Bir Zitoun! Os soldados descansando perto do caminhão pegam as armas.',alarmObjective:null,

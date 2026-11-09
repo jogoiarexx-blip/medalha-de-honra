@@ -20,8 +20,8 @@ const ease=t=>t<.5?2*t*t:1-Math.pow(-2*t+2,2)/2;
    CONFIGURAÇÃO E DADOS
    ========================================================= */
 const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
-const DEFAULT_SETTINGS={sens:1,fov:75,invertY:false,hud:'dynamic',hitmarkers:true,adsToggle:false,crouchToggle:true,bob:!REDUCED,shake:!REDUCED,helmetSave:false,blood:'discreto',bodies:'somem',chars:'detalhado',quality:'medio',volume:.8,music:.5,difficulty:'soldado'};
-let settings=Object.assign({},DEFAULT_SETTINGS,store.get('sdp_settings')||{});
+const DEFAULT_SETTINGS={sens:1,fov:75,invertY:false,hud:'dynamic',hitmarkers:true,adsToggle:false,crouchToggle:true,bob:!REDUCED,shake:!REDUCED,helmetSave:false,blood:'discreto',bodies:'somem',chars:'modelo',quality:'medio',volume:.8,music:.5,difficulty:'soldado'};
+let settings=Object.assign({},DEFAULT_SETTINGS,store.get('sdp_settings')||{}); if(settings.charsV!==3){ settings.chars='modelo'; settings.charsV=3; }
 const saveSettings=()=>store.set('sdp_settings',settings);
 
 const CFG={
