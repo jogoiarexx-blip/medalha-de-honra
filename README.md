@@ -1,13 +1,13 @@
-# Sombras de Paris
+# Medalha de Honra
 
-FPS de espionagem na Segunda Guerra Mundial (Paris ocupada e Norte da África), feito em Three.js.
+FPS de espionagem na Segunda Guerra Mundial, com campanha entre Paris, Norte da África e outras regiões da Europa, feito em Three.js.
 Arquivo único: `index.html` — sem build, sem dependências locais.
 
 ## Publicar no GitHub Pages
-1. Crie um repositório (por exemplo `sombras-de-paris`) e envie **`index.html`** e **`.nojekyll`** para a raiz.
+1. Crie um repositório (por exemplo `medalha-de-honra`) e envie **`index.html`** e **`.nojekyll`** para a raiz.
 2. No repositório: **Settings → Pages → Build and deployment → Source: Deploy from a branch**,
    branch `main`, pasta `/ (root)` → **Save**.
-3. Em 1–2 minutos o jogo fica em `https://SEU-USUARIO.github.io/sombras-de-paris/`.
+3. Em 1–2 minutos o jogo fica em `https://jogoiarexx-blip.github.io/medalha-de-honra/`.
 
 Para atualizar, é só substituir o `index.html` e fazer commit.
 
