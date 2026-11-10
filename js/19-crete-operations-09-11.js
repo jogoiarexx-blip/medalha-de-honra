@@ -44,6 +44,115 @@ function zone09(x,z){
   return 0;
 }
 function light09(x,z){ if(x>-42&&x<-26&&z>-20&&z<-6) return .55; if(x>26&&x<54&&z>-20&&z<-4) return .45; if(x>31&&x<39&&z>-52&&z<-44) return .55; return .9; }
+// Operação 9: casco de barco com proa afilada e bordas inclinadas.
+// Substitui os antigos blocos retangulares que se pareciam com rochas soltas.
+// Toda a geometria pertence ao próprio barco; nenhuma rocha do mapa é criada aqui.
+function harborHull09(root,length,width,sideMat,deckMat,deckY,bottomY){
+  const w=width*.5, L=length;
+  const p=[[0,-L*.52],[w*.58,-L*.46],[w*.9,-L*.35],[w,-L*.2],[w,L*.29],[w*.83,L*.49],
+           [-w*.83,L*.49],[-w,L*.29],[-w,-L*.2],[-w*.9,-L*.35],[-w*.58,-L*.46]];
+  const sides=[],tops=[];
+  const tri=(out,a,b,c)=>out.push(...a,...b,...c);
+  for(let i=0;i<p.length;i++){
+    const a=p[i],b=p[(i+1)%p.length];
+    const ta=[a[0],deckY,a[1]],tb=[b[0],deckY,b[1]];
+    const ba=[a[0]*.72,bottomY,a[1]*.96],bb=[b[0]*.72,bottomY,b[1]*.96];
+    tri(sides,ta,tb,bb);tri(sides,ta,bb,ba);
+    // Inverter a ordem para que o tampo aponte para cima (+Y).
+    tri(tops,[0,deckY,0],tb,ta);
+  }
+  const make=(positions,material)=>{
+    const geo=new T.BufferGeometry();geo.setAttribute('position',new T.Float32BufferAttribute(positions,3));
+    geo.computeVertexNormals();const mesh=new T.Mesh(geo,material);root.add(mesh);return mesh;
+  };
+  return {hull:make(sides,sideMat),deck:make(tops,deckMat)};
+}
+function harborBeam09(root,a,b,r,mat){
+  const from=new T.Vector3(a[0],a[1],a[2]),to=new T.Vector3(b[0],b[1],b[2]);
+  const delta=to.clone().sub(from),length=delta.length();if(length<.001)return;
+  const mesh=new T.Mesh(new T.CylinderGeometry(r,r,length,6),mat);
+  mesh.position.copy(from).add(to).multiplyScalar(.5);
+  mesh.quaternion.setFromUnitVectors(new T.Vector3(0,1,0),delta.normalize());root.add(mesh);
+}
+function harborBoat09(x,z,rotation,paint,M,large=false,variant=0){
+  const g=new T.Group();g.name=large?'Lancha torpedeira S-Boot, operação 9':'Barco pesqueiro '+(variant+1);
+  // Nível do mar da fase 9: -0.7; os cascos entram na água, não flutuam no ar.
+  g.position.set(x,-.7,z);g.rotation.y=rotation;scene.add(g);
+  const metal=hm(0x353d40),glass=hm(0x6b9fb1),trim=hm(0x30383a);
+  const hullLength=large?25.7:7.2,hullWidth=large?4.3:2.45;
+  const deckY=large?1.22:.65;
+  harborHull09(g,hullLength,hullWidth,paint,large?M.hullW:M.wood,deckY,large?-.66:-.46);
+  const addBox=(w,h,d,x,y,z,mat)=>{const mesh=new T.Mesh(BOX(w,h,d),mat);mesh.position.set(x,y,z);g.add(mesh);return mesh;};
+  const addCylinder=(rad,height,x,y,z,mat,segments=8)=>{const mesh=new T.Mesh(new T.CylinderGeometry(rad,rad,height,segments),mat);mesh.position.set(x,y,z);g.add(mesh);return mesh;};
+  if(large){
+    // Faixa superior do casco e guarda-corpo: sem símbolos históricos reais.
+    for(const side of [-1,1]){
+      const x=side*2.08;
+      harborBeam09(g,[x*.76,1.17,-9.5],[x,1.17,-4],.08,trim);
+      harborBeam09(g,[x,1.17,-4],[x,1.17,8.5],.08,trim);
+      for(const z1 of [-8,-3,3,8]){
+        const px=side*(z1<-4?1.83:2.03);
+        harborBeam09(g,[px,1.19,z1],[px,2.01,z1],.035,metal);
+      }
+      harborBeam09(g,[side*1.83,2.02,-8],[side*2.03,2.02,8],.04,metal);
+      // Dois tubos de torpedo, com anteparas e tampas nítidas.
+      const tube=new T.Mesh(new T.CylinderGeometry(.32,.32,6.9,10),metal);
+      tube.rotation.x=Math.PI/2;tube.position.set(side*1.12,1.59,-6.9);g.add(tube);
+      const muzzle=new T.Mesh(new T.CylinderGeometry(.34,.34,.16,10),trim);
+      muzzle.rotation.x=Math.PI/2;muzzle.position.set(side*1.12,1.59,-10.4);g.add(muzzle);
+      addBox(.45,.43,1.4,side*1.12,1.38,-3.4,paint);
+      // Duas defensas laterais no cais.
+      for(const zz of [-1,6.5]){
+        const f=addCylinder(.18,.8,side*2.12,.67,zz,trim);
+        f.rotation.z=Math.PI/2;
+      }
+    }
+    // Ponte de comando com frente inclinada, janela azulada e teto baixo.
+    addBox(3.05,1.22,4.1,0,1.96,-.6,M.hullW);
+    addBox(3.42,.23,4.3,0,2.7,-.65,M.hull);
+    const front=addBox(2.4,.7,.07,0,2.24,-2.72,glass);front.rotation.x=-.15;
+    for(const side of [-1,1]){
+      addBox(.065,.57,.85,side*1.56,2.22,-1.36,glass);
+      addBox(.065,.57,.85,side*1.56,2.22,-.15,glass);
+      addBox(.12,.6,.12,side*.85,2.35,-2.71,metal);
+    }
+    addCylinder(.48,.24,0,2.88,2.65,metal,10);
+    harborBeam09(g,[0,2.79,3.1],[0,5.75,3.1],.06,metal);
+    harborBeam09(g,[0,5.0,3.1],[1.25,3.6,4.0],.025,metal);
+    harborBeam09(g,[0,5.0,3.1],[-1.25,3.6,4.0],.025,metal);
+    addBox(.72,.33,.5,0,5.48,3.1,metal); // refletor/radar discreto
+    addBox(1.8,.55,1.35,0,1.54,8.4,M.hull);
+    const aftGun=addCylinder(.24,.42,0,1.85,8.3,metal);
+    const barrel=new T.Mesh(new T.CylinderGeometry(.075,.075,2.45,8),metal);
+    barrel.rotation.x=Math.PI/2;barrel.position.set(0,2.13,7.0);g.add(barrel);
+    addBox(.12,.85,.12,0,2.9,10.8,metal);
+    addBox(.04,.64,1.0,0,3.15,11.28,hm(0x9e3b30));
+    addBox(.5,.15,2.5,0,1.35,-11.0,M.hullW); // convés da proa
+  }else{
+    // Barcos de pesca existentes: preservados nas posições originais, com silhueta náutica.
+    for(const side of [-1,1]){
+      harborBeam09(g,[side*.88,.71,-2.15],[side*1.17,.72,1.8],.07,trim);
+      harborBeam09(g,[side*1.15,.72,1.8],[side*.92,.73,3.0],.07,trim);
+    }
+    for(const zz of [-1.05,.7,2.2])addBox(1.7,.17,.34,0,.82,zz,M.wood);
+    addBox(1.16,.88,1.22,0,1.16,-.35,variant%2?M.hullW:M.cream);
+    addBox(1.23,.12,1.34,0,1.65,-.37,trim);
+    addBox(.72,.42,.055,0,1.3,-1.0,glass);
+    for(const side of [-1,1])addBox(.06,.36,.43,side*.6,1.32,-.35,glass);
+    // Mastro e cabo de pesca com pouco custo de renderização.
+    harborBeam09(g,[0,.82,1.05],[0,4.2,1.05],.057,M.wood);
+    harborBeam09(g,[0,3.85,1.05],[sideSign(variant)*.93,1.16,2.9],.025,trim);
+    const rope=new T.Mesh(new T.TorusGeometry(.28,.045,6,12),M.wood);
+    rope.rotation.x=Math.PI/2;rope.position.set(-.58,.86,1.75);g.add(rope);
+    for(const side of [-1,1]){
+      addCylinder(.105,.34,side*1.14,.42,1.4,variant%2?M.hullB:M.hullW).rotation.z=Math.PI/2;
+    }
+    addBox(.55,.2,.52,0,.9,-2.7,M.hullW);
+  }
+  return g;
+}
+function sideSign(i){return i%2?1:-1;}
+
 function buildLevel09(){
   M5=mats05(); M6=mats06(); M9=mats09(); const M=M9;
   scene.background=new T.Color(0xc8dcec); scene.fog=new T.FogExp2(0xc8d8e4,.006);
@@ -67,12 +176,13 @@ function buildLevel09(){
   addBlock(35.6,38.4,-51.6,-50.8,.78,{mat:M.wood,surf:'wood',cover:true,seg:1}); addBlock(31.4,32.2,-50,-46,1.8,{mat:MAT.cabinet,surf:'metal',seg:1});
   const mapBoard=poster(35,1.8,-51.76,0,3.2,1.8,(g,w,h)=>{ g.fillStyle='#d8ccae'; g.fillRect(0,0,w,h); g.strokeStyle='#5a7a9a'; g.lineWidth=2; g.beginPath(); g.moveTo(10,90); for(let x=10;x<w-10;x+=20) g.lineTo(x,80+Math.sin(x*.05)*20); g.stroke(); g.fillStyle='#c8a870'; g.beginPath(); g.moveTo(30,95); g.quadraticCurveTo(w*.5,40,w-30,95); g.quadraticCurveTo(w*.5,140,30,95); g.fill(); g.fillStyle='#8a1a10'; for(const [x,y] of [[60,92],[110,70],[170,66],[230,74],[280,90]]){ g.beginPath(); g.arc(x,y,5,0,7); g.fill(); } g.strokeStyle='#8a1a10'; g.setLineDash([6,4]); g.beginPath(); g.moveTo(60,92); g.lineTo(170,66); g.lineTo(230,74); g.stroke(); g.setLineDash([]); g.fillStyle='#222'; g.font='bold 14px serif'; g.fillText('KRETA — Küstenbatterien u. Nachschubwege',12,20); g.font='11px serif'; g.fillText('Chania',48,110); g.fillText('Heraklion / Knossos',200,118); });
   bulb('H1',35,3.15,-48,6); W.lamps[W.lamps.length-1].base=.6; W.lamps[W.lamps.length-1].light.intensity=.6;
-  // lancha torpedeira atracada
-  { const g=new T.Group(); g.position.set(46.4,-.3,-48); scene.add(g); const hull=new T.Mesh(BOX(4,1.8,26),M.hull); hull.position.y=.4; g.add(hull); const bow=new T.Mesh(new T.ConeGeometry(2,5,4),M.hull); bow.rotation.x=-Math.PI/2; bow.rotation.y=Math.PI/4; bow.scale.set(1,1,.45); bow.position.set(0,.4,-15.5); g.add(bow);
-    const br=new T.Mesh(BOX(2.4,1.6,4),M.hull); br.position.set(0,2,-2); g.add(br); for(const s of [-1,1]){ const t=new T.Mesh(new T.CylinderGeometry(.28,.28,6,10),M.dark); t.rotation.x=Math.PI/2; t.position.set(s*1.3,1.5,-8); g.add(t); } const gun=new T.Mesh(new T.CylinderGeometry(.06,.06,1.6,8),M.dark); gun.rotation.x=Math.PI/2; gun.position.set(0,2,4); g.add(gun);
-    const flag=new T.Mesh(BOX(.02,.5,.8),hm(0xb02a20)); flag.position.set(0,3.2,10); g.add(flag); }
-  // barcos de pesca
-  for(const [x,z,r,m] of [[-56,-37,.2,M.hullB],[-40,-38,-.3,M.hullW],[-20,-37.4,.1,M.hullB],[8,-38,.4,M.hullW]]){ const g=new T.Group(); g.position.set(x,-.45,z); g.rotation.y=r; const h=new T.Mesh(BOX(2.4,1,7),m); g.add(h); const c=new T.Mesh(BOX(1.4,1.1,1.8),M.white); c.position.set(0,.9,-.6); g.add(c); const ms=new T.Mesh(new T.CylinderGeometry(.05,.05,4,6),M.wood); ms.position.set(0,2.4,1.6); g.add(ms); scene.add(g); }
+  // Lancha torpedeira e quatro barcos de pesca (sem blocos com aspecto de rochas).
+  // Posições mantidas para preservar a foto opcional da S-Boot e os caminhos do porto.
+  harborBoat09(46.4,-48,0,M.hull,M,true);
+  for(const [i,x,z,r,m] of [[0,-56,-37,.2,M.hullB],[1,-40,-38,-.3,M.hullW],
+                            [2,-20,-37.4,.1,M.hullB],[3,8,-38,.4,M.hullW]]){
+    harborBoat09(x,z,r,m,M,false,i);
+  }
   // ---- casario ----
   const house=(x0,x1,z0,z1,h,mat,sh)=>{ addBlock(x0,x1,z0,z1,h,{mat,surf:'stone',top:M.tile,seg:3,cover:false}); const R=mulberry32(Math.round(x0*13+z0*7));
     for(let y=1.4;y<h-.8;y+=2.6) for(let x=x0+1.2;x<x1-.8;x+=2.4){ if(R()<.2) continue; const m=new T.Mesh(BOX(.9,1.3,.08),R()<.5?sh:M.dark); m.position.set(x,y+.4,z0-.03); scene.add(m); if(z1<0){} } };
