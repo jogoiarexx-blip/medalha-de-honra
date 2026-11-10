@@ -51,10 +51,18 @@
     const width=canvas.width,height=canvas.height;
     const color=new Uint8Array(uv.count*3);
     const clampByte=v=>Math.max(0,Math.min(255,Math.round(v)));
+    // THREE.BufferAttribute.getX/getY em r128 retornam valores BRUTOS;
+    // normalized=true somente normaliza na GPU. O GLB guarda UVs Uint16.
+    // Sem dividir por 65535, quase todos os vertices leem um unico texel.
+    const normalizedScale=uv.normalized?
+      (uv.array instanceof Uint16Array?1/65535:
+       uv.array instanceof Uint8Array?1/255:
+       uv.array instanceof Int16Array?1/32767:1):1;
     for(let i=0;i<uv.count;i++){
-      const u=Math.min(1,Math.max(0,uv.getX(i)));
+      const u=Math.min(1,Math.max(0,uv.getX(i)*normalizedScale));
       // glTF Loader usa flipY=false (V cresce para baixo no atlas glTF).
-      const v=Math.min(1,Math.max(0,map.flipY?1-uv.getY(i):uv.getY(i)));
+      const vy=Math.min(1,Math.max(0,uv.getY(i)*normalizedScale));
+      const v=map.flipY?1-vy:vy;
       const x=Math.min(width-1,Math.floor(u*(width-1)));
       const y=Math.min(height-1,Math.floor(v*(height-1)));
       // Filtragem de quatro texels elimina pontilhados de compressao JPEG.
