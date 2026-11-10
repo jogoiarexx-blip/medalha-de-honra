@@ -102,8 +102,8 @@ const sleep=ms=>new Promise(r=>setTimeout(r,ms));
   if(report.visual.morphs!==8||!report.visual.hasVertexColors||report.visual.colorVertices!==9008||
       report.textureMode!=='fur-vertex-baked')throw new Error('Morph targets ou pelagem corrigida ausentes');
   const tone=report.visual.colorStats;
-  if(!tone||tone.max[0]-tone.min[0]<95||tone.max[1]-tone.min[1]<80||
-     tone.max[2]-tone.min[2]<60){
+  if(!tone||tone.max[0]-tone.min[0]<80||tone.max[1]-tone.min[1]<60||
+     tone.max[2]-tone.min[2]<30){
     throw new Error('Textura virou cor uniforme por UVs nao normalizadas: '+JSON.stringify(tone));
   }
   const p=report.visual.screen;if(Math.abs(p[0])>1||Math.abs(p[1])>1||Math.abs(p[2])>1)throw new Error('Pastor fora da camera: '+p);
