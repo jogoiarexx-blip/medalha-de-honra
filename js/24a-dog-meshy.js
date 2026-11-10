@@ -1,155 +1,237 @@
 'use strict';
-/* Pastor alemão Meshy | GLB otimizado e rig de caminhada.
- * Compartilha geometria/texturas, clona somente o esqueleto por cão.
- * Preserva a IA, colisões e o cachorro procedural se o arquivo não existir.
- * Coloque o modelo em assets/models/pastor-alemao-animado.glb
+/*
+ * Pastor-alemao Meshy - ponte para o rig de cachorro existente.
+ *
+ * O GLB tem escala 0.01 em Armature e matrizes inverseBind ~100.
+ * Suas posicoes de vertices NAO podem ser multiplicadas por 100:
+ * o skinning ja converte as unidades. Box3.setFromObject()
+ * nao considera a deformacao skinned do Three r128 e da dimensao
+ * incorreta. Aqui medimos os vertices com SkinnedMesh.boneTransform()
+ * para preservar o tamanho do cachorro procedural em cada eixo.
+ *
+ * A IA e hitboxes permanecem no personagem antigo. Conservamos
+ * descanso, alerta, corrida, mordida e morte; o GLB oferece
+ * a animacao original Walk apenas para locomocao.
  */
 (function(){
   const oldMake=makeDogRig, oldPose=poseDogRig;
   const DATA={
     url:'assets/models/pastor-alemao-animado.glb',
-    status:'loading', mounted:0, instances:[], error:null,
-    trianglesPerDog:12245, correctedVertices:0, menuDogVisible:false, visibleMeshes:0
+    status:'loading',mounted:0,instances:[],error:null,
+    trianglesPerDog:12245,correctedVertices:0,
+    visibleMeshes:0,menuDogVisible:false,
+    originalSize:null,importedSize:null,meshyScale:null
   };
   window.__PASTOR_MESHY=DATA;
-  let template=null,walk=null;
-  const SIZE=1.12;
+  let template=null,walk=null,sourceBox=null;
+  const V=new T.Vector3(),XAXIS=new T.Vector3(1,0,0),YAXIS=new T.Vector3(0,1,0);
+
+  function skinnedBounds(root){
+    root.updateMatrixWorld(true);
+    const out=new T.Box3().makeEmpty();
+    const pt=new T.Vector3();
+    root.traverse(o=>{
+      if(!o.isMesh||!o.geometry)return;
+      const attr=o.geometry.getAttribute('position');
+      if(!attr)return;
+      for(let i=0;i<attr.count;i++){
+        if(o.isSkinnedMesh && typeof o.boneTransform==='function'){
+          o.boneTransform(i,pt);
+        }else{
+          pt.fromBufferAttribute(attr,i);
+        }
+        pt.applyMatrix4(o.matrixWorld);
+        if(Number.isFinite(pt.x)&&Number.isFinite(pt.y)&&Number.isFinite(pt.z))out.expandByPoint(pt);
+      }
+    });
+    return out;
+  }
 
   function cloneRig(original){
     const copy=original.clone(true);
     const a=[],b=[];
-    original.traverse(x=>a.push(x));
-    copy.traverse(x=>b.push(x));
-    if(a.length!==b.length) throw new Error('Hierarquia do pastor incompatível');
+    original.traverse(o=>a.push(o));
+    copy.traverse(o=>b.push(o));
+    if(a.length!==b.length)throw new Error('Hierarquia incompatível no pastor');
     const mapped=new Map(a.map((x,i)=>[x,b[i]]));
     a.forEach((o,i)=>{
       if(!o.isSkinnedMesh)return;
       const c=b[i],bones=o.skeleton.bones.map(x=>mapped.get(x));
-      if(bones.some(x=>!x))throw new Error('Osso ausente no cachorro clonado');
-      const inv=o.skeleton.boneInverses.map(x=>x.clone());
-      c.bind(new T.Skeleton(bones,inv),o.bindMatrix.clone());
+      if(bones.some(x=>!x))throw new Error('Osso ausente no pastor');
+      c.bind(new T.Skeleton(bones,o.skeleton.boneInverses.map(x=>x.clone())),o.bindMatrix.clone());
       c.bindMode=o.bindMode;
       c.frustumCulled=false;
-      c.castShadow=true;
+      c.castShadow=false;
+      c.receiveShadow=true;
     });
     return copy;
   }
 
-  function attach(d){
-    if(!template||d._meshy||!d.root)return;
-    const model=cloneRig(template);
-    // Alguns GLB do Meshy exportam Z-up; a detecção também aceita Y-up.
-    const bounds=new T.Box3().setFromObject(model);
-    const dim=bounds.getSize(new T.Vector3());
-    if(dim.z>dim.y*1.2)model.rotation.x=-Math.PI/2;
-    model.updateMatrixWorld(true);
-    const pre=new T.Box3().setFromObject(model);
-    const height=pre.max.y-pre.min.y;
-    if(!Number.isFinite(height)||height<1e-9)throw new Error('Dimensões inválidas no GLB');
-    model.scale.multiplyScalar(SIZE/height);
-    model.updateMatrixWorld(true);
-    const box=new T.Box3().setFromObject(model);
-    model.position.x-=(box.min.x+box.max.x)*.5;
-    model.position.y-=box.min.y;
-    model.position.z-=(box.min.z+box.max.z)*.5;
+  function preparePose(model){
+    const bones={};
+    model.traverse(o=>{if(o.isBone)bones[o.name]=o;});
+    const original={};
+    for(const name in bones){
+      const b=bones[name];
+      original[name]={p:b.position.clone(),q:b.quaternion.clone(),s:b.scale.clone()};
+    }
+    return {bones,original};
+  }
 
+  function attach(d){
+    if(!template||d._meshy||!d.root||!sourceBox)return;
+    const model=cloneRig(template);
+    const desired=d._pastorOriginalBounds;
+    if(!desired||desired.isEmpty())throw new Error('Cachorro original sem dimensões');
+    const oldSize=desired.getSize(new T.Vector3());
+    const newSize=sourceBox.getSize(new T.Vector3());
+    if(Math.min(oldSize.x,oldSize.y,oldSize.z,newSize.x,newSize.y,newSize.z)<1e-6){
+      throw new Error('Medidas inválidas no GLB');
+    }
+    const fit=new T.Vector3(oldSize.x/newSize.x,oldSize.y/newSize.y,oldSize.z/newSize.z);
+    // Nonuniform fitting reproduz o volume do personagem original e sua escala 0.85/1.0.
+    // Nenhum dos vértices ou ossos recebe multiplicação manual.
+    model.scale.copy(fit);
+    const a=desired.getCenter(new T.Vector3()),b=sourceBox.getCenter(new T.Vector3());
+    model.position.set(a.x-b.x*fit.x,desired.min.y-sourceBox.min.y*fit.y,a.z-b.z*fit.z);
+    model.updateMatrixWorld(true);
+    // Não ocultar o cachorro antigo antes de confirmar a presença do SkinnedMesh.
+    const skinned=[];
+    model.traverse(o=>{if(o.isSkinnedMesh)skinned.push(o);});
+    if(!skinned.length)throw new Error('GLB não tem SkinnedMesh');
     d.root.add(model);
-    d.spine.visible=false;
-    d._meshy={model,mixer:new T.AnimationMixer(model),action:null,rest:0};
+    const pose=preparePose(model);
+    d._meshy={
+      model,mixer:new T.AnimationMixer(model),action:null,
+      bones:pose.bones,original:pose.original,rest:0,mode:'idle'
+    };
     if(walk){
       const action=d._meshy.mixer.clipAction(walk);
       action.setLoop(T.LoopRepeat,Infinity);
-      action.play();
-      action.paused=true;
       d._meshy.action=action;
     }
-    // Capacete do bônus preservado como equipamento visual independente.
     if(d._wantsDogHelmet){
       const cap=new T.Mesh(
         new T.SphereGeometry(.18,12,7,0,Math.PI*2,0,Math.PI*.54),
         new T.MeshLambertMaterial({color:0x596346,side:T.DoubleSide})
       );
       cap.position.set(0,1.025,.38);
-      d.root.add(cap);
-      d._meshy.cap=cap;
+      d.root.add(cap);d._meshy.cap=cap;
     }
+    d.spine.visible=false;
     DATA.mounted++;
+    DATA.originalSize=oldSize.toArray();
+    DATA.importedSize=newSize.toArray();
+    DATA.meshyScale=fit.toArray();
   }
+
   makeDogRig=function(helmet){
     const d=oldMake(helmet);
     d._wantsDogHelmet=!!helmet;
+    // Capturar dimensões antes de poses (dormir, morder, morrer).
+    d._pastorOriginalBounds=new T.Box3().setFromObject(d.spine);
     if(DATA.instances.length>45){
       DATA.instances=DATA.instances.filter(x=>x.root&&x.root.parent);
     }
     DATA.instances.push(d);
     if(template){
-      try{attach(d);}catch(e){DATA.error=String(e);console.warn('Pastor Meshy: fallback procedural',e);}
+      try{attach(d);}catch(e){DATA.error=String(e);console.warn('Pastor: mantendo cachorro procedural',e);}
     }
     return d;
   };
-  poseDogRig=function(d,time,dt,opts){
-    if(!d||!d._meshy)return oldPose(d,time,dt,opts);
-    opts=opts||{};
-    const m=d._meshy;
-    const delta=Math.max(0,Math.min(.05,dt||0));
-    const speed=Math.max(0,Math.min(8,opts.speed||0));
-    const resting=!!opts.resting,dead=!!opts.dead;
-    const walking=!resting&&!dead&&speed>.2;
-    if(m.action){
-      m.action.paused=!walking;
-      m.action.timeScale=Math.max(.55,Math.min(2.3,speed/3.1));
-      if(walking)m.mixer.update(delta);
+
+  const turn=new T.Quaternion();
+  function rotate(m,name,axis,angle){
+    const bone=m.bones[name],base=m.original[name];
+    if(!bone||!base)return;
+    turn.setFromAxisAngle(axis,angle);
+    bone.quaternion.copy(base.q).multiply(turn);
+  }
+  function restPose(m,t,rest,opts){
+    for(const name in m.original){
+      const b=m.bones[name],base=m.original[name];
+      b.position.copy(base.p);b.quaternion.copy(base.q);b.scale.copy(base.s);
     }
-    m.rest+=(resting?1-m.rest:-m.rest)*Math.min(1,delta*4);
-    if(m.cap)m.cap.visible=!dead;
+    const hips=m.bones.Hips,base=m.original.Hips;
+    if(hips&&base){
+      // Eixo local Z da armature corresponde a altura (negativo para cima).
+      hips.position.z=base.p.z+.33*rest;
+    }
+    const breath=Math.sin(t*1.7)*.015,look=(opts.look||0)*.18;
+    rotate(m,'chest',XAXIS,.12*rest+breath);
+    rotate(m,'head',YAXIS,look+Math.sin(t*.48)*.05);
+    rotate(m,'frontleg',XAXIS,-.85*rest);
+    rotate(m,'R_frontleg',XAXIS,-.85*rest);
+    rotate(m,'backleg',XAXIS,.72*rest);
+    rotate(m,'R_backleg',XAXIS,.72*rest);
+    rotate(m,'tail',YAXIS,Math.sin(t*(opts.alert?7:3.2))*.12);
+  }
+
+  poseDogRig=function(d,time,dt,opts){
+    // Mantém TODAS as transições e reações originais (IA, rig, estados).
+    oldPose(d,time,dt,opts||{});
+    if(!d||!d._meshy)return;
+    const m=d._meshy,o=opts||{},delta=Math.max(0,Math.min(.05,dt||0));
+    const speed=Math.max(0,Math.min(8,o.speed||0));
+    const walking=!o.resting&&!o.dead&&speed>.2;
+    const targetRest=(o.resting||o.dead)?1:0;
+    m.rest+=(targetRest-m.rest)*(1-Math.exp(-delta*6));
+    if(walking&&m.action){
+      if(m.mode!=='walking'){m.action.reset().play();m.mode='walking';}
+      m.action.timeScale=Math.max(.55,Math.min(2.3,speed/3.1));
+      m.mixer.update(delta);
+      // Feedback de ataque, sem destruir os keyframes de caminhada.
+      if(o.bite){
+        const head=m.bones.head;
+        if(head)head.quaternion.multiply(turn.setFromAxisAngle(XAXIS,-.23*o.bite));
+      }
+    }else{
+      if(m.mode==='walking'){m.action.stop();m.mode='idle';}
+      restPose(m,time,m.rest,o);
+      if(o.bite){
+        const head=m.bones.head;
+        if(head)head.quaternion.multiply(turn.setFromAxisAngle(XAXIS,-.23*o.bite));
+      }
+    }
+    if(m.cap)m.cap.visible=!o.dead;
   };
 
   if(!T.GLTFLoader){
-    DATA.status='fallback'; DATA.error='GLTFLoader não carregado';
+    DATA.status='fallback';DATA.error='GLTFLoader não carregado';
     return;
   }
   const loader=new T.GLTFLoader();
   loader.load(DATA.url,gltf=>{
-    if(!gltf||!gltf.scene)throw new Error('GLB sem cena');
-    template=gltf.scene;walk=(gltf.animations||[])[0]||null;
-    // Correção de unidades Meshy/FBX: o arquivo guarda vértices ~100x menores
-    // que as juntas do esqueleto (posição ~0.014 vs ossos ~1.4).
-    // Sem essa correção a animação afasta a malha da posição do cão.
-    // Corrigir somente a posição do mesh; ossos, pesos, binds e clips permanecem.
-    const scaledGeometries=new Set();
-    template.traverse(o=>{
-      if(!o.isMesh||!o.material)return;
-      DATA.visibleMeshes++;
-      if(o.isSkinnedMesh && o.geometry && !scaledGeometries.has(o.geometry)){
-        const geo=o.geometry, position=geo.getAttribute('position');
-        if(!position || !position.count)throw new Error('Pastor: geometria sem vértices');
-        for(let i=0;i<position.count;i++){
-          position.setXYZ(i,position.getX(i)*100,position.getY(i)*100,position.getZ(i)*100);
-        }
-        position.needsUpdate=true; geo.computeBoundingBox(); geo.computeBoundingSphere();
-        scaledGeometries.add(geo);
-        DATA.correctedVertices+=position.count;
-      }
-      // O GLB exportou textura emissiva duplicada: deixar pelagem fosca.
-      const mats=Array.isArray(o.material)?o.material:[o.material];
-      mats.forEach(m=>{
-        if(m.emissive)m.emissive.setRGB(0,0,0);
-        if('emissiveMap' in m)m.emissiveMap=null;
-        if('metalness' in m)m.metalness=0;
-        if('roughness' in m)m.roughness=.9;
-        m.needsUpdate=true;
+    try{
+      if(!gltf||!gltf.scene)throw new Error('GLB sem cena');
+      template=gltf.scene;walk=(gltf.animations||[])[0]||null;
+      template.traverse(o=>{
+        if(!o.isMesh||!o.material)return;
+        DATA.visibleMeshes++;
+        // Não reescalar posições: o skinning preserva as proporções originais.
+        const mats=Array.isArray(o.material)?o.material:[o.material];
+        mats.forEach(mat=>{
+          if(mat.emissive)mat.emissive.setRGB(0,0,0);
+          if('emissiveMap' in mat)mat.emissiveMap=null;
+          if('metalness' in mat)mat.metalness=0;
+          if('roughness' in mat)mat.roughness=.9;
+          mat.needsUpdate=true;
+        });
       });
-    });
-    if(!DATA.correctedVertices)throw new Error('Pastor: nenhum SkinnedMesh foi encontrado');
-    DATA.status='ready';
-    DATA.instances.forEach(d=>{
-      if(d.root&&d.root.parent&&!d._meshy){
-        try{attach(d);}catch(e){DATA.error=String(e);console.warn('Pastor Meshy:',e);}
+      sourceBox=skinnedBounds(template);
+      const size=sourceBox.getSize(new T.Vector3());
+      if(sourceBox.isEmpty()||Math.min(size.x,size.y,size.z)<1e-6)throw new Error('GLB sem volume skinned válido');
+      DATA.status='ready';
+      for(const d of DATA.instances){
+        if(d.root&&d.root.parent&&!d._meshy){
+          try{attach(d);}catch(e){DATA.error=String(e);console.warn('Pastor não pôde ser anexado:',e);}
+        }
       }
-    });
+      if(DATA.mounted===0)console.info('Pastor carregado: aguardando cão visível');
+    }catch(e){DATA.status='fallback';DATA.error=String(e);console.warn('Pastor: usando modelo original',e);}
   },undefined,err=>{
     DATA.status='fallback';
-    DATA.error=err&&err.message?err.message:'Modelo externo indisponível';
-    // Nenhuma falha de jogo: os cães procedurais continuam ativos.
+    DATA.error=err&&err.message?err.message:'Modelo GLB indisponível';
+    console.warn('Pastor GLB indisponível; modelo original preservado:',DATA.error);
   });
 })();
