@@ -18,11 +18,34 @@ const sleep=ms=>new Promise(r=>setTimeout(r,ms));
   await page.waitForTimeout(5500);
   const report=await page.evaluate(()=>{
    const d=window.__PASTOR_MESHY||{},menu=window.MENU3D, dog=menu&&menu.dog||null, t=window.THREE;
-   const res={status:d.status,error:d.error,correctedVertices:d.correctedVertices,mounted:d.mounted,visibleMeshes:d.visibleMeshes,instances:d.instances&&d.instances.length,menuBuilt:!!menu?.built,menuOn:!!menu?.on,webgl:!!window.__SDP};
+   const res={status:d.status,error:d.error,correctedVertices:d.correctedVertices,mounted:d.mounted,visibleMeshes:d.visibleMeshes,instances:d.instances&&d.instances.length,menuBuilt:!!menu?.built,menuOn:!!menu?.on,webgl:!!window.__SDP,originalSize:d.originalSize,importedSize:d.importedSize,meshyScale:d.meshyScale};
    if(dog){res.dog={position:dog.root.position.toArray(),scale:dog.root.scale.toArray(),visible:dog.root.visible,parent:dog.root.parent?.type,meshy:!!dog._meshy,spineVisible:dog.spine.visible};
     if(dog._meshy){
-      const m=dog._meshy.model; const b=new t.Box3().setFromObject(m);const c=b.getCenter(new t.Vector3()),v=c.clone().project(menu.cam);res.model={center:c.toArray(),box:[b.min.toArray(),b.max.toArray()],projected:v.toArray(),w:Number(b.max.x-b.min.x),h:Number(b.max.y-b.min.y),d:Number(b.max.z-b.min.z),meshes:0,bones:0};
-      m.traverse(o=>{if(o.isSkinnedMesh){res.model.meshes++;res.model.bones+=o.skeleton.bones.length;}});
+      const m=dog._meshy.model; const b=new t.Box3().setFromObject(m),c=b.getCenter(new t.Vector3());
+      const ob=dog._pastorOriginalBounds;
+      res.model={oldBox:ob&&[ob.min.toArray(),ob.max.toArray()],approxBox:[b.min.toArray(),b.max.toArray()],meshes:0,bones:0,actualBox:null,skinnedVisible:null};
+      const skin=new t.Box3().makeEmpty(),pt=new t.Vector3();m.updateMatrixWorld(true);
+      m.traverse(o=>{
+        if(o.isSkinnedMesh){
+          res.model.meshes++;res.model.bones+=o.skeleton.bones.length;
+          const a=o.geometry.getAttribute('position');
+          res.model.material={map:!!o.material.map,transparent:o.material.transparent,opacity:o.material.opacity,visible:o.visible,name:o.name,frustumCulled:o.frustumCulled};
+          const points=[];
+          for(let i=0;i<a.count;i++){
+            o.boneTransform(i,pt);
+            if(i===0)points.push(pt.toArray());
+            pt.applyMatrix4(o.matrixWorld);skin.expandByPoint(pt);
+          }
+          res.model.sample=points;
+        }
+      });
+      if(!skin.isEmpty()){
+        const center=skin.getCenter(new t.Vector3()), proj=center.clone().project(menu.cam);
+        res.model.actualBox=[skin.min.toArray(),skin.max.toArray()];
+        res.model.actualSize=skin.getSize(new t.Vector3()).toArray();
+        res.model.actualCenter=center.toArray();res.model.screen=proj.toArray();
+        res.model.skinnedVisible=proj.x>=-1&&proj.x<=1&&proj.y>=-1&&proj.y<=1&&proj.z>=-1&&proj.z<=1;
+      }
     }
    }
    return res;
