@@ -80,7 +80,7 @@ const sleep=ms=>new Promise(r=>setTimeout(r,ms));
     const geo=sk.geometry.clone();
     geo.setAttribute('position',new t.BufferAttribute(points,3));
     geo.deleteAttribute('skinIndex');geo.deleteAttribute('skinWeight');geo.computeVertexNormals();geo.computeBoundingSphere();
-    const mat=sk.material.clone();mat.skinning=false;mat.side=t.DoubleSide;mat.needsUpdate=true;
+    const mat=new t.MeshBasicMaterial({map:sk.material.map||null,color:0xffffff,side:t.DoubleSide});
     const visual=new t.Mesh(geo,mat); visual.frustumCulled=false;root.add(visual);
     m.model.visible=false;d.spine.visible=false;
     return {vertices:a.count,normalisedSize:rs.toArray(),originalRaw:sz.toArray(),offset:base.toArray(),visible:visual.visible};
