@@ -19,7 +19,7 @@ const sleep=ms=>new Promise(r=>setTimeout(r,ms));
   await page.waitForTimeout(1600);
   const report=await page.evaluate(()=>{
    const d=window.__PASTOR_MESHY||{},menu=window.MENU3D,dog=menu&&menu.dog||null,t=window.THREE;
-   const r={status:d.status,error:d.error,renderMode:d.renderMode,mounted:d.mounted,originalSize:d.originalSize,importedSize:d.importedSize,textureMode:d.textureMode,furColorVertices:d.furColorVertices,furTextureResolution:d.furTextureResolution,menuBuilt:!!menu?.built,menuOn:!!menu?.on,webgl:!!window.__SDP};
+   const r={status:d.status,error:d.error,renderMode:d.renderMode,mounted:d.mounted,originalSize:d.originalSize,importedSize:d.importedSize,textureMode:d.textureMode,sourceUvRepairs:d.sourceUvRepairs,furColorVertices:d.furColorVertices,furTextureResolution:d.furTextureResolution,menuBuilt:!!menu?.built,menuOn:!!menu?.on,webgl:!!window.__SDP};
    if(dog){
      r.dog={pos:dog.root.position.toArray(),scale:dog.root.scale.toArray(),visible:dog.root.visible,hasModel:!!dog._meshy,spineVisible:dog.spine.visible,originalBounds:dog._pastorOriginalBounds&&dog._pastorOriginalBounds.getSize(new t.Vector3()).toArray()};
      if(dog._meshy){
@@ -106,6 +106,7 @@ const sleep=ms=>new Promise(r=>setTimeout(r,ms));
      tone.max[2]-tone.min[2]<30){
     throw new Error('Textura virou cor uniforme por UVs nao normalizadas: '+JSON.stringify(tone));
   }
+  if(report.sourceUvRepairs!==557)throw new Error('Reparos do atlas original nao foram aplicados: '+report.sourceUvRepairs);
   const p=report.visual.screen;if(Math.abs(p[0])>1||Math.abs(p[1])>1||Math.abs(p[2])>1)throw new Error('Pastor fora da camera: '+p);
   if(!s1.hasModel||s1.moving.length!==8||s1.biting.length!==8)throw new Error('Pastor da missao S1 nao anima');
   if(!variants.every(x=>x.option===x.selected))throw new Error('A opcao de personagem nao foi persistida no menu');
