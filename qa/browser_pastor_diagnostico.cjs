@@ -35,6 +35,25 @@ const sleep=ms=>new Promise(r=>setTimeout(r,ms));
   console.log('PASTOR_BROWSER_LOGS '+JSON.stringify(logs.slice(0,30)));
   fs.mkdirSync('qa-shots',{recursive:true});
   await page.screenshot({path:'qa-shots/pastor-menu.png',fullPage:true});
+  // Vista isolada com luz neutra para auditar textura, UV e a orientacao do pastor.
+  const views=await page.evaluate(()=>{
+    const t=window.THREE,d=window.MENU3D?.dog,m=d?._meshy?.mesh;
+    if(!m)return [];
+    const canvas=document.createElement('canvas');canvas.width=520;canvas.height=480;
+    const r=new t.WebGLRenderer({canvas,antialias:true,preserveDrawingBuffer:true});
+    r.setSize(520,480,false);r.setPixelRatio(1);r.outputEncoding=t.sRGBEncoding;
+    const scene=new t.Scene();scene.background=new t.Color(0xc0bcb7);
+    const cam=new t.PerspectiveCamera(48,520/480,.1,30),images=[];
+    scene.add(new t.AmbientLight(0xffffff,1));
+    const light=new t.DirectionalLight(0xffffff,1.4);light.position.set(-4,8,7);scene.add(light);
+    const mesh=m.clone();mesh.position.set(0,.1,0);mesh.visible=true;scene.add(mesh);
+    for(const [label,px,pz] of [['front',0,5],['side',5,0],['back',0,-5],['other',-5,0]]){
+      cam.position.set(px,1.5,pz);cam.lookAt(0,.7,0);r.render(scene,cam);
+      images.push({label,url:canvas.toDataURL('image/png')});
+    }
+    r.dispose();return images;
+  });
+  for(const v of views)fs.writeFileSync('qa-shots/pastor-'+v.label+'.png',Buffer.from(v.url.split(',')[1],'base64'));
   const s1=await page.evaluate(()=>{
     const scene=window.__SDP.scene;
     const dog=makeDogRig(true);
