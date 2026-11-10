@@ -33,7 +33,7 @@ assert(load.includes('m.mesh.morphTargetInfluences'),
 assert(load.includes('const mesh=new T.Mesh(shared.geometry,shared.material)'),'Pose baked deveria ser compartilhada sem clonar skeleton');
 assert(load.includes('d.spine.visible=false'),'Malha procedural nao sera substituida');
 assert(load.includes("DATA.status='fallback'"),'Fallback para GLB indisponivel ausente');
-assert(menu.includes('dog.root.position.set(1.85,0,-.75)'),'Cachorro continua escondido no porao');
+assert(menu.includes('dog.root.position.set(2.5,0,-.75)'),'Cachorro continua escondido no porao');
 assert(menu.includes('dog.root.scale.setScalar(.85)'),'Cachorro deve manter a escala 0.85 original no menu');
 assert(menu.includes('this.dogLight=new T.PointLight('),'Cachorro sem iluminacao dedicada');
 assert(menu.includes('poseDogRig(dog,t,dt,{resting:true,alert:near,look:near?facing:0})'),
