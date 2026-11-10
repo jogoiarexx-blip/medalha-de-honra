@@ -119,7 +119,7 @@
     const normalized=samples.map((s,frame)=>{
       const n=s.vertices.length/3,out=new Float32Array(s.vertices.length);
       const c=s.min.clone().add(s.max).multiplyScalar(.5);
-      const heightMul=frame===5?.78:1;
+      const heightMul=frame===5?.60:1;
       for(let i=0;i<n;i++){
         out[i*3]=(s.vertices[i*3]-c.x)*factor.x+center.x;
         out[i*3+1]=(s.vertices[i*3+1]-s.min.y)*factor.y*heightMul+expected.min.y;
