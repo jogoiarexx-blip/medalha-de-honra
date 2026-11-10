@@ -9,7 +9,7 @@
   const DATA={
     url:'assets/models/pastor-alemao-animado.glb',
     status:'loading', mounted:0, instances:[], error:null,
-    trianglesPerDog:12245
+    trianglesPerDog:12245, correctedVertices:0, menuDogVisible:false, visibleMeshes:0
   };
   window.__PASTOR_MESHY=DATA;
   let template=null,walk=null;
@@ -112,9 +112,25 @@
   loader.load(DATA.url,gltf=>{
     if(!gltf||!gltf.scene)throw new Error('GLB sem cena');
     template=gltf.scene;walk=(gltf.animations||[])[0]||null;
-    // O GLB original usa emissiveMap duplicado e brilho excessivo: material fosco no jogo.
+    // Correção de unidades Meshy/FBX: o arquivo guarda vértices ~100x menores
+    // que as juntas do esqueleto (posição ~0.014 vs ossos ~1.4).
+    // Sem essa correção a animação afasta a malha da posição do cão.
+    // Corrigir somente a posição do mesh; ossos, pesos, binds e clips permanecem.
+    const scaledGeometries=new Set();
     template.traverse(o=>{
       if(!o.isMesh||!o.material)return;
+      DATA.visibleMeshes++;
+      if(o.isSkinnedMesh && o.geometry && !scaledGeometries.has(o.geometry)){
+        const geo=o.geometry, position=geo.getAttribute('position');
+        if(!position || !position.count)throw new Error('Pastor: geometria sem vértices');
+        for(let i=0;i<position.count;i++){
+          position.setXYZ(i,position.getX(i)*100,position.getY(i)*100,position.getZ(i)*100);
+        }
+        position.needsUpdate=true; geo.computeBoundingBox(); geo.computeBoundingSphere();
+        scaledGeometries.add(geo);
+        DATA.correctedVertices+=position.count;
+      }
+      // O GLB exportou textura emissiva duplicada: deixar pelagem fosca.
       const mats=Array.isArray(o.material)?o.material:[o.material];
       mats.forEach(m=>{
         if(m.emissive)m.emissive.setRGB(0,0,0);
@@ -124,6 +140,7 @@
         m.needsUpdate=true;
       });
     });
+    if(!DATA.correctedVertices)throw new Error('Pastor: nenhum SkinnedMesh foi encontrado');
     DATA.status='ready';
     DATA.instances.forEach(d=>{
       if(d.root&&d.root.parent&&!d._meshy){
