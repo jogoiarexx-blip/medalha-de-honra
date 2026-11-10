@@ -19,12 +19,13 @@ const sleep=ms=>new Promise(r=>setTimeout(r,ms));
   await page.waitForTimeout(1600);
   const report=await page.evaluate(()=>{
    const d=window.__PASTOR_MESHY||{},menu=window.MENU3D,dog=menu&&menu.dog||null,t=window.THREE;
-   const r={status:d.status,error:d.error,renderMode:d.renderMode,mounted:d.mounted,originalSize:d.originalSize,importedSize:d.importedSize,menuBuilt:!!menu?.built,menuOn:!!menu?.on,webgl:!!window.__SDP};
+   const r={status:d.status,error:d.error,renderMode:d.renderMode,mounted:d.mounted,originalSize:d.originalSize,importedSize:d.importedSize,textureMode:d.textureMode,furColorVertices:d.furColorVertices,furTextureResolution:d.furTextureResolution,menuBuilt:!!menu?.built,menuOn:!!menu?.on,webgl:!!window.__SDP};
    if(dog){
      r.dog={pos:dog.root.position.toArray(),scale:dog.root.scale.toArray(),visible:dog.root.visible,hasModel:!!dog._meshy,spineVisible:dog.spine.visible,originalBounds:dog._pastorOriginalBounds&&dog._pastorOriginalBounds.getSize(new t.Vector3()).toArray()};
      if(dog._meshy){
        const m=dog._meshy.mesh,geo=m.geometry,box=new t.Box3().setFromObject(m),center=box.getCenter(new t.Vector3()),projection=center.clone().project(menu.cam);
-       r.visual={meshType:m.type,material:m.material.type,hasMap:!!m.material.map,mapWidth:m.material.map?.image?.width||0,
+       r.visual={meshType:m.type,material:m.material.type,hasMap:!!m.material.map,hasVertexColors:!!m.material.vertexColors,
+         colorVertices:geo.getAttribute('color')?.count||0,mapWidth:d.furTextureResolution?.[0]||0,
          morphs:geo.morphAttributes.position?.length||0,influences:m.morphTargetInfluences?.slice(),worldBox:[box.min.toArray(),box.max.toArray()],
          worldSize:box.getSize(new t.Vector3()).toArray(),screen:projection.toArray(),triangles:geo.index.count/3};
      }
@@ -93,7 +94,8 @@ const sleep=ms=>new Promise(r=>setTimeout(r,ms));
   console.log('PASTOR_VARIANTS_PROBE '+JSON.stringify(variants));
   fs.writeFileSync('qa-shots/report.json',JSON.stringify({report,logs,s1,variants},null,2));
   if(report.status!=='ready'||!report.dog?.hasModel||!report.visual)throw new Error('Pastor Meshy nao carregou no menu: '+report.error);
-  if(report.visual.morphs!==8||!report.visual.hasMap)throw new Error('Morph targets ou textura ausentes');
+  if(report.visual.morphs!==8||!report.visual.hasVertexColors||report.visual.colorVertices!==9008||
+      report.textureMode!=='fur-vertex-baked')throw new Error('Morph targets ou pelagem corrigida ausentes');
   const p=report.visual.screen;if(Math.abs(p[0])>1||Math.abs(p[1])>1||Math.abs(p[2])>1)throw new Error('Pastor fora da camera: '+p);
   if(!s1.hasModel||s1.moving.length!==8||s1.biting.length!==8)throw new Error('Pastor da missao S1 nao anima');
   if(!variants.every(x=>x.option===x.selected))throw new Error('A opcao de personagem nao foi persistida no menu');
