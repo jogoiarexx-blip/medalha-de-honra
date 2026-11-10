@@ -22,13 +22,15 @@ const span=position.max.map((v,i)=>v-position.min[i]);
 assert(span[1]<.03,'Modelo nao corresponde ao GLB Meshy de unidades reduzidas');
 assert(!load.includes("position.setXYZ(i,position.getX(i)*100"),
   'Multiplicacao dos vertices por 100 corrompe o skinning do Meshy');
-assert(load.includes('o.boneTransform(i,pt)'),
-  'Calculo do volume deve considerar os ossos do SkinnedMesh');
-assert(load.includes('model.scale.copy(fit)'),
-  'Modelo deve copiar o tamanho do cachorro procedural');
-assert(load.includes('d._pastorOriginalBounds=new T.Box3().setFromObject(d.spine)'),
-  'Tamanho original do cachorro deve ser preservado antes das poses');
-assert(load.includes('const model=cloneRig(template)'),'Esqueleto nao esta sendo clonado');
+assert(load.includes('sk.boneTransform(i,point)'),
+  'Baking deve aplicar animacao aos vertices do SkinnedMesh');
+assert(load.includes('const expected=new T.Box3().setFromObject(reference.spine)'),
+  'Nova malha deve ser normalizada para tamanho do rig procedural');
+assert(load.includes('geo.morphAttributes.position=normalized.map('),
+  'Caminhada e poses devem estar em morph targets compartilhados');
+assert(load.includes('m.mesh.morphTargetInfluences'),
+  'Cachorro precisa animar os morph targets por quadro');
+assert(load.includes('const mesh=new T.Mesh(shared.geometry,shared.material)'),'Pose baked deveria ser compartilhada sem clonar skeleton');
 assert(load.includes('d.spine.visible=false'),'Malha procedural nao sera substituida');
 assert(load.includes("DATA.status='fallback'"),'Fallback para GLB indisponivel ausente');
 assert(menu.includes('dog.root.position.set(1.85,0,.55)'),'Cachorro continua escondido no porao');
@@ -38,8 +40,8 @@ assert(menu.includes('poseDogRig(dog,t,dt,{resting:true,alert:near,look:near?fac
   'Menu deve manter animacao original de descanso e alerta');
 assert(load.includes('oldPose(d,time,dt,opts||{})'),
   'Rig procedural deve continuar animando os estados originais');
-assert(load.includes("m.action.timeScale=")||load.includes("m.action.timeScale ="),
-  'Caminhada do Meshy deve ter velocidade variavel');
+assert(load.includes('Math.max(.6,Math.min(3,speed/3.2))'),
+  'Caminhada deve acompanhar a velocidade original da IA');
 assert(secret.includes('if(d.dog&&!e.dogMesh) dogify25(e)'),'Cachorro da fase secreta desconectado');
 assert(html.indexOf('src="js/24a-dog-meshy.js')>html.indexOf('src="js/24-secret-operations.js'),
   'O integrador deve entrar apos a fase secreta');
