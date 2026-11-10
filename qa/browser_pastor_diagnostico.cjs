@@ -47,11 +47,44 @@ const sleep=ms=>new Promise(r=>setTimeout(r,ms));
     return {hasModel:!!dog._meshy,scale:dog.root.scale.toArray(),moving,biting};
   });
   console.log('PASTOR_S1_PROBE '+JSON.stringify(s1));
-  fs.writeFileSync('qa-shots/report.json',JSON.stringify({report,logs,s1},null,2));
+  // Alterna a MESMA opcao de personagens que escolhe o soldado Meshy.
+  const variants=await page.evaluate(()=>{
+    const results=[];
+    const select=document.querySelector('#oChars');
+    for(const mode of ['detalhado','classico','modelo']){
+      select.value=mode;
+      select.dispatchEvent(new Event('change',{bubbles:true}));
+      MENU3D.update(1/60);
+      const menuDog=MENU3D.dog;
+      const secretDog=makeDogRig(true);
+      const scene=window.__SDP.scene;
+      scene.add(secretDog.root);
+      poseDogRig(secretDog,1,.05,{speed:5,alert:true});
+      results.push({
+        option:mode,selected:settings.chars,
+        menuMesh:!!menuDog._meshy&&menuDog._meshy.mesh.visible,
+        menuProcedural:menuDog.spine.visible,
+        secretMesh:!!secretDog._meshy&&secretDog._meshy.mesh.visible,
+        secretProcedural:secretDog.spine.visible
+      });
+      scene.remove(secretDog.root);
+    }
+    return results;
+  });
+  console.log('PASTOR_VARIANTS_PROBE '+JSON.stringify(variants));
+  fs.writeFileSync('qa-shots/report.json',JSON.stringify({report,logs,s1,variants},null,2));
   if(report.status!=='ready'||!report.dog?.hasModel||!report.visual)throw new Error('Pastor Meshy nao carregou no menu: '+report.error);
   if(report.visual.morphs!==8||!report.visual.hasMap)throw new Error('Morph targets ou textura ausentes');
   const p=report.visual.screen;if(Math.abs(p[0])>1||Math.abs(p[1])>1||Math.abs(p[2])>1)throw new Error('Pastor fora da camera: '+p);
   if(!s1.hasModel||s1.moving.length!==8||s1.biting.length!==8)throw new Error('Pastor da missao S1 nao anima');
+  if(!variants.every(x=>x.option===x.selected))throw new Error('A opcao de personagem nao foi persistida no menu');
+  for(const v of variants){
+    const expectedMeshy=v.option==='modelo';
+    if(v.menuMesh!==expectedMeshy||v.secretMesh!==expectedMeshy||
+       v.menuProcedural===expectedMeshy||v.secretProcedural===expectedMeshy){
+      throw new Error('Modelo errado na variante '+v.option+': '+JSON.stringify(v));
+    }
+  }
   if(logs.some(x=>x.includes('pageerror:')))throw new Error('Excecao durante teste do navegador');
  }finally{if(browser)await browser.close();srv.kill('SIGTERM');}
 })().catch(e=>{console.error('PASTOR_BROWSER_FAIL '+String(e.stack||e));process.exitCode=1;});
