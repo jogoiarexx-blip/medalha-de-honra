@@ -79,55 +79,63 @@ function harborBoat09(x,z,rotation,paint,M,large=false,variant=0){
   // Nível do mar da fase 9: -0.7; os cascos entram na água, não flutuam no ar.
   g.position.set(x,-.7,z);g.rotation.y=rotation;scene.add(g);
   const metal=hm(0x353d40),glass=hm(0x6b9fb1),trim=hm(0x30383a);
-  const hullLength=large?25.7:7.2,hullWidth=large?4.3:2.45;
-  const deckY=large?1.22:.65;
+  const hullLength=large?27.4:7.4,hullWidth=large?4.75:2.45;
+  const deckY=large?1.26:.65;
   harborHull09(g,hullLength,hullWidth,paint,large?M.hullW:M.wood,deckY,large?-.66:-.46);
   const addBox=(w,h,d,x,y,z,mat)=>{const mesh=new T.Mesh(BOX(w,h,d),mat);mesh.position.set(x,y,z);g.add(mesh);return mesh;};
   const addCylinder=(rad,height,x,y,z,mat,segments=8)=>{const mesh=new T.Mesh(new T.CylinderGeometry(rad,rad,height,segments),mat);mesh.position.set(x,y,z);g.add(mesh);return mesh;};
   if(large){
-    // Faixa superior do casco e guarda-corpo: sem símbolos históricos reais.
+    // Lancha torpedeira mais rica visualmente: casco, faixas laterais, torpedos,
+    // cabine com molduras e mais detalhes de convés, mantendo o estilo low-poly.
+    const stripe=hm(0xe4dcc8), navy=hm(0x2f3e52), brass=hm(0xc5b071);
+    addBox(.22,.18,22.2,2.22,.83,-.65,stripe);
+    addBox(.22,.18,22.2,-2.22,.83,-.65,stripe);
+    addBox(1.0,.16,2.9,0,1.36,-11.45,M.hullW);
+    addBox(2.55,.12,2.7,0,1.32,-8.75,M.hullW);
     for(const side of [-1,1]){
-      const x=side*2.08;
-      harborBeam09(g,[x*.76,1.17,-9.5],[x,1.17,-4],.08,trim);
-      harborBeam09(g,[x,1.17,-4],[x,1.17,8.5],.08,trim);
-      for(const z1 of [-8,-3,3,8]){
-        const px=side*(z1<-4?1.83:2.03);
-        harborBeam09(g,[px,1.19,z1],[px,2.01,z1],.035,metal);
+      const x=side*2.22;
+      harborBeam09(g,[x*.79,1.22,-10.5],[x,1.22,-4.1],.08,trim);
+      harborBeam09(g,[x,1.22,-4.1],[x,1.22,10.4],.08,trim);
+      for(const z1 of [-9.2,-5.2,-1.2,3.2,7.2]){
+        const px=side*(z1<-4?1.94:2.14);
+        harborBeam09(g,[px,1.23,z1],[px,2.08,z1],.035,metal);
       }
-      harborBeam09(g,[side*1.83,2.02,-8],[side*2.03,2.02,8],.04,metal);
-      // Dois tubos de torpedo, com anteparas e tampas nítidas.
-      const tube=new T.Mesh(new T.CylinderGeometry(.32,.32,6.9,10),metal);
-      tube.rotation.x=Math.PI/2;tube.position.set(side*1.12,1.59,-6.9);g.add(tube);
-      const muzzle=new T.Mesh(new T.CylinderGeometry(.34,.34,.16,10),trim);
-      muzzle.rotation.x=Math.PI/2;muzzle.position.set(side*1.12,1.59,-10.4);g.add(muzzle);
-      addBox(.45,.43,1.4,side*1.12,1.38,-3.4,paint);
-      // Duas defensas laterais no cais.
-      for(const zz of [-1,6.5]){
-        const f=addCylinder(.18,.8,side*2.12,.67,zz,trim);
-        f.rotation.z=Math.PI/2;
-      }
+      harborBeam09(g,[side*1.94,2.09,-9.2],[side*2.14,2.09,10.1],.04,metal);
+      const tube=new T.Mesh(new T.CylinderGeometry(.31,.31,7.8,10),metal);
+      tube.rotation.x=Math.PI/2;tube.position.set(side*1.18,1.63,-6.65);g.add(tube);
+      const tube2=new T.Mesh(new T.CylinderGeometry(.35,.35,.18,10),trim);
+      tube2.rotation.x=Math.PI/2;tube2.position.set(side*1.18,1.63,-10.55);g.add(tube2);
+      addBox(.52,.45,1.55,side*1.18,1.42,-2.55,paint);
+      addBox(.09,.36,7.5,side*1.48,1.04,-2.1,navy);
+      for(const zz of [-1.2,7.4]){ const f=addCylinder(.18,.92,side*2.16,.72,zz,trim); f.rotation.z=Math.PI/2; }
+      addBox(.18,.18,.62,side*1.84,1.26,11.2,brass);
     }
-    // Ponte de comando com frente inclinada, janela azulada e teto baixo.
-    addBox(3.05,1.22,4.1,0,1.96,-.6,M.hullW);
-    addBox(3.42,.23,4.3,0,2.7,-.65,M.hull);
-    const front=addBox(2.4,.7,.07,0,2.24,-2.72,glass);front.rotation.x=-.15;
+    addBox(3.4,1.28,4.55,0,1.97,-.72,M.hullW);
+    addBox(3.88,.18,4.86,0,2.73,-.73,M.hull);
+    addBox(2.75,.26,1.15,0,2.82,-2.86,M.hull);
+    const front=addBox(2.62,.78,.08,0,2.23,-3.02,glass);front.rotation.x=-.19;
     for(const side of [-1,1]){
-      addBox(.065,.57,.85,side*1.56,2.22,-1.36,glass);
-      addBox(.065,.57,.85,side*1.56,2.22,-.15,glass);
-      addBox(.12,.6,.12,side*.85,2.35,-2.71,metal);
+      addBox(.07,.62,.96,side*1.73,2.22,-1.52,glass);
+      addBox(.07,.62,.96,side*1.73,2.22,-.16,glass);
+      addBox(.13,.66,.13,side*1.08,2.36,-3.01,metal);
+      addBox(.16,.32,4.36,side*1.95,2.78,-.72,trim);
     }
-    addCylinder(.48,.24,0,2.88,2.65,metal,10);
-    harborBeam09(g,[0,2.79,3.1],[0,5.75,3.1],.06,metal);
-    harborBeam09(g,[0,5.0,3.1],[1.25,3.6,4.0],.025,metal);
-    harborBeam09(g,[0,5.0,3.1],[-1.25,3.6,4.0],.025,metal);
-    addBox(.72,.33,.5,0,5.48,3.1,metal); // refletor/radar discreto
-    addBox(1.8,.55,1.35,0,1.54,8.4,M.hull);
-    const aftGun=addCylinder(.24,.42,0,1.85,8.3,metal);
-    const barrel=new T.Mesh(new T.CylinderGeometry(.075,.075,2.45,8),metal);
-    barrel.rotation.x=Math.PI/2;barrel.position.set(0,2.13,7.0);g.add(barrel);
-    addBox(.12,.85,.12,0,2.9,10.8,metal);
-    addBox(.04,.64,1.0,0,3.15,11.28,hm(0x9e3b30));
-    addBox(.5,.15,2.5,0,1.35,-11.0,M.hullW); // convés da proa
+    addBox(1.68,.28,1.06,0,1.6,8.55,M.hull);
+    addBox(1.08,.18,1.78,0,1.34,5.65,M.hullW);
+    for(const zz of [-10.8,-8.7,-6.2,-3.8,2.2,5.0,8.7]) addBox(.24,.1,.5,0,1.37,zz,brass);
+    addCylinder(.52,.22,0,2.91,2.72,metal,10);
+    harborBeam09(g,[0,2.82,3.25],[0,6.15,3.25],.06,metal);
+    harborBeam09(g,[0,5.15,3.25],[1.34,3.72,4.22],.025,metal);
+    harborBeam09(g,[0,5.15,3.25],[-1.34,3.72,4.22],.025,metal);
+    addBox(.78,.36,.54,0,5.82,3.25,metal);
+    addBox(.22,.9,.22,0,3.03,11.28,metal);
+    addBox(.05,.72,1.18,0,3.32,11.84,hm(0x9e3b30));
+    addBox(.94,.16,3.22,0,1.48,11.18,M.hullW);
+    const aftGun=addCylinder(.25,.46,0,1.88,8.55,metal);
+    const barrel=new T.Mesh(new T.CylinderGeometry(.078,.078,2.92,8),metal);
+    barrel.rotation.x=Math.PI/2;barrel.position.set(0,2.15,6.86);g.add(barrel);
+    const shield=addBox(.85,.48,.11,0,2.12,8.08,metal); shield.rotation.x=-.08;
+    addBox(.18,.18,.7,0,1.2,-11.95,brass);
   }else{
     // Barcos de pesca existentes: preservados nas posições originais, com silhueta náutica.
     for(const side of [-1,1]){
@@ -153,6 +161,18 @@ function harborBoat09(x,z,rotation,paint,M,large=false,variant=0){
 }
 function sideSign(i){return i%2?1:-1;}
 
+function dockEdgeStrip09(x,z,len,rot,mat,width=.98,height=.16){
+  const curb=new T.Mesh(BOX(len,height,width),mat);
+  curb.position.set(x,.09,z);
+  curb.rotation.y=rot;
+  curb.renderOrder=6;
+  if(curb.material){ curb.material=curb.material.clone?curb.material.clone():curb.material;
+    if(curb.material){ curb.material.polygonOffset=true; curb.material.polygonOffsetFactor=-1; curb.material.polygonOffsetUnits=-1; }
+  }
+  scene.add(curb);
+  return curb;
+}
+
 function buildLevel09(){
   M5=mats05(); M6=mats06(); M9=mats09(); const M=M9;
   scene.background=new T.Color(0xc8dcec); scene.fog=new T.FogExp2(0xc8d8e4,.006);
@@ -160,14 +180,19 @@ function buildLevel09(){
   scene.add(new T.HemisphereLight(0xd8e8f8,0x9a8a70,.7));
   const sun=new T.DirectionalLight(0xfff4e0,1.0); sun.target.position.set(0,0,-10); sun.position.set(-30,70,40); scene.add(sun); scene.add(sun.target); scene.add(new T.AmbientLight(0x6a6a7a,.3));
   // ---- mar e cais ----
-  const water=new T.Mesh(new T.PlaneGeometry(220,90),M.water); water.rotation.x=-Math.PI/2; water.position.set(0,-.7,-77); scene.add(water);
-  floorPlane(140,62,-2,-1,M.quay,'stone',0);
-  addBlock(-70,70,-33.4,-32,.01,{mat:M.stone,surf:'stone',seg:4,solid:false}); addSolidOnly(-70,28.5,-33,-32.6,1.2); addSolidOnly(44,70,-33,-32.6,1.2);
-  { const q=new T.Mesh(BOX(140,.8,.6),M.stone); q.position.set(0,-.4,-32.3); scene.add(q); }
-  for(let x=-64;x<=26;x+=7){ addMesh(new T.CylinderGeometry(.2,.26,.55,8),M.dark,x,.27,-31.8,'metal'); addSolidOnly(x-.25,x+.25,-32.05,-31.55,.55,0,true); }
+  const water=new T.Mesh(new T.PlaneGeometry(220,90),M.water); water.rotation.x=-Math.PI/2; water.position.set(0,-.82,-77); water.renderOrder=0; scene.add(water);
+  // Piso principal e borda do cais em alturas diferentes para evitar z-fighting.
+  floorPlane(140,62,-2,-1,M.quay,'stone',.02);
+  addSolidOnly(-70,28.5,-33,-32.6,1.2); addSolidOnly(44,70,-33,-32.6,1.2);
+  { const q=new T.Mesh(BOX(140,.82,1.25),M.stone); q.position.set(0,-.34,-32.72); q.renderOrder=4; scene.add(q); }
+  dockEdgeStrip09(0,-32.04,140,0,hm(0xe9dfbf),1.06,.15);
+  for(let x=-64;x<=26;x+=7){ addMesh(new T.CylinderGeometry(.2,.26,.55,8),M.dark,x,.29,-31.72,'metal'); addSolidOnly(x-.25,x+.25,-31.97,-31.47,.55,0,true); }
   // molhe com a capitania
-  floorPlane(15.5,30,36.25,-47,M.quay,'stone',.01);
-  { const q=new T.Mesh(BOX(15.5,.8,30),M.stone); q.position.set(36.25,-.42,-47); scene.add(q); }
+  floorPlane(15.5,30,36.25,-47,M.quay,'stone',.03);
+  { const q=new T.Mesh(BOX(15.5,.84,30),M.stone); q.position.set(36.25,-.38,-47); q.renderOrder=4; scene.add(q); }
+  dockEdgeStrip09(36.25,-61.64,15.5,0,hm(0xe9dfbf),1.02,.15);
+  dockEdgeStrip09(28.72,-47,30,Math.PI/2,hm(0xe9dfbf),1.02,.15);
+  dockEdgeStrip09(43.78,-47,30,Math.PI/2,hm(0xe9dfbf),1.02,.15);
   addSolidOnly(28.2,28.5,-62,-33,1.2); addSolidOnly(44,44.3,-62,-33,1.2); addSolidOnly(28.2,44.3,-62.3,-62,1.2);
   const wl=(axis,c0,c1,a0,a1,h,ops,mat)=>wallOpen(axis,c0,c1,a0,a1,h,ops,mat,{inner:{}});
   wl('x',-52,-51.8,31,39,3.4,[],M.white); wl('x',-44.2,-44,31,39,3.4,[{c:35,w:1.2},{c:32.6,w:1,sill:1,top:2.2},{c:37.4,w:1,sill:1,top:2.2}],M.white); wl('z',31,31.2,-51.8,-44.2,3.4,[{c:-48,w:1,sill:1,top:2.2}],M.white); wl('z',38.8,39,-51.8,-44.2,3.4,[],M.white);
