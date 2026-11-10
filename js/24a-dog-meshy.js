@@ -80,6 +80,38 @@
         color[i*3+ch]=clampByte(255*linear);
       }
     }
+    // O simplificador agrupou vertices de pequenas ilhas UV de cor oposta.
+    // Essas amostras isoladas apareciam como riscos claros no dorso preto.
+    // Filtro de mediana em apenas uma volta de vizinhos: remove ilhas
+    // aberrantes, sem desfazer o desenho natural do dorso e da barriga.
+    const index=geo.getIndex();
+    if(index){
+      const neighbours=Array.from({length:uv.count},()=>[]);
+      const idx=index.array;
+      for(let k=0;k<idx.length;k+=3){
+        const a=idx[k],b=idx[k+1],c=idx[k+2];
+        neighbours[a].push(b,c);neighbours[b].push(a,c);neighbours[c].push(a,b);
+      }
+      const corrected=new Uint8Array(color);
+      let softened=0;
+      for(let i=0;i<uv.count;i++){
+        const adj=neighbours[i];
+        if(adj.length<3)continue;
+        const list=[i,...adj],m=[0,0,0];
+        for(let ch=0;ch<3;ch++){
+          const samples=list.map(v=>color[v*3+ch]).sort((a,b)=>a-b);
+          m[ch]=samples[samples.length>>1];
+        }
+        const p=i*3;
+        const difference=Math.max(
+          Math.abs(color[p]-m[0]),Math.abs(color[p+1]-m[1]),Math.abs(color[p+2]-m[2]));
+        const blend=difference>28?.80:difference>13?.45:.06;
+        if(blend>.1)softened++;
+        for(let ch=0;ch<3;ch++)corrected[p+ch]=clampByte(color[p+ch]*(1-blend)+m[ch]*blend);
+      }
+      color.set(corrected);
+      DATA.softenedFurVertices=softened;
+    }
     geo.setAttribute('color',new T.Uint8BufferAttribute(color,3,true));
     DATA.furColorVertices=uv.count;
     DATA.furTextureResolution=[width,height];
