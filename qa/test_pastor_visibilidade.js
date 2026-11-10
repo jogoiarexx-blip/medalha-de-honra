@@ -38,6 +38,14 @@ assert(menu.includes('dog.root.scale.setScalar(.85)'),'Cachorro deve manter a es
 assert(menu.includes('this.dogLight=new T.PointLight('),'Cachorro sem iluminacao dedicada');
 assert(menu.includes('poseDogRig(dog,t,dt,{resting:true,alert:near,look:near?facing:0})'),
   'Menu deve manter animacao original de descanso e alerta');
+assert(load.includes("const useMeshy=()=>settings.chars==='modelo'"),
+  'Pastor GLB deve seguir a mesma escolha do soldado 3D');
+assert(load.includes("d.spine.visible=!(modelOn&&hasModel)"),
+  'Cachorro procedural deve ficar visivel no modo classico e detalhado');
+assert(load.includes("d._meshy.mesh.visible=modelOn"),
+  'Malha GLB deve ficar oculta fora do modo Modelo 3D');
+assert(load.includes('if(useMeshy())requestMeshy();'),
+  'GLB deve ser carregado apenas na opcao Modelo 3D');
 assert(load.includes('oldPose(d,time,dt,opts||{})'),
   'Rig procedural deve continuar animando os estados originais');
 assert(load.includes('Math.max(.6,Math.min(3,speed/3.2))'),
