@@ -1,0 +1,35 @@
+name: Browser QA pastor-alemao
+on:
+  push:
+    branches: [main]
+    paths:
+      - "js/18-menu-system.js"
+      - "js/24a-dog-meshy.js"
+      - "qa/browser_pastor_diagnostico.cjs"
+      - ".github/workflows/browser-pastor.yml"
+      - "index.html"
+  workflow_dispatch:
+jobs:
+  browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Install Playwright browser
+        run: |
+          npm install --no-save playwright@1.56.1
+          npx playwright install --with-deps chromium
+      - name: Browser playtest of dog in menu
+        run: node qa/browser_pastor_diagnostico.cjs
+      - name: Save screenshot and diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pastor-browser-qa
+          path: qa-shots/
+          if-no-files-found: warn
