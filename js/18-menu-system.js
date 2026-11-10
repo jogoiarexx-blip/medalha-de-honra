@@ -218,15 +218,15 @@ MENU3D.build=function(){
 // Pastor alemão no lado visível do menu, à direita dos botões.
  // Mesma malha/rig também usada pelos cães da operação secreta S1.
 const dog=makeDogRig(false);
-dog.root.position.set(1.85,0,.55); dog.root.rotation.y=-.4;
+dog.root.position.set(1.85,0,-.75); dog.root.rotation.y=-.4;
 // Mesmo tamanho do cachorro original do menu (.85), sem ampliacao.
 dog.root.scale.setScalar(.85); S.add(dog.root);
 dog.restT=1; poseDogRig(dog,0,.016,{resting:true}); this.dog=dog;
 // Luz econômica focada no cão; o cenário tem outras luzes próprias.
 this.dogLight=new T.PointLight(0xffdfab,1.35,4.8,1.8);
-this.dogLight.position.set(1.85,2.2,.8); S.add(this.dogLight);
+this.dogLight.position.set(1.85,2.2,-.5); S.add(this.dogLight);
 const dogShade=new T.Mesh(new T.CircleGeometry(.6,18),new T.MeshBasicMaterial({color:0x0c0806,transparent:true,opacity:.32,depthWrite:false}));
-dogShade.rotation.x=-Math.PI/2; dogShade.position.set(1.85,.014,.55);
+dogShade.rotation.x=-Math.PI/2; dogShade.position.set(1.85,.014,-.75);
 S.add(dogShade); this.dogShade=dogShade;
   this.layout={TX,TZ,DZ,SX,SZ};
   const fillL=new T.PointLight(0xffc890,.75,9,1.4); fillL.position.set(.6,2.7,.6); S.add(fillL);
