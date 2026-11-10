@@ -32,6 +32,50 @@
   const point=new T.Vector3();
   const XAXIS=new T.Vector3(1,0,0),YAXIS=new T.Vector3(0,1,0);
   const HEAD_COUNT=8;
+  // O GLB otimizado agrupou coordenadas UV de ilhas diferentes.
+  // Interpolar a textura entre essas coordenadas causava riscas claras na pelagem.
+  // Amostramos a textura ORIGINAL uma unica vez e pintamos as cores nos
+  // vertices da malha simplificada. Assim a animacao por morph targets
+  // permanece leve, sem seams de atlas nem carregamento adicional.
+  function bakeFurColors(geo,map){
+    const uv=geo.getAttribute('uv'),image=map&&map.image;
+    if(!uv||!image||!image.width||!image.height){
+      throw new Error('Textura/UV do pastor ausente para corrigir a pelagem');
+    }
+    const canvas=document.createElement('canvas');
+    canvas.width=image.width;canvas.height=image.height;
+    const context=canvas.getContext('2d',{willReadFrequently:true});
+    if(!context)throw new Error('Canvas 2D nao disponivel para a textura do pastor');
+    context.drawImage(image,0,0);
+    const rgba=context.getImageData(0,0,canvas.width,canvas.height).data;
+    const width=canvas.width,height=canvas.height;
+    const color=new Uint8Array(uv.count*3);
+    const clampByte=v=>Math.max(0,Math.min(255,Math.round(v)));
+    for(let i=0;i<uv.count;i++){
+      const u=Math.min(1,Math.max(0,uv.getX(i)));
+      // glTF Loader usa flipY=false (V cresce para baixo no atlas glTF).
+      const v=Math.min(1,Math.max(0,map.flipY?1-uv.getY(i):uv.getY(i)));
+      const x=Math.min(width-1,Math.floor(u*(width-1)));
+      const y=Math.min(height-1,Math.floor(v*(height-1)));
+      // Filtragem de quatro texels elimina pontilhados de compressao JPEG.
+      const x1=Math.min(width-1,x+1),y1=Math.min(height-1,y+1);
+      const c=[0,0,0];
+      for(const [px,py] of [[x,y],[x1,y],[x,y1],[x1,y1]]){
+        const p=(py*width+px)*4;
+        c[0]+=rgba[p];c[1]+=rgba[p+1];c[2]+=rgba[p+2];
+      }
+      for(let ch=0;ch<3;ch++){
+        const linear=c[ch]/(4*255);
+        // Corrigir o castanho muito escuro sem apagar o dorso preto.
+        color[i*3+ch]=clampByte(255*Math.pow(linear,.86));
+      }
+    }
+    geo.setAttribute('color',new T.Uint8BufferAttribute(color,3,true));
+    DATA.furColorVertices=uv.count;
+    DATA.furTextureResolution=[width,height];
+    return true;
+  }
+
 
   function snapshot(root){
     const a=[];
@@ -110,10 +154,11 @@
       samples.push(sourceSample(scene,skin));
     }
     action.stop();restore();
-    for(const kind of ['idle','rest','bite','alert']){
-      localPose(scene,restore,bones,kind);
-      samples.push(sourceSample(scene,skin));
-    }
+    // O GLB original nao possui clips Idle/Rest/Bite: os ossos de descanso
+    // criados artificialmente esticavam as patas e explodiam a silhueta.
+    // As quatro poses extras partem do MESMO repouso neutro valido.
+    const neutral=sourceSample(scene,skin);
+    for(let i=0;i<4;i++)samples.push(neutral);
     restore();
 
     const b0=samples[0],sz=b0.max.clone().sub(b0.min);
@@ -123,11 +168,32 @@
     const normalized=samples.map((s,frame)=>{
       const n=s.vertices.length/3,out=new Float32Array(s.vertices.length);
       const c=s.min.clone().add(s.max).multiplyScalar(.5);
-      const heightMul=frame===5?.60:1;
       for(let i=0;i<n;i++){
         out[i*3]=(s.vertices[i*3]-c.x)*factor.x+center.x;
-        out[i*3+1]=(s.vertices[i*3+1]-s.min.y)*factor.y*heightMul+expected.min.y;
+        out[i*3+1]=(s.vertices[i*3+1]-s.min.y)*factor.y+expected.min.y;
         out[i*3+2]=(s.vertices[i*3+2]-c.z)*factor.z+center.z;
+      }
+      // Todas as poses usam coordenadas coerentes com a mesma topologia.
+      // Repouso = agachar, e nao fazer as quatro pernas apontarem para frente.
+      if(frame===5){
+        for(let i=0;i<n;i++){
+          const y=i*3+1;
+          out[y]=expected.min.y+(out[y]-expected.min.y)*.64;
+        }
+      }else if(frame===6){
+        // Mordida: avançar apenas cabeca e focinho, sem afetar o tronco.
+        for(let i=0;i<n;i++){
+          const k=i*3,y=out[k+1],z=out[k+2];
+          const head=Math.max(0,Math.min(1,(z-.35)*2.6))*Math.max(0,Math.min(1,(y-.55)*2.0));
+          out[k+2]+=head*.12;out[k+1]-=head*.04;
+        }
+      }else if(frame===7){
+        // Alerta: cabeca erguida e respiracao, sem deformar membros.
+        for(let i=0;i<n;i++){
+          const k=i*3,y=out[k+1],z=out[k+2];
+          const head=Math.max(0,Math.min(1,(z-.33)*2.6))*Math.max(0,Math.min(1,(y-.53)*2));
+          out[k+1]+=head*.06;
+        }
       }
       return out;
     });
@@ -143,14 +209,18 @@
     geo.computeVertexNormals();
     geo.computeBoundingSphere();
 
-    // Textura original do GLB com iluminação constante e barata:
-    // em r128, o material PBR exportado era escuro demais neste porao.
+    // Riscos amarelados e pelagem quebrada vinham da interpolacao de
+    // coordenadas UV medias, nao de falha no download do JPG.
+    // O color baking preserva a paleta do atlas original e anula o artefato.
+    const sourceTexture=skin.material&&skin.material.map;
+    if(!sourceTexture)throw new Error('Textura do pastor indisponível');
+    bakeFurColors(geo,sourceTexture);
     const material=new T.MeshBasicMaterial({
-      map:skin.material&&skin.material.map||null,
-      color:0xffffff,side:T.DoubleSide,morphTargets:true,
+      vertexColors:true,map:null,color:0xffffff,
+      side:T.DoubleSide,morphTargets:true,
       depthWrite:true,transparent:false
     });
-    if(!material.map)throw new Error('Textura do pastor indisponível');
+    DATA.textureMode='fur-vertex-baked';
     DATA.visibleMeshes=1;
     return {geometry:geo,material,reference:expected};
   }
