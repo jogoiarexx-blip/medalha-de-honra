@@ -504,8 +504,8 @@ function cataDress02(){
     TUNNEL02.forEach((row,r)=>{ for(let c=0;c<row.length;c++){ if(row[c]!=='.'||n>26||(c*3+r*5)%4) continue; const cx=X0+c*C+1, cz=Z0+r*C+1; for(const [dx,dz] of [[-1,-1],[1,-1],[-1,1],[1,1]]){ if(!isWall(c+dx,r)||!isWall(c,r+dz)) continue; const m=new T.Mesh(new T.PlaneGeometry(.9,.9),wm); m.position.set(cx+dx*.62,2.5,cz+dz*.62); m.rotation.set(0,Math.atan2(-dx,-dz)+Math.PI/4*0,0); m.lookAt(cx,2.2,cz); dressAdd(m); n++; break; } } }); }
   // ---- grelha no teto com um feixe de luar
   { const gx=41, gz=-25; const gr=new T.Mesh(new T.PlaneGeometry(.9,.9),new T.MeshBasicMaterial({color:0x8aa0c8})); gr.rotation.x=Math.PI/2; gr.position.set(gx,2.78,gz); scene.add(gr); for(let i=-2;i<=2;i++){ const b=new T.Mesh(BOX(.04,.04,.9),hm(0x1a1a1a)); b.position.set(gx+i*.18,2.76,gz); scene.add(b); }
-    const beam=new T.Mesh(new T.CylinderGeometry(.42,.75,2.75,12,1,true),new T.MeshBasicMaterial({map:TEX.soft2,color:0x4a5a7a,transparent:true,opacity:.35,blending:T.AdditiveBlending,depthWrite:false,side:T.DoubleSide})); beam.position.set(gx,1.4,gz); scene.add(beam);
-    const spot=new T.Mesh(new T.PlaneGeometry(1.8,1.8),new T.MeshBasicMaterial({map:TEX.soft2,color:0x3a4a6a,transparent:true,blending:T.AdditiveBlending,depthWrite:false})); spot.rotation.x=-Math.PI/2; spot.position.set(gx,.02,gz); scene.add(spot);
+    const beam=new T.Mesh(new T.CylinderGeometry(.42,.75,2.75,12,1,true),new T.MeshBasicMaterial({map:TEX.soft2||SOFTTEX||null,color:0x4a5a7a,transparent:true,opacity:.35,blending:T.AdditiveBlending,depthWrite:false,side:T.DoubleSide})); beam.position.set(gx,1.4,gz); scene.add(beam);
+    const spot=new T.Mesh(new T.PlaneGeometry(1.8,1.8),new T.MeshBasicMaterial({map:TEX.soft2||SOFTTEX||null,color:0x3a4a6a,transparent:true,blending:T.AdditiveBlending,depthWrite:false})); spot.rotation.x=-Math.PI/2; spot.position.set(gx,.02,gz); scene.add(spot);
     const ml=new T.PointLight(0x7a90c8,.9,6,1.6); ml.position.set(gx,2.2,gz); scene.add(ml); }
   // ---- ratos
   const rats=[]; { const rm=hm(0x2a2622), tm=hm(0x6a5048); const spots=faceList.filter((f,i)=>i%9===4).slice(0,7);
@@ -519,7 +519,7 @@ function cataDress02(){
   const pf=faceList.filter(f=>(f.c*5+f.r*11)%13===0).slice(0,plaques.length);
   pf.forEach((f,i)=>{ const cx=X0+f.c*C+1, cz=Z0+f.r*C+1, ry=Math.atan2(-f.dc,-f.dr); const m=new T.Mesh(new T.BoxGeometry(.9,.46,.05),[limeM,limeM,limeM,limeM,new T.MeshLambertMaterial({map:plaqueTex(plaques[i])}),limeM]); m.position.set(cx+f.dc*.97,2.22,cz+f.dr*.97); m.rotation.y=ry; scene.add(m); });
   // velas, poças, entulho
-  const tc=[], tf=[], glows=[], pools=[], lights=[], rubble=[]; const soft=TEX.soft2;
+  const tc=[], tf=[], glows=[], pools=[], lights=[], rubble=[]; const soft=TEX.soft2||SOFTTEX;
   const cand=faceList.filter((f,i)=>(f.c*3+f.r*7+i)%6===0);
   cand.forEach((f,i)=>{ const cx=X0+f.c*C+1, cz=Z0+f.r*C+1; const bx=cx+f.dc*(1-SD-.1), bz=cz+f.dr*(1-SD-.1); const n=2+(R()*3|0);
     for(let k=0;k<n;k++){ const ox=f.dc?0:(k-n/2)*.1+R()*.04, oz=f.dc?(k-n/2)*.1+R()*.04:0, hgt=.08+R()*.16; tc.push([bx+ox,hgt/2,bz+oz,.045,hgt,.045]); tf.push([bx+ox,hgt+.035,bz+oz,.022,.05,.022]); }
