@@ -218,14 +218,15 @@ MENU3D.build=function(){
 // Pastor alemão no lado visível do menu, à direita dos botões.
  // Mesma malha/rig também usada pelos cães da operação secreta S1.
 const dog=makeDogRig(false);
-dog.root.position.set(2.25,0,-.45); dog.root.rotation.y=.35;
-dog.root.scale.setScalar(1.08); S.add(dog.root);
-dog.restT=0; poseDogRig(dog,0,.016,{speed:.8,alert:true}); this.dog=dog;
+dog.root.position.set(1.85,0,.55); dog.root.rotation.y=-.4;
+// Mesmo tamanho do cachorro original do menu (.85), sem ampliacao.
+dog.root.scale.setScalar(.85); S.add(dog.root);
+dog.restT=1; poseDogRig(dog,0,.016,{resting:true}); this.dog=dog;
 // Luz econômica focada no cão; o cenário tem outras luzes próprias.
 this.dogLight=new T.PointLight(0xffdfab,1.35,4.8,1.8);
-this.dogLight.position.set(2.0,2.25,-.25); S.add(this.dogLight);
+this.dogLight.position.set(1.85,2.2,.8); S.add(this.dogLight);
 const dogShade=new T.Mesh(new T.CircleGeometry(.6,18),new T.MeshBasicMaterial({color:0x0c0806,transparent:true,opacity:.32,depthWrite:false}));
-dogShade.rotation.x=-Math.PI/2; dogShade.position.set(2.25,.014,-.45);
+dogShade.rotation.x=-Math.PI/2; dogShade.position.set(1.85,.014,.55);
 S.add(dogShade); this.dogShade=dogShade;
   this.layout={TX,TZ,DZ,SX,SZ};
   const fillL=new T.PointLight(0xffc890,.75,9,1.4); fillL.position.set(.6,2.7,.6); S.add(fillL);
@@ -277,16 +278,13 @@ MENU3D.update=function(dt){
     if(this.cup.visible&&c>10.5&&Math.random()<dt*2.5){ this.cup.getWorldPosition(_m3c2); this.puff(_m3c2.setY(_m3c2.y+.06),0xe8e4e0,.05,1.2,.18); }
     if(c<10.5||c>=14.5){ this.pot.position.set(Lt.SX-.08,.88,Lt.SZ+.12); this.pot.rotation.z=0; }
     h.root.position.set(pos.x,0,pos.z); let dy=yaw-h.root.rotation.y; dy=Math.atan2(Math.sin(dy),Math.cos(dy)); h.root.rotation.y+=dy*Math.min(1,dt*8);
-    // Cão caminha lentamente no primeiro plano, sem se esconder sob a mesa.
+    // Mesmo descanso/alerta do rig anterior, em area iluminada e visivel.
     const dog=this.dog;
     if(dog){
-      const a=t*.55, px=2.25+.58*Math.sin(a), pz=-.48+.25*Math.cos(a);
-      const vx=.58*.55*Math.cos(a), vz=-.25*.55*Math.sin(a);
-      dog.root.position.set(px,0,pz);
-      const facing=Math.atan2(vx,vz);
-      dog.root.rotation.y+=angDiff(dog.root.rotation.y,facing)*Math.min(1,dt*3.5);
-      poseDogRig(dog,t,dt,{speed:.85,alert:true});
-      if(this.dogShade)this.dogShade.position.set(px,.014,pz);
+      const dx=pos.x-dog.root.position.x,dz=pos.z-dog.root.position.z;
+      const near=dx*dx+dz*dz<9;
+      const facing=clamp(Math.atan2(dx,dz)-dog.root.rotation.y,-.9,.9);
+      poseDogRig(dog,t,dt,{resting:true,alert:near,look:near?facing:0});
       if(window.__PASTOR_MESHY)window.__PASTOR_MESHY.menuDogVisible=dog.root.visible&&!!dog.root.parent;
     } }
   // fumaça
