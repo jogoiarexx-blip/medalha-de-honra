@@ -31,8 +31,8 @@ assert(menu.includes('dog.root.position.set(2.25,0,-.45)'),'Cachorro continua es
 assert(menu.includes('this.dogLight=new T.PointLight('),'Cachorro sem iluminacao dedicada');
 assert(menu.includes('poseDogRig(dog,t,dt,{speed:.85,alert:true})'),'Caminhada do menu nao esta ativa');
 assert(secret.includes('if(d.dog&&!e.dogMesh) dogify25(e)'),'Cachorro da fase secreta desconectado');
-assert(html.indexOf('src="js/24a-dog-meshy.js"')>html.indexOf('src="js/24-secret-operations.js"'),
+assert(html.indexOf('src="js/24a-dog-meshy.js')>html.indexOf('src="js/24-secret-operations.js'),
   'O integrador deve entrar apos a fase secreta');
-assert(html.indexOf('src="js/24a-dog-meshy.js"')<html.indexOf('src="js/25-boot.js"'),
+assert(html.indexOf('src="js/24a-dog-meshy.js')<html.indexOf('src="js/25-boot.js'),
   'O integrador deve entrar antes do boot');
 console.log('PASSOU: GLB, malha de '+position.count+' vertices, 27 ossos, caminhada, menu visivel e fase S1.');
