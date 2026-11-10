@@ -7,7 +7,8 @@ FPS histórico de espionagem em Three.js/WebGL, distribuído pelo GitHub Pages.
 - `index.html`: documento HTML, telas, menus e referências a arquivos externos.
 - `css/game.css`: estilos da interface, menus, HUD e acessibilidade.
 - `js/`: sistemas e campanhas divididos por responsabilidade, carregados em ordem numérica.
-- `audio/trilha_sombras_de_paris.mp3`: demonstração da trilha sonora. A música adaptativa do jogo é sintetizada pelo JavaScript.
+- `audio/menu-principal.mp3`: música nova do menu, otimizada para MP3 estéreo de 96 kbps (~1,8 MB).
+- `audio/trilha_sombras_de_paris.mp3`: amostra antiga, não reproduzida no menu. A trilha das missões continua sintetizada pelo jogo.
 - `assets/images/`: pasta para futuras texturas e artes.
 - `assets/models/`: pasta para futuros modelos GLB.
 - `js/modelos/soldado-meshy-dados.js`: o soldado 3D (modelo feito no Meshy) já otimizado para o jogo — carregado antes dos outros módulos.
@@ -32,7 +33,9 @@ Projeto independente inspirado em jogos históricos de espionagem. Para redistri
 
 ## Música original e ativação
 
-- A trilha original é **gerada pelo próprio jogo** com o sistema MUS/Web Audio em `js/01-audio.js`: menu, exploração, tensão e combate, com variações por região.
+- **Menu principal:** reproduz em loop `audio/menu-principal.mp3` após um clique/toque/tecla. O menu deixa de tocar a melodia sintetizada por cima.
+- **Missões:** continuam usando MUS/Web Audio em `js/01-audio.js` (exploração, tensão e combate). Em caso de erro de carregamento, o menu usa o tema sintetizado anterior.
+- `js/01a-menu-track.js` conecta o MP3 ao controle de volume de música existente.
 - Clique em **Ativar trilha sonora** no menu ou interaja com uma tecla/click em qualquer opção para liberar o áudio após a primeira interação. Essa exigência vem dos navegadores.
 - Em **Opções**, ajuste **Volume da música** acima de zero. Se estiver no mudo, a trilha permanece silenciosa por preferência do jogador.
 - `audio/trilha_sombras_de_paris.mp3` é uma **amostra de referência** e não substitui a composição dinâmica.

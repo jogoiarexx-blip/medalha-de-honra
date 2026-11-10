@@ -1,0 +1,13 @@
+'use strict';
+const fs=require('node:fs'),path=require('node:path'),assert=require('node:assert/strict');
+const root=path.resolve(__dirname,'..');
+const read=p=>fs.readFileSync(path.join(root,p));
+const html=read('index.html').toString('utf8'),source=read('js/01a-menu-track.js').toString('utf8'),audio=read('audio/menu-principal.mp3');
+assert(audio.byteLength>100000&&audio.byteLength<3000000,'MP3 ausente ou grande demais');
+assert(audio.toString('latin1',0,3)==='ID3'||audio[0]===255&&(audio[1]&224)===224,'Cabeçalho MP3 inválido');
+assert(html.includes('src="js/01a-menu-track.js"'),'Script de música não carregado');
+assert(html.indexOf('src="js/01-audio.js"')<html.indexOf('src="js/01a-menu-track.js"'),'Ordem dos scripts incorreta');
+assert(html.indexOf('src="js/01a-menu-track.js"')<html.indexOf('src="js/25-boot.js"'),'Script de música deve carregar antes do boot');
+assert(source.includes('createMediaElementSource(el)'),'MP3 não compartilha controle de volume');
+assert(source.includes('MUS.next=now+.10'),'Sequenciador não reiniciado ao trocar faixa');
+console.log('PASSOU: música do menu otimizada, integração e fallback presentes.');
