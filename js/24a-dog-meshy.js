@@ -101,7 +101,6 @@
       if(walking)m.mixer.update(delta);
     }
     m.rest+=(resting?1-m.rest:-m.rest)*Math.min(1,delta*4);
-    m.model.position.y-=0; // posição do modelo não acumula deslocamento entre frames
     if(m.cap)m.cap.visible=!dead;
   };
 
@@ -113,6 +112,18 @@
   loader.load(DATA.url,gltf=>{
     if(!gltf||!gltf.scene)throw new Error('GLB sem cena');
     template=gltf.scene;walk=(gltf.animations||[])[0]||null;
+    // O GLB original usa emissiveMap duplicado e brilho excessivo: material fosco no jogo.
+    template.traverse(o=>{
+      if(!o.isMesh||!o.material)return;
+      const mats=Array.isArray(o.material)?o.material:[o.material];
+      mats.forEach(m=>{
+        if(m.emissive)m.emissive.setRGB(0,0,0);
+        if('emissiveMap' in m)m.emissiveMap=null;
+        if('metalness' in m)m.metalness=0;
+        if('roughness' in m)m.roughness=.9;
+        m.needsUpdate=true;
+      });
+    });
     DATA.status='ready';
     DATA.instances.forEach(d=>{
       if(d.root&&d.root.parent&&!d._meshy){
