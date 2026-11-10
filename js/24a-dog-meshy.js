@@ -18,13 +18,17 @@
   const oldMake=makeDogRig,oldPose=poseDogRig;
   const DATA={
     url:'assets/models/pastor-alemao-animado.glb',
-    status:'loading',error:null,instances:[],mounted:0,
+    status:'idle',error:null,instances:[],mounted:0,
     renderMode:'baked-morph',walkFrames:4,morphFrames:8,
     trianglesPerDog:12245,visibleMeshes:0,
     originalSize:null,importedSize:null,menuDogVisible:false
   };
   window.__PASTOR_MESHY=DATA;
-  let shared=null;
+  let shared=null, loading=false;
+  // O GLB do pastor acompanha EXATAMENTE a variante do soldado Meshy.
+  // Detalhados e Classicos mantêm o cachorro procedural antigo.
+  const useMeshy=()=>settings.chars==='modelo';
+  DATA.useMeshy=useMeshy;
   const point=new T.Vector3();
   const XAXIS=new T.Vector3(1,0,0),YAXIS=new T.Vector3(0,1,0);
   const HEAD_COUNT=8;
@@ -152,7 +156,7 @@
   }
 
   function attach(d){
-    if(!shared||!d.root||d._meshy)return;
+    if(!useMeshy()||!shared||!d.root||d._meshy)return;
     const mesh=new T.Mesh(shared.geometry,shared.material);
     mesh.frustumCulled=false;
     mesh.morphTargetInfluences.fill(0);
@@ -171,6 +175,21 @@
     DATA.mounted++;
   }
 
+  function syncVariant(d){
+    if(!d)return;
+    const modelOn=useMeshy();
+    if(modelOn && shared && !d._meshy && d.root){
+      try{attach(d);}catch(e){DATA.error=String(e);console.warn('Pastor: mantendo o cachorro original',e);}
+    }
+    const hasModel=!!d._meshy;
+    d.spine.visible=!(modelOn&&hasModel);
+    if(hasModel){
+      d._meshy.mesh.visible=modelOn;
+      if(d._meshy.cap)d._meshy.cap.visible=modelOn;
+    }
+  }
+  DATA.syncVariant=syncVariant;
+
   makeDogRig=function(helmet){
     const d=oldMake(helmet);
     d._wantsDogHelmet=!!helmet;
@@ -178,15 +197,19 @@
       DATA.instances=DATA.instances.filter(x=>x.root&&x.root.parent);
     }
     DATA.instances.push(d);
-    if(shared){
-      try{attach(d);}catch(e){DATA.error=String(e);console.warn('Pastor: mantendo rig original',e);}
+    if(useMeshy()){
+      requestMeshy();
+      syncVariant(d);
     }
     return d;
   };
 
   poseDogRig=function(d,time,dt,opts){
     oldPose(d,time,dt,opts||{});
-    if(!d||!d._meshy)return;
+    if(!d)return;
+    if(useMeshy()&&!shared)requestMeshy();
+    syncVariant(d);
+    if(!useMeshy()||!d._meshy)return;
     const m=d._meshy,o=opts||{};
     const speed=Math.max(0,Math.min(8,o.speed||0)),delta=Math.min(.06,Math.max(0,dt||0));
     const weights=new Array(HEAD_COUNT).fill(0);
@@ -211,24 +234,31 @@
     if(m.cap)m.cap.visible=!o.dead;
   };
 
-  if(!T.GLTFLoader){
-    DATA.status='fallback';DATA.error='GLTFLoader não carregado';return;
-  }
-  new T.GLTFLoader().load(DATA.url,gltf=>{
-    try{
-      shared=buildMorphs(gltf);
-      DATA.status='ready';
-      for(const d of DATA.instances){
-        if(d.root&&d.root.parent&&!d._meshy){
-          try{attach(d);}catch(e){DATA.error=String(e);console.warn('Pastor:',e);}
-        }
-      }
-    }catch(e){
-      DATA.error=String(e);DATA.status='fallback';shared=null;
-      console.warn('Falha ao otimizar pastor: cachorro procedural mantido',e);
+  // Só faz download/decodificação quando a variante de soldados é Modelo 3D.
+  // A mudança de seleção durante download não substitui o cão procedural.
+  function requestMeshy(){
+    if(!useMeshy() || loading || shared || DATA.status==='fallback')return;
+    if(!T.GLTFLoader){
+      DATA.status='fallback';DATA.error='GLTFLoader não carregado';return;
     }
-  },undefined,e=>{
-    DATA.status='fallback';DATA.error=e&&e.message||'GLB indisponível';
-    console.warn('Pastor GLB indisponível; cachorro anterior ativo',DATA.error);
-  });
+    loading=true;DATA.status='loading';
+    new T.GLTFLoader().load(DATA.url,gltf=>{
+      loading=false;
+      try{
+        shared=buildMorphs(gltf);
+        DATA.status='ready';
+        for(const d of DATA.instances){
+          if(d.root&&d.root.parent)syncVariant(d);
+        }
+      }catch(e){
+        DATA.error=String(e);DATA.status='fallback';shared=null;
+        console.warn('Falha ao otimizar pastor: cachorro procedural mantido',e);
+      }
+    },undefined,e=>{
+      loading=false;DATA.status='fallback';
+      DATA.error=e&&e.message||'GLB indisponível';
+      console.warn('Pastor GLB indisponível; cachorro anterior ativo',DATA.error);
+    });
+  }
+  if(useMeshy())requestMeshy();
 })();
