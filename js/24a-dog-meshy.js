@@ -80,6 +80,27 @@
         color[i*3+ch]=clampByte(255*linear);
       }
     }
+    // Restaurar as cores das ilhas UV mais danificadas usando o arquivo
+    // original de alta resolução, sem carregar seus 12 MB no navegador.
+    // Sao 557 correcoes pontuais compactas de 5 bytes, compartilhadas
+    // entre todos os caes e aplicadas somente uma vez ao iniciar o modo GLB.
+    const sourcePatch=window.PASTOR_FUR_SOURCE_PATCH;
+    if(sourcePatch&&sourcePatch.vertexCount===uv.count){
+      const raw=atob(sourcePatch.data);
+      if(raw.length!==sourcePatch.recordCount*5)throw new Error('Patch de pelagem truncado');
+      for(let offset=0;offset<raw.length;offset+=5){
+        const i=raw.charCodeAt(offset)|(raw.charCodeAt(offset+1)<<8);
+        if(i>=uv.count)throw new Error('Indice inválido no patch da pelagem');
+        for(let ch=0;ch<3;ch++){
+          const srgb=raw.charCodeAt(offset+2+ch)/255;
+          const linear=srgb<=.04045?srgb/12.92:Math.pow((srgb+.055)/1.055,2.4);
+          color[i*3+ch]=clampByte(255*linear);
+        }
+      }
+      DATA.sourceUvRepairs=sourcePatch.recordCount;
+    }else{
+      DATA.sourceUvRepairs=0;
+    }
     // O simplificador agrupou vertices de pequenas ilhas UV de cor oposta.
     // Essas amostras isoladas apareciam como riscos claros no dorso preto.
     // Filtro de mediana em apenas uma volta de vizinhos: remove ilhas
