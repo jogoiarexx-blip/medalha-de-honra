@@ -73,9 +73,11 @@
         c[0]+=rgba[p];c[1]+=rgba[p+1];c[2]+=rgba[p+2];
       }
       for(let ch=0;ch<3;ch++){
-        const linear=c[ch]/(4*255);
-        // Corrigir o castanho muito escuro sem apagar o dorso preto.
-        color[i*3+ch]=clampByte(255*Math.pow(linear,.86));
+        const srgb=c[ch]/(4*255);
+        // Vertex colors em Three.js r128 sao LINEARES; a imagem JPEG e sRGB.
+        // Sem converter, a curva sRGB e aplicada duas vezes, lavando toda a pelagem.
+        const linear=srgb<=.04045?srgb/12.92:Math.pow((srgb+.055)/1.055,2.4);
+        color[i*3+ch]=clampByte(255*linear);
       }
     }
     geo.setAttribute('color',new T.Uint8BufferAttribute(color,3,true));
