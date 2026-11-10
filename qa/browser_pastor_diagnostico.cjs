@@ -54,7 +54,41 @@ const sleep=ms=>new Promise(r=>setTimeout(r,ms));
   console.log('PASTOR_BROWSER_LOGS '+JSON.stringify(logs.slice(0,30)));
   fs.mkdirSync('qa-shots',{recursive:true});
   await page.screenshot({path:'qa-shots/pastor-menu.png',fullPage:true});
-  fs.writeFileSync('qa-shots/report.json',JSON.stringify({report,logs},null,2));
+  // Diagnostico: cria UMA malha estatica a partir da pose skinned e a encaixa
+  // no volume do pastor original, sem depender do bindMatrix do clone.
+  const baked=await page.evaluate(()=>{
+    const d=window.MENU3D?.dog,m=d?._meshy,t=window.THREE;
+    if(!m)return {error:'sem modelo Meshy'};
+    let sk=null;m.model.traverse(o=>{if(o.isSkinnedMesh)sk=o;});
+    if(!sk)return {error:'sem SkinnedMesh'};
+    const a=sk.geometry.getAttribute('position'),root=d.root;
+    const points=new Float32Array(a.count*3),pt=new t.Vector3(),lo=new t.Vector3(Infinity,Infinity,Infinity),hi=new t.Vector3(-Infinity,-Infinity,-Infinity);
+    m.model.updateMatrixWorld(true);root.updateMatrixWorld(true);
+    for(let i=0;i<a.count;i++){
+      sk.boneTransform(i,pt);pt.applyMatrix4(sk.matrixWorld);root.worldToLocal(pt);
+      points[i*3]=pt.x;points[i*3+1]=pt.y;points[i*3+2]=pt.z;
+      lo.min(pt);hi.max(pt);
+    }
+    const ref=d._pastorOriginalBounds,rs=ref.getSize(new t.Vector3()),sz=hi.clone().sub(lo);
+    const sc=new t.Vector3(rs.x/sz.x,rs.y/sz.y,rs.z/sz.z);
+    const center=ref.getCenter(new t.Vector3()),base=lo.clone().add(hi).multiplyScalar(.5);
+    for(let i=0;i<a.count;i++){
+      points[i*3]=(points[i*3]-base.x)*sc.x+center.x;
+      points[i*3+1]=(points[i*3+1]-lo.y)*sc.y+ref.min.y;
+      points[i*3+2]=(points[i*3+2]-base.z)*sc.z+center.z;
+    }
+    const geo=sk.geometry.clone();
+    geo.setAttribute('position',new t.BufferAttribute(points,3));
+    geo.deleteAttribute('skinIndex');geo.deleteAttribute('skinWeight');geo.computeVertexNormals();geo.computeBoundingSphere();
+    const mat=sk.material.clone();mat.skinning=false;mat.side=t.DoubleSide;mat.needsUpdate=true;
+    const visual=new t.Mesh(geo,mat); visual.frustumCulled=false;root.add(visual);
+    m.model.visible=false;d.spine.visible=false;
+    return {vertices:a.count,normalisedSize:rs.toArray(),originalRaw:sz.toArray(),offset:base.toArray(),visible:visual.visible};
+  });
+  console.log('PASTOR_BAKED_PROBE '+JSON.stringify(baked));
+  await page.waitForTimeout(500);
+  await page.screenshot({path:'qa-shots/pastor-baked.png',fullPage:true});
+  fs.writeFileSync('qa-shots/report.json',JSON.stringify({report,logs,baked},null,2));
   if(!report.menuBuilt)throw new Error('Menu nao inicializado');
   if(!report.dog)throw new Error('Cachorro procedural nao criado');
  }finally{if(browser)await browser.close();srv.kill('SIGTERM');}
