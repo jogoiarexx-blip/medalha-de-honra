@@ -215,11 +215,18 @@ MENU3D.build=function(){
   this.reader=mk({uniform:0x4a3828,pants:0x2e2e32,skin:0xd8aa88,hair:0x6a6a66,boots:true},TX+.95,TZ+.4,-Math.PI/2);
   const cupM=Lm({color:0xe8e0d0}); this.cup=box(.07,.08,.07,cupM,0,-.1,.04,0,this.coffee.g.wrR); this.cup.visible=false;
   this.paper=add(new T.PlaneGeometry(.24,.32),Lm({map:paperT,side:T.DoubleSide}),0,0,0); this.paper.rotation.order='YXZ'; this.cig=box(.012,.012,.07,Lm({color:0xf0ece0}),0,-.1,.05,0,this.reader.g.wrL);
-// Pastor alemão deitado no porão; mesmo rig usado pelos cães da operação S1.
+// Pastor alemão no lado visível do menu, à direita dos botões.
+ // Mesma malha/rig também usada pelos cães da operação secreta S1.
 const dog=makeDogRig(false);
-dog.root.position.set(.55,0,-2.0);dog.root.rotation.y=1.3;
-dog.root.scale.setScalar(.85);S.add(dog.root);
-dog.restT=1;poseDogRig(dog,0,.016,{resting:true});this.dog=dog;
+dog.root.position.set(2.25,0,-.45); dog.root.rotation.y=.35;
+dog.root.scale.setScalar(1.08); S.add(dog.root);
+dog.restT=0; poseDogRig(dog,0,.016,{speed:.8,alert:true}); this.dog=dog;
+// Luz econômica focada no cão; o cenário tem outras luzes próprias.
+this.dogLight=new T.PointLight(0xffdfab,1.35,4.8,1.8);
+this.dogLight.position.set(2.0,2.25,-.25); S.add(this.dogLight);
+const dogShade=new T.Mesh(new T.CircleGeometry(.6,18),new T.MeshBasicMaterial({color:0x0c0806,transparent:true,opacity:.32,depthWrite:false}));
+dogShade.rotation.x=-Math.PI/2; dogShade.position.set(2.25,.014,-.45);
+S.add(dogShade); this.dogShade=dogShade;
   this.layout={TX,TZ,DZ,SX,SZ};
   const fillL=new T.PointLight(0xffc890,.75,9,1.4); fillL.position.set(.6,2.7,.6); S.add(fillL);
   this.bulbA.position.set(TX-.2,2.85,TZ+.3);
@@ -270,10 +277,18 @@ MENU3D.update=function(dt){
     if(this.cup.visible&&c>10.5&&Math.random()<dt*2.5){ this.cup.getWorldPosition(_m3c2); this.puff(_m3c2.setY(_m3c2.y+.06),0xe8e4e0,.05,1.2,.18); }
     if(c<10.5||c>=14.5){ this.pot.position.set(Lt.SX-.08,.88,Lt.SZ+.12); this.pot.rotation.z=0; }
     h.root.position.set(pos.x,0,pos.z); let dy=yaw-h.root.rotation.y; dy=Math.atan2(Math.sin(dy),Math.cos(dy)); h.root.rotation.y+=dy*Math.min(1,dt*8);
-    // cão acompanha quem passa
-    const d=this.dog, dx=pos.x-d.root.position.x, dz=pos.z-d.root.position.z, near=dx*dx+dz*dz<9;
-    const facing=clamp(Math.atan2(dx,dz)-d.root.rotation.y,-.9,.9);
-    poseDogRig(d,t,dt,{resting:true,alert:near,look:near?facing:0}); }
+    // Cão caminha lentamente no primeiro plano, sem se esconder sob a mesa.
+    const dog=this.dog;
+    if(dog){
+      const a=t*.55, px=2.25+.58*Math.sin(a), pz=-.48+.25*Math.cos(a);
+      const vx=.58*.55*Math.cos(a), vz=-.25*.55*Math.sin(a);
+      dog.root.position.set(px,0,pz);
+      const facing=Math.atan2(vx,vz);
+      dog.root.rotation.y+=angDiff(dog.root.rotation.y,facing)*Math.min(1,dt*3.5);
+      poseDogRig(dog,t,dt,{speed:.85,alert:true});
+      if(this.dogShade)this.dogShade.position.set(px,.014,pz);
+      if(window.__PASTOR_MESHY)window.__PASTOR_MESHY.menuDogVisible=dog.root.visible&&!!dog.root.parent;
+    } }
   // fumaça
   for(const f of this.puffs){ if(f.life<=0) continue; f.life-=dt; const k=1-f.life/f.max; f.sp.position.addScaledVector(f.v,dt); f.sp.scale.setScalar(f.size*(1+k*3)); f.sp.material.opacity=Math.sin(k*Math.PI)*.35; if(f.life<=0) f.sp.visible=false; }
   if(Math.random()<dt*1.5) this.puff(V3(this.layout.SX-.08,1.02,this.layout.SZ+.12),0xd8d4d0,.06,1.6,.2);
