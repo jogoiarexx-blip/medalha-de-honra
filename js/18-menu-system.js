@@ -9,6 +9,113 @@
    rádio, café, leitura de dossiê, cão dormindo; cena própria
    ========================================================= */
 var MENU3D={on:false,built:false,t:0,parts:[],grade:[1.05,.98,.9,1.02,1.06]};
+/* Shared low-poly dog rig for the animated menu and secret operation S1.
+   Assets are geometry-only; does not request downloads or alter game logic. */
+let DOG_MATS=null, DOG_GEOS=null;
+function makeDogRig(helmet=false){
+  if(!DOG_MATS){
+    const mat=color=>new T.MeshLambertMaterial({color});
+    DOG_MATS={saddle:mat(0x302b27),coat:mat(0x8c633f),tan:mat(0xb58d5a),shadow:mat(0x543d2c),
+      muzzle:mat(0x272423),nose:mat(0x16191a),ear:mat(0x422d24),inner:mat(0x945d51),
+      eye:new T.MeshBasicMaterial({color:0x241a12}),glint:new T.MeshBasicMaterial({color:0xded6ad}),
+      collar:mat(0x4b3930),metal:mat(0x83867b),helmet:mat(0x596346)};
+    DOG_GEOS={sphere:new T.SphereGeometry(1,10,7),cone:new T.ConeGeometry(1,1,7),
+      bar:new T.CylinderGeometry(1,1,1,8),cap:new T.SphereGeometry(1,12,7,0,Math.PI*2,0,Math.PI*.53)};
+  }
+  const m=DOG_MATS,g=DOG_GEOS,root=new T.Group(),spine=new T.Group();
+  root.add(spine);
+  const ell=(parent,material,x,y,z,sx,sy,sz,rx=0)=>{
+    const o=new T.Mesh(g.sphere,material);o.position.set(x,y,z);o.scale.set(sx,sy,sz);
+    if(rx)o.rotation.x=rx;parent.add(o);return o;
+  };
+  const link=(parent,material,x,y,z,radius,length,rx=0)=>{
+    const o=new T.Mesh(g.bar,material);o.position.set(x,y,z);o.scale.set(radius,length,radius);
+    o.rotation.x=rx;parent.add(o);return o;
+  };
+  // Angled chest, slim waist and broad rear: readable shepherd-dog silhouette.
+  const torso=ell(spine,m.coat,0,.66,-.06,.29,.33,.65);
+  ell(spine,m.saddle,0,.79,-.17,.295,.22,.49);
+  ell(spine,m.coat,0,.70,-.43,.275,.29,.31);
+  ell(spine,m.tan,0,.67,.34,.275,.33,.29,-.23);
+  const neck=ell(spine,m.coat,0,.9,.43,.205,.27,.24,-.34);
+  const head=new T.Group();head.position.set(0,1.04,.56);spine.add(head);
+  ell(head,m.coat,0,.08,.08,.205,.19,.22);
+  ell(head,m.saddle,0,.07,.245,.183,.14,.1);
+  ell(head,m.tan,0,-.037,.25,.143,.087,.21);
+  ell(head,m.muzzle,0,-.077,.39,.104,.068,.11);
+  ell(head,m.nose,0,-.037,.485,.08,.045,.045);
+  const jaw=new T.Group();jaw.position.set(0,-.11,.24);head.add(jaw);
+  ell(jaw,m.shadow,0,-.025,.13,.122,.04,.19);
+  const ears=[];
+  for(const side of [-1,1]){
+    const ear=new T.Group();ear.position.set(side*.153,.227,.04);head.add(ear);
+    const e=new T.Mesh(g.cone,m.ear);e.position.y=.135;e.scale.set(.102,.29,.105);e.rotation.z=side*-.17;ear.add(e);
+    const ins=new T.Mesh(g.cone,m.inner);ins.position.set(0,.14,.075);ins.scale.set(.056,.19,.028);ins.rotation.z=side*-.17;ear.add(ins);
+    ell(head,m.eye,side*.141,.078,.253,.033,.031,.025);
+    ell(head,m.glint,side*.152,.091,.274,.009,.01,.008);
+    ears.push(ear);
+  }
+  // Front/rear leg hierarchies make knees and paws move independently.
+  const legs=[];
+  for(let i=0;i<4;i++){
+    const front=i<2,side=(i%2===0?-1:1),z=front?.34:-.4;
+    const hip=new T.Group();hip.position.set(side*.215,front?.58:.56,z);spine.add(hip);
+    ell(hip,front?m.coat:m.tan,0,-.13,0,.105,.2,.12);
+    const knee=new T.Group();knee.position.set(0,-.30,front?.005:-.028);hip.add(knee);
+    ell(knee,m.tan,0,-.105,.01,.082,.16,.082);
+    const paw=ell(knee,m.shadow,0,-.245,.085,.12,.072,.2);
+    legs.push({hip,knee,paw,front,side});
+  }
+  const tail=new T.Group();tail.position.set(0,.75,-.64);spine.add(tail);
+  const tailMid=new T.Group();tailMid.position.set(0,.01,-.31);tail.add(tailMid);
+  const t1=ell(tail,m.coat,0,.025,-.175,.105,.11,.25,.25);
+  ell(tailMid,m.saddle,0,-.028,-.16,.078,.087,.19,-.3);
+  if(helmet){
+    const helm=new T.Mesh(g.cap,m.helmet);helm.position.set(0,.245,.05);helm.scale.set(.25,.25,.24);head.add(helm);
+    link(head,m.metal,0,.244,-.164,.027,.35,Math.PI/2);
+    // Slim chin strap is kept clear of the muzzle.
+    for(const side of [-1,1])link(head,m.collar,side*.20,-.025,.105,.017,.24,side*.18);
+  }else{
+    const collar=ell(spine,m.collar,0,.915,.46,.206,.077,.195,-.35);collar.rotation.x=-.3;
+    ell(spine,m.metal,0,.81,.62,.052,.077,.022);
+  }
+  const dog={root,spine,torso,neck,head,jaw,ears,tail,tailMid,legs,restT:0,blendSpeed:0};
+  root.userData.dogRig=dog;
+  return dog;
+}
+function poseDogRig(d,time,dt,opts={}){
+  // dt is capped to prevent a background-tab resume from snapping the rig.
+  const delta=Math.max(0,Math.min(.06,dt||0));
+  const targetRest=opts.resting?1:0;
+  d.restT+=(targetRest-d.restT)*(1-Math.exp(-delta*3.5));
+  const rest=d.restT, speed=Math.max(0,Math.min(8,opts.speed||0));
+  d.blendSpeed+=(speed-d.blendSpeed)*(1-Math.exp(-delta*10));
+  const move=Math.min(1,d.blendSpeed/4),running=Math.min(1,d.blendSpeed/6);
+  const phase=time*(7.5+7*running),breath=Math.sin(time*1.8);
+  d.spine.position.y=-.29*rest+(.022+.045*running)*Math.cos(phase*2)*move+.012*breath*(1-move);
+  d.torso.scale.y=.33*(1+.023*breath);
+  d.neck.rotation.x= -.04+Math.sin(time*.9)*.025;
+  d.head.rotation.x= -.02+.08*rest+Math.sin(time*.55)*.035-(opts.bite||0)*.35;
+  d.head.rotation.y=(opts.look||0)*.5+Math.sin(time*.33)*.05*(1-move);
+  d.jaw.rotation.x=(opts.bite||0)*.48+((!rest&&speed<.4)?Math.max(0,Math.sin(time*3))*.07:0);
+  for(let i=0;i<4;i++){
+    const l=d.legs[i],p=phase+(i===0||i===3?0:Math.PI);
+    // Alternating diagonals for trot, deeper cycle at running speed.
+    const swing=Math.sin(p)*(.58+.2*running)*move;
+    const tuck=l.front?-1.10:-.90;
+    l.hip.rotation.x=swing*(1-rest)+tuck*rest;
+    l.knee.rotation.x=(Math.max(0,-Math.sin(p))*(.55+.3*running)*move)*(1-rest)+1.35*rest;
+    l.paw.rotation.x=-l.knee.rotation.x*.2;
+  }
+  const wag=(opts.alert?.34:.13)*(1-rest*.3)+.12*rest;
+  d.tail.rotation.y=Math.sin(time*(opts.alert?9:3.5))*wag;
+  d.tail.rotation.x=.24+Math.sin(time*2.4)*.09;
+  d.tailMid.rotation.y=-d.tail.rotation.y*.5;
+  d.ears[0].rotation.z=Math.sin(time*1.12)*.06;
+  d.ears[1].rotation.z=-Math.sin(time*.87)*.06;
+  if(opts.dead){d.head.rotation.x=.45;d.tail.rotation.y=0;d.jaw.rotation.x=0;}
+}
+
 MENU3D.build=function(){
   if(this.built) return; this.built=true;
   const S=new T.Scene(); this.scene=S; S.background=new T.Color(0x07060a); S.fog=new T.Fog(0x0a0807,11,26);
@@ -108,11 +215,11 @@ MENU3D.build=function(){
   this.reader=mk({uniform:0x4a3828,pants:0x2e2e32,skin:0xd8aa88,hair:0x6a6a66,boots:true},TX+.95,TZ+.4,-Math.PI/2);
   const cupM=Lm({color:0xe8e0d0}); this.cup=box(.07,.08,.07,cupM,0,-.1,.04,0,this.coffee.g.wrR); this.cup.visible=false;
   this.paper=add(new T.PlaneGeometry(.24,.32),Lm({map:paperT,side:T.DoubleSide}),0,0,0); this.paper.rotation.order='YXZ'; this.cig=box(.012,.012,.07,Lm({color:0xf0ece0}),0,-.1,.05,0,this.reader.g.wrL);
-  // cão dormindo
-  const dg=new T.Group(); dg.position.set(.55,0,-2.0); dg.rotation.y=1.3; dg.scale.setScalar(.85); S.add(dg); const fur=hm(0x6a4a2a), dark=hm(0x2a1a10);
-  box(.42,.3,.95,fur,0,.17,0,0,dg); const dh=new T.Group(); dh.position.set(0,.22,.52); dg.add(dh); box(.3,.26,.34,fur,0,0,.05,0,dh); box(.17,.13,.2,dark,0,-.04,.3,0,dh); for(const s of [-1,1]) box(.07,.12,.05,dark,s*.12,.14,0,0,dh);
-  for(const [x,z] of [[-.17,.4],[.17,.4]]) box(.1,.08,.36,fur,x,.04,z+.15,0,dg); for(const s of [-1,1]) box(.12,.1,.4,fur,s*.2,.06,-.3,0,dg);
-  const tail=new T.Group(); tail.position.set(0,.22,-.48); dg.add(tail); box(.06,.06,.36,fur,0,0,-.17,0,tail); this.dog={g:dg,head:dh,tail};
+// Pastor alemão deitado no porão; mesmo rig usado pelos cães da operação S1.
+const dog=makeDogRig(false);
+dog.root.position.set(.55,0,-2.0);dog.root.rotation.y=1.3;
+dog.root.scale.setScalar(.85);S.add(dog.root);
+dog.restT=1;poseDogRig(dog,0,.016,{resting:true});this.dog=dog;
   this.layout={TX,TZ,DZ,SX,SZ};
   const fillL=new T.PointLight(0xffc890,.75,9,1.4); fillL.position.set(.6,2.7,.6); S.add(fillL);
   this.bulbA.position.set(TX-.2,2.85,TZ+.3);
@@ -164,7 +271,9 @@ MENU3D.update=function(dt){
     if(c<10.5||c>=14.5){ this.pot.position.set(Lt.SX-.08,.88,Lt.SZ+.12); this.pot.rotation.z=0; }
     h.root.position.set(pos.x,0,pos.z); let dy=yaw-h.root.rotation.y; dy=Math.atan2(Math.sin(dy),Math.cos(dy)); h.root.rotation.y+=dy*Math.min(1,dt*8);
     // cão acompanha quem passa
-    const d=this.dog, dx=pos.x-d.g.position.x, dz=pos.z-d.g.position.z, near=dx*dx+dz*dz<9; d.head.rotation.x=near?-.35:.12+Math.sin(t*.3)*.03; d.head.rotation.y=near?clamp(Math.atan2(dx,dz)-d.g.rotation.y,-.9,.9):0; d.tail.rotation.y=Math.sin(t*(near?14:3))*(near?.7:.15); d.g.children[0].scale.y=1+Math.sin(t*1.6)*.03; }
+    const d=this.dog, dx=pos.x-d.root.position.x, dz=pos.z-d.root.position.z, near=dx*dx+dz*dz<9;
+    const facing=clamp(Math.atan2(dx,dz)-d.root.rotation.y,-.9,.9);
+    poseDogRig(d,t,dt,{resting:true,alert:near,look:near?facing:0}); }
   // fumaça
   for(const f of this.puffs){ if(f.life<=0) continue; f.life-=dt; const k=1-f.life/f.max; f.sp.position.addScaledVector(f.v,dt); f.sp.scale.setScalar(f.size*(1+k*3)); f.sp.material.opacity=Math.sin(k*Math.PI)*.35; if(f.life<=0) f.sp.visible=false; }
   if(Math.random()<dt*1.5) this.puff(V3(this.layout.SX-.08,1.02,this.layout.SZ+.12),0xd8d4d0,.06,1.6,.2);

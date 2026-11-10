@@ -8,21 +8,32 @@
    ========================================================= */
 (function(){ const up=Enemy.prototype.update; Enemy.prototype.update=function(dt){
   const d=this.def; if(!d||!d.melee) return up.call(this,dt);
-  if(this.dead){ if(this.dogMesh){ this.dogMesh.rotation.z=Math.min(1.5,(this.deathT||0)*3); } return up.call(this,dt); }
+  if(this.dead){ if(this.dogMesh){ this.dogMesh.rotation.z=Math.min(1.2,(this.deathT||0)*2.4); if(this.dogVisual) poseDogRig(this.dogVisual,simTime,dt,{dead:true}); } return up.call(this,dt); }
   const P=G.player, dx=P.pos.x-this.pos.x, dz=P.pos.z-this.pos.z, dist=Math.hypot(dx,dz);
-  if(!this.woke){ if(dist<(d.wake||22)||this.hp<this.maxHp||G.alarm){ this.woke=true; AudioSys.play(d.dog?'shout':'grunt',this.pos,1.1); if(d.zombie&&this.rise===undefined) this.rise=1; } else { this.moveDir(0,0,0,dt); this.animate(dt); if(this.dogMesh) syncDog25(this); return; } }
+  if(!this.woke){ if(dist<(d.wake||22)||this.hp<this.maxHp||G.alarm){ this.woke=true; AudioSys.play(d.dog?'shout':'grunt',this.pos,1.1); if(d.zombie&&this.rise===undefined) this.rise=1; } else { this.moveDir(0,0,0,dt); this.animate(dt); if(this.dogMesh) syncDog25(this,dt); return; } }
   if(this.rise>0){ this.rise-=dt; this.crouchTarget=.9*this.rise; this.moveDir(0,0,0,dt); this.animate(dt); return; }
   this.state='COMBAT'; this.awareness=1; this.biteT=(this.biteT||0)-dt;
   if(dist<(d.reach||1.4)&&!P.dead){ this.moveDir(0,0,0,dt); this.faceTowards(P.pos.x,P.pos.z,dt,12); if(this.biteT<=0){ this.biteT=d.biteCD||1.1; hurtPlayer((d.bite||12)*(G.diff==='recruta'?.7:G.diff==='veterano'?1.3:1),this.pos.clone()); AudioSys.play(d.dog?'grunt':'hurt',this.pos,1); if(d.zombie) AudioSys.play('grunt',this.pos,.8); } }
   else { this.repathT=(this.repathT||0)-dt; if(this.repathT<=0||!this.path){ this.repathT=.5+Math.random()*.3; if(segClear2D(this.pos.x,this.pos.z,P.pos.x,P.pos.z,.3,true)){ this.path=[{x:P.pos.x,z:P.pos.z}]; this.pathI=0; } else this.setPath(P.pos.x,P.pos.z); } this.followPath(d.speed||3,dt); }
   if(d.zombie&&Math.random()<dt*.25) AudioSys.play('grunt',this.pos,.5);
-  this.aimTarget=0; this.animate(dt); if(this.dogMesh) syncDog25(this);
+  this.aimTarget=0; this.animate(dt); if(this.dogMesh) syncDog25(this,dt);
 }; })();
-function dogify25(e){ const r=e.h.root; r.scale.set(.85,.42,.85); r.traverse(o=>{ if(o.isMesh) o.visible=false; });
-  const g=new T.Group(); scene.add(g); const fur=hm(0x6a4a2a), dark=hm(0x2a1a10); const body=new T.Mesh(BOX(.42,.4,1),fur); body.position.y=.55; g.add(body); const head=new T.Mesh(BOX(.32,.3,.38),fur); head.position.set(0,.78,.6); g.add(head); const snout=new T.Mesh(BOX(.18,.14,.22),dark); snout.position.set(0,.72,.86); g.add(snout);
-  const helm=new T.Mesh(new T.SphereGeometry(.2,10,6,0,Math.PI*2,0,Math.PI/2),hm(0x4a5038)); helm.position.set(0,.9,.58); g.add(helm); for(const [x,z] of [[-.15,.38],[.15,.38],[-.15,-.38],[.15,-.38]]){ const l=new T.Mesh(BOX(.1,.36,.1),fur); l.position.set(x,.18,z); g.add(l); l.userData.leg=true; } const tail=new T.Mesh(BOX(.06,.06,.36),fur); tail.position.set(0,.66,-.62); tail.rotation.x=.6; g.add(tail);
-  e.dogMesh=g; e.dogLegs=g.children.filter(c=>c.userData.leg); }
-function syncDog25(e){ const g=e.dogMesh; g.position.set(e.pos.x,e.pos.y,e.pos.z); g.rotation.y=e.yaw; const s=e.speedNow||0; e.dogLegs.forEach((l,i)=>{ l.rotation.x=Math.sin(simTime*14+(i%2?Math.PI:0)+(i>1?Math.PI/2:0))*.6*Math.min(1,s/3); }); }
+function dogify25(e){
+  // The human Actor still handles AI, hitboxes and damage; only its rendering is hidden.
+  const h=e.h.root; h.scale.set(.85,.42,.85); h.traverse(o=>{if(o.isMesh)o.visible=false;});
+  const dog=makeDogRig(true);scene.add(dog.root);
+  dog.root.position.set(e.pos.x,e.pos.y,e.pos.z);dog.root.rotation.y=e.yaw;
+  e.dogVisual=dog;e.dogMesh=dog.root;e.dogPrev={x:e.pos.x,z:e.pos.z};
+}
+function syncDog25(e,dt){
+  const d=e.dogVisual;if(!d)return;
+  d.root.position.set(e.pos.x,e.pos.y,e.pos.z);d.root.rotation.y=e.yaw;
+  let speed=0;
+  if(dt>0&&e.dogPrev) speed=Math.hypot(e.pos.x-e.dogPrev.x,e.pos.z-e.dogPrev.z)/dt;
+  e.dogPrev={x:e.pos.x,z:e.pos.z};
+  const attacking=e.state==='COMBAT'&&e.biteT>0&&e.biteT<.3;
+  poseDogRig(d,simTime,dt,{speed:Math.min(8,speed),alert:!!e.woke,bite:attacking?.8:0});
+}
 function zombify25(e){ const P=e.h.parts; const rot=hm(0x5a6a4a); if(e.h.mz){} else if(e.h.headMesh){ e.h.headMesh.material=hm(0x8a9a7a); } else { if(P.head) P.head.material=hm(0x8a9a7a); for(const k of ['forearm_L','forearm_R']) if(P[k]) P[k].material=rot; } e.h.root.traverse(o=>{ if(o.isMesh&&o.material&&o.material.color&&!o.userData.keep){ } }); e.aimTarget=0; for(const w of (e.h.weaponMeshes||[])) w.visible=false; const eyes=new T.Mesh(BOX(.16,.03,.02),new T.MeshBasicMaterial({color:0xc8ff6a})); eyes.position.set(0,.05,.12); if(P.head) P.head.add(eyes); }
 function botify25(e){ armorUp13(e); const P=e.h.parts; const eyes=new T.Mesh(BOX(.18,.04,.02),new T.MeshBasicMaterial({color:0xff2a1a})); eyes.position.set(0,.06,.15); if(P.head) P.head.add(eyes); }
 function bonusTint25(fogC,bg){ scene.fog=new T.FogExp2(fogC,.022); scene.background=new T.Color(bg); scene.add(new T.AmbientLight(0x6a4a8a,.25)); }
