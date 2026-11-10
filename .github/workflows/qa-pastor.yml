@@ -1,0 +1,35 @@
+name: QA pastor-alemao
+on:
+  push:
+    branches: [main]
+    paths:
+      - "js/18-menu-system.js"
+      - "js/24a-dog-meshy.js"
+      - "js/24-secret-operations.js"
+      - "assets/models/pastor-alemao-animado.glb"
+      - "qa/test_pastor_visibilidade.js"
+      - ".github/workflows/qa-pastor.yml"
+  pull_request:
+    paths:
+      - "js/18-menu-system.js"
+      - "js/24a-dog-meshy.js"
+      - "js/24-secret-operations.js"
+      - "assets/models/pastor-alemao-animado.glb"
+      - "qa/test_pastor_visibilidade.js"
+jobs:
+  structural-smoke:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Verificar sintaxe JavaScript
+        run: |
+          node --check js/18-menu-system.js
+          node --check js/24a-dog-meshy.js
+          node --check js/24-secret-operations.js
+      - name: Testar estrutura do cachorro e suas animacoes
+        run: node qa/test_pastor_visibilidade.js
