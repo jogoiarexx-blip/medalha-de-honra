@@ -46,3 +46,15 @@ Verifique o comportamento em um navegador com áudio: abrir menu, clicar Ativar 
 - O capacete é uma peça separada: quando um tiro derruba o capacete, ele voa e aparece o cabelo. Oficiais e soldados de quepe/boina usam o mesmo corpo com o quepe do jogo.
 - Em **Opções → Personagens** dá para escolher entre *Modelo 3D (soldado novo)*, *Detalhados* e *Clássicos (blocos)*.
 - As caixas de acerto não mudaram: tiros na cabeça, capacete, desarme e rendição funcionam como antes.
+
+
+## Pastor alemão — GLB animado otimizado (10/11/2026)
+
+- O arquivo `assets/models/pastor-alemao-animado.glb` é um modelo autoral fornecido pelo projeto, otimizado para ~438 KB (12.245 triângulos; antes 12,4 MB e 163.975 triângulos).
+- Preservados os 27 ossos e a animação de caminhada original (81 canais de animação). Textura convertida para JPEG 512×512, com pesos de skin compactados.
+- O `js/24a-dog-meshy.js` carrega esse GLB com `js/vendor/GLTFLoader-r128.js` após os módulos do jogo e antes do `boot`.
+- Substitui **apenas a apresentação visual** do cachorro do menu e dos cães da fase secreta S1; lógica de movimentação, ataques, dano, hitboxes e objetivos continuam inalterados.
+- O modelo e a textura são compartilhados entre as instâncias; cada cão recebe um esqueleto e AnimationMixer próprios para caminhar independentemente.
+- Se o GLB estiver ausente ou não carregar, o visual procedural anterior permanece como fallback. A tela inicial e a fase S1 continuam operacionais.
+- Para depuração pelo console: `window.__PASTOR_MESHY.status` (loading/ready/fallback), `mounted` e `error`.
+- Conferência estática executada: estrutura GLB válida, 27 ossos, 81 canais de animação, textura embutida, carregador r128 e ordem dos scripts. **A animação e aparência no navegador ainda exigem playtest visual.**
