@@ -12,9 +12,9 @@ const FX={parts:[],decals:[],tracers:[],flashes:[],pi:0,di:0,ti:0,fi:0,
     this.decalMats={stone:new T.MeshBasicMaterial({color:0x111111,transparent:true,opacity:.7,polygonOffset:true,polygonOffsetFactor:-2,depthWrite:false}),wood:new T.MeshBasicMaterial({color:0x22160c,transparent:true,opacity:.8,polygonOffset:true,polygonOffsetFactor:-2,depthWrite:false}),metal:new T.MeshBasicMaterial({color:0x9aa0a0,transparent:true,opacity:.6,polygonOffset:true,polygonOffsetFactor:-2,depthWrite:false})};
     for(let i=0;i<80;i++){ const m=new T.Mesh(dg,this.decalMats.stone); m.visible=false; scene.add(m); this.decals.push(m); }
     for(let i=0;i<20;i++){ const geo=new T.BufferGeometry().setFromPoints([V3(),V3()]); const l=new T.Line(geo,new T.LineBasicMaterial({color:0xffd690,transparent:true,opacity:0})); l.frustumCulled=false; scene.add(l); this.tracers.push({l,t:0}); }
-    this.sprites=[]; for(let i=0;i<130;i++){ const sp=new T.Sprite(new T.SpriteMaterial({map:SOFTTEX,transparent:true,depthWrite:false,opacity:0})); sp.visible=false; scene.add(sp); this.sprites.push({sp,v:V3(),life:0,max:1,size:1,a:1}); } this.si=0;
+    this.sprites=[]; for(let i=0;i<130;i++){ const sp=new T.Sprite(new T.SpriteMaterial({map:SOFTTEX||null,transparent:true,depthWrite:false,opacity:0})); sp.visible=false; scene.add(sp); this.sprites.push({sp,v:V3(),life:0,max:1,size:1,a:1}); } this.si=0;
     this.casings=[]; FX.cgeo=FX.cgeo||new T.BoxGeometry(.01,.01,.026); FX.cmat=FX.cmat||new T.MeshPhongMaterial({color:0xb8913a,specular:0x887744,shininess:80}); for(let i=0;i<24;i++){ const m=new T.Mesh(FX.cgeo,FX.cmat); m.visible=false; scene.add(m); this.casings.push({m,v:V3(),av:V3(),life:0,b:0}); } this.ci=0;
-    const fg=new T.PlaneGeometry(.45,.45); const fm=new T.MeshBasicMaterial({map:FLASHTEX,color:0xffd27a,transparent:true,opacity:.9,blending:T.AdditiveBlending,depthWrite:false,side:T.DoubleSide});
+    const fg=new T.PlaneGeometry(.45,.45); const fm=new T.MeshBasicMaterial({map:FLASHTEX||null,color:0xffd27a,transparent:true,opacity:.9,blending:T.AdditiveBlending,depthWrite:false,side:T.DoubleSide});
     for(let i=0;i<8;i++){ const m=new T.Mesh(fg,fm); m.visible=false; scene.add(m); this.flashes.push({m,t:0}); }
   },
   burst(p,n,color,speed,life,grav=9.8,spread=1,dir){
