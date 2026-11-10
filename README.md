@@ -18,11 +18,13 @@ Os módulos são scripts clássicos, **não** ES Modules, porque o jogo original
 
 Não é necessário npm, Vite ou compilação. Execute por um servidor HTTP local, por exemplo `python -m http.server 8000`, e abra `http://localhost:8000`. Para publicar, envie toda a estrutura para o branch `main` e use GitHub Pages com raiz `/`.
 
-**Atenção:** Three.js r128 e as fontes ainda vêm de CDN e exigem rede na primeira execução. Os demais sistemas e a música adaptativa ficam no código local do projeto.
+**Three.js r128 agora é servido localmente** por `js/vendor/three-r128.min.js` (licença MIT); o `GLTFLoader-r128.js` também fica no projeto. Isso evita os avisos de bloqueio de armazenamento do `cdnjs` para o motor 3D. As fontes externas ainda podem exigir rede, portanto o jogo completo não deve ser anunciado como offline sem testes específicos.
 
 ## Testes
 
 `node --check js/00-core.js` valida a sintaxe de um arquivo; verifique todos os módulos após mudanças. Teste o menu, primeira fase, combate, salvamento/carregamento e as 27 operações.
+
+`node qa/test_three_local.js` valida a cópia local do Three.js r128, a ordem dos scripts e os fallbacks de `map` opcionais. O teste é estrutural, não comprova o carregamento no navegador nem a campanha completa.
 
 ## Fonte de inspiração
 
