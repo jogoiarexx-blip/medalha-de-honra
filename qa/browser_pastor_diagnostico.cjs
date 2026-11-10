@@ -30,7 +30,7 @@ const sleep=ms=>new Promise(r=>setTimeout(r,ms));
          worldSize:box.getSize(new t.Vector3()).toArray(),screen:projection.toArray(),triangles:geo.index.count/3};
        const ca=geo.getAttribute('color');
        if(ca){const min=[Infinity,Infinity,Infinity],max=[-Infinity,-Infinity,-Infinity],sum=[0,0,0];
-         for(let i=0;i<ca.count;i++){for(let c=0;c<3;c++){const v=ca.getComponent(i,c);min[c]=Math.min(min[c],v);max[c]=Math.max(max[c],v);sum[c]+=v;}}
+         for(let i=0;i<ca.count;i++){for(let c=0;c<3;c++){const v=c===0?ca.getX(i):c===1?ca.getY(i):ca.getZ(i);min[c]=Math.min(min[c],v);max[c]=Math.max(max[c],v);sum[c]+=v;}}
          r.visual.colorStats={min,max,mean:sum.map(v=>v/ca.count),samples:[0,100,1000,5000].map(i=>[ca.getX(i),ca.getY(i),ca.getZ(i)]),normalized:ca.normalized,vertexColors:m.material.vertexColors};
        }
      }
