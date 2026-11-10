@@ -101,6 +101,11 @@ const sleep=ms=>new Promise(r=>setTimeout(r,ms));
   if(report.status!=='ready'||!report.dog?.hasModel||!report.visual)throw new Error('Pastor Meshy nao carregou no menu: '+report.error);
   if(report.visual.morphs!==8||!report.visual.hasVertexColors||report.visual.colorVertices!==9008||
       report.textureMode!=='fur-vertex-baked')throw new Error('Morph targets ou pelagem corrigida ausentes');
+  const tone=report.visual.colorStats;
+  if(!tone||tone.max[0]-tone.min[0]<95||tone.max[1]-tone.min[1]<80||
+     tone.max[2]-tone.min[2]<60){
+    throw new Error('Textura virou cor uniforme por UVs nao normalizadas: '+JSON.stringify(tone));
+  }
   const p=report.visual.screen;if(Math.abs(p[0])>1||Math.abs(p[1])>1||Math.abs(p[2])>1)throw new Error('Pastor fora da camera: '+p);
   if(!s1.hasModel||s1.moving.length!==8||s1.biting.length!==8)throw new Error('Pastor da missao S1 nao anima');
   if(!variants.every(x=>x.option===x.selected))throw new Error('A opcao de personagem nao foi persistida no menu');
