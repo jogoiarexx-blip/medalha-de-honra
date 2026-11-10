@@ -185,7 +185,7 @@ function mergeDress(){ if(!DRESS.length) return; const groups=new Map(); for(con
     const G2=new T.BufferGeometry(); G2.setAttribute('position',new T.BufferAttribute(pos,3)); G2.setAttribute('normal',new T.BufferAttribute(nor,3)); G2.setAttribute('uv',new T.BufferAttribute(uv,2)); const M2=new T.Mesh(G2,mat); M2.matrixAutoUpdate=false; scene.add(M2); for(const m of list) m.parent.remove(m); }
   DRESS=[]; }
 let PARIS_M=null;
-function parisDress(x0,x1,z0,z1,h){ if(!PARIS_M) PARIS_M={zinc:new T.MeshLambertMaterial({color:0x5a6470}),corn:new T.MeshLambertMaterial({map:TEX.lime5,color:0xd8ccb8}),iron:new T.MeshLambertMaterial({color:0x1e2022}),chim:new T.MeshLambertMaterial({map:TEX.lime5,color:0xb08a6a}),pot:new T.MeshLambertMaterial({color:0x8a4a2a}),aw:[0xa02828,0x2a5a3a,0x284a7a,0x8a6a2a]};
+function parisDress(x0,x1,z0,z1,h){ if(!PARIS_M) PARIS_M={zinc:new T.MeshLambertMaterial({color:0x5a6470}),corn:new T.MeshLambertMaterial({map:TEX.lime,color:0xd8ccb8}),iron:new T.MeshLambertMaterial({color:0x1e2022}),chim:new T.MeshLambertMaterial({map:TEX.lime,color:0xb08a6a}),pot:new T.MeshLambertMaterial({color:0x8a4a2a}),aw:[0xa02828,0x2a5a3a,0x284a7a,0x8a6a2a]};
   const M=PARIS_M, w=x1-x0, d=z1-z0, cx=(x0+x1)/2, cz=(z0+z1)/2; const R=mulberry32(((x0*31+z0*17+h)|0)+7);
   // cornija saliente no topo e faixa do térreo
   for(const [ww,dd,y,t] of [[w+.6,d+.6,h-.15,.3],[w+.24,d+.24,3.3,.18]]){ const m=new T.Mesh(BOX(ww,t,dd),M.corn); m.position.set(cx,y,cz); dressAdd(m); }
