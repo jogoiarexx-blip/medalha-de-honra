@@ -28,6 +28,12 @@ assert(load.includes('const expected=new T.Box3().setFromObject(reference.spine)
   'Nova malha deve ser normalizada para tamanho do rig procedural');
 assert(load.includes('geo.morphAttributes.position=normalized.map('),
   'Caminhada e poses devem estar em morph targets compartilhados');
+assert(load.includes('bakeFurColors(geo,sourceTexture)'),
+  'Textura corrigida deve ser amostrada uma vez nas cores dos vertices');
+assert(load.includes('vertexColors:true,map:null'),
+  'Material nao pode voltar a interpolar as UVs danificadas do atlas');
+assert(load.includes("if(frame===5){"),
+  'Repouso precisa de pose valida sem esticar o esqueleto');
 assert(load.includes('m.mesh.morphTargetInfluences'),
   'Cachorro precisa animar os morph targets por quadro');
 assert(load.includes('const mesh=new T.Mesh(shared.geometry,shared.material)'),'Pose baked deveria ser compartilhada sem clonar skeleton');
