@@ -3,6 +3,7 @@ on:
   push:
     branches: [main]
     paths:
+      - "index.html"
       - "js/18-menu-system.js"
       - "js/24a-dog-meshy.js"
       - "js/24-secret-operations.js"
@@ -11,6 +12,7 @@ on:
       - ".github/workflows/qa-pastor.yml"
   pull_request:
     paths:
+      - "index.html"
       - "js/18-menu-system.js"
       - "js/24a-dog-meshy.js"
       - "js/24-secret-operations.js"
