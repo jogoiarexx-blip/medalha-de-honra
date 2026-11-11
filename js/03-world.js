@@ -130,7 +130,8 @@ function rayCylinder(o,d,maxT,cx,cz,r,y0,y1){
   const sq=Math.sqrt(disc); let t=(-b-sq)/(2*a); if(t<0) t=(-b+sq)/(2*a); if(t<0||t>maxT) return -1;
   const y=o.y+d.y*t; if(y<y0||y>y1) return -1; return t;
 }
-function distPointSeg(p,a,b){ const ab=V3().subVectors(b,a), ap=V3().subVectors(p,a); const t=clamp(ap.dot(ab)/Math.max(1e-6,ab.lengthSq()),0,1); return ap.sub(ab.multiplyScalar(t)).length(); }
+const _dpsA=new T.Vector3(), _dpsB=new T.Vector3();   // rascunho: função chamada em laços de IA e de tiro
+function distPointSeg(p,a,b){ const ab=_dpsA.subVectors(b,a), ap=_dpsB.subVectors(p,a); const t=clamp(ap.dot(ab)/Math.max(1e-6,ab.lengthSq()),0,1); return ap.sub(ab.multiplyScalar(t)).length(); }
 
 /* --- luz ambiente para furtividade --- */
 function lightAt(x,z){

@@ -1,0 +1,85 @@
+name: QA campanha e estabilidade
+on:
+  push:
+    branches: [main]
+    paths:
+      - "index.html"
+      - "css/**"
+      - "js/**"
+      - "assets/**"
+      - "qa/**"
+      - ".github/workflows/qa-campanha.yml"
+  pull_request:
+    paths:
+      - "index.html"
+      - "css/**"
+      - "js/**"
+      - "assets/**"
+      - "qa/**"
+  workflow_dispatch:
+jobs:
+  estrutural:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Sintaxe de todos os scripts do jogo
+        run: |
+          for f in js/*.js; do node --check "$f"; done
+      - name: Testes estruturais
+        run: |
+          node qa/test_three_local.js
+          node qa/test_menu_principal.js
+          node qa/test_material_paris.js
+          node qa/test_fase9_lancha_refinada2.js
+          node qa/test_pastor_visibilidade.js
+          node qa/test_glb_assets.cjs
+  navegador:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Instalar Chromium (Playwright)
+        run: |
+          npm install --no-save playwright@1.56.1
+          npx playwright install --with-deps chromium
+      - name: Contrato das 27 operações
+        run: node qa/test_registry_27.cjs
+      - name: Saves corrompidos, migração e backup
+        run: node qa/test_save_migration.cjs
+      - name: Passo fixo sem perda silenciosa
+        run: node qa/test_frame_pacing.cjs
+      - name: Transições de tela
+        run: node qa/test_state_transitions.cjs
+      - name: Memória de GPU em reinícios e trocas
+        run: node qa/test_reloads_memory.cjs
+      - name: Perfis gráficos e de aparelho
+        run: node qa/test_hardware_profiles.cjs
+      - name: Estados de áudio
+        run: node qa/test_audio_states.cjs
+      - name: Orçamento da IA
+        run: node qa/test_ai_budget.cjs
+      - name: Matriz por operação (27 fases)
+        run: node qa/test_operation_progress.cjs
+      - name: Captura de desempenho (software; só para comparar revisões)
+        run: node qa/test_performance_scene.cjs
+        env:
+          QA_PERF_SECONDS: "10"
+      - name: Guardar relatórios e capturas
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: qa-campanha
+          path: |
+            qa-report/
+            qa-shots/
+          if-no-files-found: warn

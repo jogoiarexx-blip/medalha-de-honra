@@ -1,7 +1,10 @@
 
 'use strict';
 const T = window.THREE;
-const $ = s => document.querySelector(s);
+// Busca de elemento com memória para seletores "#id": o HUD consulta dezenas deles por quadro.
+// Só devolve da memória o que ainda está no documento (elementos recriados são buscados de novo).
+const $CACHE=new Map(), $ID=/^#[\w-]+$/;
+const $ = s => { if(!$ID.test(s)) return document.querySelector(s); const c=$CACHE.get(s); if(c&&c.isConnected) return c; const el=document.querySelector(s); if(el) $CACHE.set(s,el); else $CACHE.delete(s); return el; };
 if(!T){ $('#boot').textContent='Não foi possível carregar o motor 3D. Verifique a conexão e recarregue.'; throw new Error('Three.js não carregado'); }
 
 /* =========================================================
@@ -13,15 +16,32 @@ const UP=V3(0,1,0);
 function angDiff(a,b){let d=(b-a)%(Math.PI*2);if(d>Math.PI)d-=Math.PI*2;if(d<-Math.PI)d+=Math.PI*2;return d;}
 function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
 const pick=(arr,r=Math.random)=>arr[Math.floor(r()*arr.length)];
-const store={get(k){try{const v=localStorage.getItem(k);return v?JSON.parse(v):null;}catch(e){return null;}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true;}catch(e){return false;}},del(k){try{localStorage.removeItem(k);}catch(e){}}};
+const store={get(k){try{const v=localStorage.getItem(k);return v?JSON.parse(v):null;}catch(e){return null;}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true;}catch(e){return false;}},del(k){try{localStorage.removeItem(k);}catch(e){}},
+  // texto cru (para distinguir "não existe" de "existe mas está ilegível")
+  raw(k){try{return localStorage.getItem(k);}catch(e){return null;}},setRaw(k,t){try{localStorage.setItem(k,t);return true;}catch(e){return false;}}};
 const ease=t=>t<.5?2*t*t:1-Math.pow(-2*t+2,2)/2;
 
 /* =========================================================
    CONFIGURAÇÃO E DADOS
    ========================================================= */
 const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
-const DEFAULT_SETTINGS={sens:1,fov:75,invertY:false,hud:'dynamic',hitmarkers:true,adsToggle:false,crouchToggle:true,bob:!REDUCED,shake:!REDUCED,helmetSave:false,blood:'discreto',bodies:'somem',chars:'modelo',quality:'medio',volume:.8,music:.5,difficulty:'soldado'};
-let settings=Object.assign({},DEFAULT_SETTINGS,store.get('sdp_settings')||{}); if(settings.charsV!==3){ settings.chars='modelo'; settings.charsV=3; }
+const DEFAULT_SETTINGS={autoRes:true,sens:1,fov:75,invertY:false,hud:'dynamic',hitmarkers:true,adsToggle:false,crouchToggle:true,bob:!REDUCED,shake:!REDUCED,helmetSave:false,blood:'discreto',bodies:'somem',chars:'modelo',quality:'medio',volume:.8,music:.5,difficulty:'soldado'};
+const SETTINGS_FIRST_RUN=store.raw('sdp_settings')===null;
+// Ajustes gravados passam por conferência: valor fora do esperado volta ao padrão em vez de quebrar o jogo.
+const SETTINGS_ENUM={hud:['classic','dynamic','cinematic'],blood:['discreto','off'],bodies:['somem','ficam'],chars:['modelo','detalhado','classico'],quality:['baixo','medio','alto'],difficulty:['recruta','soldado','veterano']};
+const SETTINGS_RANGE={sens:[.3,2.5],fov:[65,100],volume:[0,1],music:[0,1]};
+function sanitizeSettings(src){
+  const out=Object.assign({},DEFAULT_SETTINGS), s=src&&typeof src==='object'&&!Array.isArray(src)?src:{};
+  for(const k in s){ const v=s[k], d=DEFAULT_SETTINGS[k];
+    if(SETTINGS_ENUM[k]){ if(SETTINGS_ENUM[k].includes(v)) out[k]=v; }
+    else if(SETTINGS_RANGE[k]){ if(typeof v==='number'&&isFinite(v)) out[k]=clamp(v,SETTINGS_RANGE[k][0],SETTINGS_RANGE[k][1]); }
+    else if(typeof d==='boolean'){ if(typeof v==='boolean') out[k]=v; }
+    else if(d===undefined){ if(v===null||['boolean','number','string'].includes(typeof v)) out[k]=v; } }
+  return out;
+}
+let settings=sanitizeSettings(store.get('sdp_settings')); if(settings.charsV!==3){ settings.chars='modelo'; settings.charsV=3; }
+// Primeiro uso em aparelho de toque: começa no perfil Baixo (pode ser trocado nas Opções).
+if(SETTINGS_FIRST_RUN){ try{ if(matchMedia('(pointer: coarse)').matches&&navigator.maxTouchPoints>0) settings.quality='baixo'; }catch(e){} }
 const saveSettings=()=>store.set('sdp_settings',settings);
 
 const CFG={

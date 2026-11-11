@@ -559,7 +559,7 @@ function restore10(s){ const F=G.flags, R=G.refs; if(F.ev_ledger) R.ledger.visib
 LEVELS['10']={id:'10',num:10,op:'Operação 10',name:'O Que Há em Cnossos',place:'Palácio de Cnossos, Creta',prev:'09',
   loadout:{weapons:['silenced','pistol'],ammo:{silenced:{mag:6,reserve:18},pistol:{mag:8,reserve:16}},cur:'silenced',camera:true},baseLight:.24,lightFn:light10,shadows:false,bloomTh:.75,grenades:true,
   build:()=>{ const r=buildLevel10(); photos10(); return r; },enemies:ENEMY_DEFS_10,ally:null,start:{x:1.4,z:44,yaw:-.3},startDocs:['planta10'],drawMap:drawMap10,
-  reinf:[{id:'n1',x:40,z:20,weapon:'smg',helmet:true},{id:'n2',x:42,z:22,weapon:'rifle',helmet:true,nades:1},{id:'n3',x:-2,z:48,weapon:'rifle',helmet:true}],
+  reinf:[{id:'n4',x:40,z:20,weapon:'smg',helmet:true},{id:'n2',x:42,z:22,weapon:'rifle',helmet:true,nades:1},{id:'n3',x:-2,z:48,weapon:'rifle',helmet:true}],
   radio:{x:43.6,z:-7.6,fx:46,fz:-5.6},radioRun:'O oficial corre para o rádio do furgão!',alarmPos:V3(46,1.4,-4),alarmText:'Alarme em Cnossos! Lanternas em todo o palácio.',alarmObjective:'quietVan',
   alarmYes:'Cnossos acordou antes da hora. ',alarmLate:'O palácio só acordou com a explosão. ',alarmNo:'',alarmOk:()=>!!(G&&G.flags.boomed&&!G.flags.alarmEarly10),
   deathText:'A guarnição de Cnossos fechou as saídas do palácio.',

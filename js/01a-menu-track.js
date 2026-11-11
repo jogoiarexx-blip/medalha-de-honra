@@ -20,6 +20,9 @@
         this.active=true;
         const playing=this.el.play();
         if(playing&&typeof playing.catch==='function')playing.catch(err=>{
+          // Sair do menu antes de a faixa começar interrompe o play(): não é falha,
+          // e não pode desligar a música do menu pelo resto da sessão.
+          if(err&&err.name==='AbortError'){this.active=false;return;}
           this.active=false;this.failed=true;this.error=String(err);
           console.warn('Fallback musical do menu após falha de reprodução:',err);
         });

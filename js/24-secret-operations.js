@@ -98,11 +98,11 @@ SECRET_ORDER.push('S3');
 
 const CAMPAIGNS=[['01','Campanha 1 · Paris ocupada'],['05','Campanha 2 · Norte da África'],['09','Campanha 3 · Creta'],['12','Campanha 4 · Vestfália'],['15','Campanha 5 · Montecalvo'],['18','Campanha 6 · Graufels'],['21','Campanha 7 · Libertação']];
 function renderOps(){
-  const camp=store.get('sdp_campaign')||{}; const done=camp.done||{}; const box=$('#opsList'); box.innerHTML='';
+  const camp=campaign(); const done=camp.done||{}; const box=$('#opsList'); box.innerHTML='';
   for(const id of LEVEL_ORDER){ const L=LEVELS[id], d=done[id];
     const cp=CAMPAIGNS.find(c=>c[0]===id); if(cp){ const h=document.createElement('div'); h.className='opcamp'; h.textContent=cp[1]; box.appendChild(h); }
     const b=document.createElement('button'); b.className='opcard'+(d?' done':''); b.id='op'+id;
-    const parts=[['opn',String(L.num)],['opt',L.name],['opp',L.place],['opst',d?`Concluída · ${d.rating} · ${DIFF[d.diff].label}`:'Não concluída']];
+    const parts=[['opn',String(L.num)],['opt',L.name],['opp',L.place],['opst',d?`Concluída · ${d.rating||'—'} · ${(DIFF[d.diff]||DIFF.soldado).label}`:'Não concluída']];
     for(const [c,t] of parts){ const sp=document.createElement('span'); sp.className=c; sp.textContent=t; b.appendChild(sp); }
     b.onclick=()=>openBriefing(id); box.appendChild(b); }
 }
@@ -112,9 +112,11 @@ function openBriefing(id){
   const body=$('#bBody'); body.innerHTML=''; for(const x of B.paras){ const p=document.createElement('p'); p.textContent=x; body.appendChild(p); }
   const ul=$('#bList'); ul.innerHTML=''; for(const x of B.list){ const li=document.createElement('li'); li.textContent=x; ul.appendChild(li); }
   let note='';
-  if(L.loadout){ const c=(store.get('sdp_campaign')||{}).carry; note=(c&&c.from===L.prev)?'Equipamento trazido da '+LEVELS[L.prev].op+', completado pela rede: '+[...new Set([...c.weapons,...L.loadout.weapons])].map(w=>WEAPONS[w].name).join(' e ')+'. Saúde de entrada conforme a dificuldade.':'Equipamento padrão: '+L.loadout.weapons.map(w=>WEAPONS[w].name).join(' e ')+'.'; }
+  if(L.loadout){ const c=campaign().carry; note=(c&&c.from===L.prev)?'Equipamento trazido da '+LEVELS[L.prev].op+', completado pela rede: '+[...new Set([...c.weapons,...L.loadout.weapons])].map(w=>WEAPONS[w].name).join(' e ')+'. Saúde de entrada conforme a dificuldade.':'Equipamento padrão: '+L.loadout.weapons.map(w=>WEAPONS[w].name).join(' e ')+'.'; }
   $('#bCarry').textContent=note; $('#bCarry').hidden=!note;
   UI.show('briefing'); setDiff(settings.difficulty);
+  // Enquanto o dossiê é lido, os uniformes da operação já são pintados (sem engasgo no primeiro inimigo).
+  clearTimeout(APP.warmT); APP.warmT=setTimeout(()=>{ try{ if(APP.state==='MENU'&&typeof mzWarmLevel==='function') mzWarmLevel(L); }catch(err){ DIAG.report('BRIEF_WARM','pré-carregamento do dossiê falhou',err); } },120);
 }
 const CHEAT_DEFS=[
   ['god','Vida infinita','Élise não perde saúde.'],
@@ -133,7 +135,7 @@ function anyCheat(){ return CHEAT_DEFS.some(([k])=>k!=='secret'&&CHEATS[k]); }
 function cheatsFound(){ try{ return localStorage.getItem('sdp_secret_found')==='1'; }catch(e){ return !!APP.secretFound; } }
 function applyCheatsVisual(){ const c=document.getElementById('view'); if(c) c.style.filter=CHEATS.film?'grayscale(1) sepia(.3) contrast(1.15) brightness(1.05)':''; let t=document.getElementById('cheatTag'); if(!t){ t=document.createElement('div'); t.id='cheatTag'; t.className='cheattag'; document.body.appendChild(t); } t.textContent=anyCheat()?'CÓDIGOS ATIVOS':''; t.hidden=!anyCheat()||APP.state!=='PLAYING'; $('#bPCheats').hidden=!cheatsFound(); }
 function cheatTick(){ if(!CHEATS.bighead) return; for(const e of G.enemies){ if(e._bh||!e.h||!e.h.parts.head) continue; e._bh=true; e.h.parts.head.scale.setScalar(1.9); } }
-function secretUnlocked(){ const camp=store.get('sdp_campaign')||{}; const d=camp.done||{}; return !!CHEATS.secret||!!d['24']; }
+function secretUnlocked(){ const camp=campaign(); const d=camp.done||{}; return !!CHEATS.secret||!!d['24']; }
 function revealCheats(){ try{ localStorage.setItem('sdp_secret_found','1'); }catch(e){ APP.secretFound=true; } AudioSys.init(); AudioSys.play('objective'); renderCheats(); UI.show('cheats'); }
 function renderCheats(){ const box=$('#cheatList'); box.innerHTML='';
   for(const [k,name,desc] of CHEAT_DEFS){ const l=document.createElement('label'); l.htmlFor='ch_'+k; l.textContent=name; const sm=document.createElement('small'); sm.textContent=desc; l.appendChild(sm); const i=document.createElement('input'); i.type='checkbox'; i.id='ch_'+k; i.checked=!!CHEATS[k]; i.onchange=()=>{ CHEATS[k]=i.checked; saveCheats(); }; box.append(l,i); } }
@@ -143,7 +145,7 @@ function tryCode(raw){ const c=String(raw||'').trim().toUpperCase().replace(/\s+
   if(v==='secret'){ CHEATS.secret=true; saveCheats(); renderExtras(); return 'Operações secretas liberadas.'; }
   if(v==='film'){ CHEATS.film=!CHEATS.film; saveCheats(); return CHEATS.film?'Cinejornal ligado.':'Cinejornal desligado.'; }
   return c?'Nada acontece.':''; }
-function renderExtras(){ const camp=store.get('sdp_campaign')||{}; const d=camp.done||{};
+function renderExtras(){ const camp=campaign(); const d=camp.done||{};
   const ids=LEVEL_ORDER.filter(id=>!LEVELS[id].secret), nd=ids.filter(id=>d[id]).length, ex=ids.filter(id=>d[id]&&d[id].rating==='EXCELENTE').length;
   let best=0; for(const id of ids) if(d[id]) best+=d[id].time||0;
   $('#xStats').innerHTML=`<div><b>${nd}/${ids.length}</b><span>Operações concluídas</span></div><div><b>${ex}</b><span>Classificação excelente</span></div><div><b>${Math.floor(best/60)} min</b><span>Tempo somado</span></div><div><b>${(SECRET_ORDER||[]).filter(id=>d[id]).length}/${(SECRET_ORDER||[]).length}</b><span>Secretas</span></div>`;
@@ -159,17 +161,21 @@ function renderExtras(){ const camp=store.get('sdp_campaign')||{}; const d=camp.
     if(/^Key[A-Z]$/.test(e.code)){ typed=(typed+e.code.slice(3)).slice(-12); if(typed.endsWith('LAMPIAO')){ typed=''; revealCheats(); } } });
   let taps=[]; addEventListener('pointerdown',e=>{ const t=e.target.closest&&e.target.closest('#menu .title'); if(!t) return; const now=performance.now(); taps=taps.filter(x=>now-x<2200); taps.push(now); if(taps.length>=7){ taps=[]; revealCheats(); } });
 })();
-function showCredits(){ const r=$('#cRoll'); const camp=store.get('sdp_campaign')||{}; const d=camp.done||{}; const n=LEVEL_ORDER.filter(id=>d[id]).length, ex=LEVEL_ORDER.filter(id=>d[id]&&d[id].rating==='EXCELENTE').length;
+function showCredits(){ const r=$('#cRoll'); const camp=campaign(); const d=camp.done||{}; const n=LEVEL_ORDER.filter(id=>d[id]).length, ex=LEVEL_ORDER.filter(id=>d[id]&&d[id].rating==='EXCELENTE').length;
   const sec=[['Medalha de Honra',''],['Uma história da Rede Lampião','h4'],['Élise','h4'],['Agente da Rede, de Paris a Paris',''],['Ao lado dela','h4'],['Lucien · Yasmina · Manolis · Capitão Hale · Pavel · Bruna',''],['Campanhas','h4'],['Paris ocupada · Norte da África · Creta · Vestfália · Montecalvo · Graufels · Libertação',''],['Seu registro','h4'],[n+' de '+LEVEL_ORDER.length+' operações concluídas · '+ex+' excelentes',''],
     ['Inspirado nos princípios de design do GDD v2.0','h4'],['Personagens, mapas, textos e sons originais.',''],['Feito com','h4'],['Three.js · Web Audio · muita paciência com as setas do teclado',''],['Operações secretas','h4'],['Agora abertas em Extras. Leve fé: nada ali é história.',''],['',''],['Paris, 25 de agosto de 1944.','h4'],['Fim.','']];
   r.innerHTML=''; const h=document.createElement('h3'); h.textContent='Medalha de Honra'; r.appendChild(h); for(const [t,k] of sec.slice(1)){ const e=document.createElement(k||'p'); e.textContent=t; r.appendChild(e); } r.style.animation='none'; void r.offsetWidth; r.style.animation=''; UI.show('credits'); }
 function startPlaying(save,levelId){
   AudioSys.init();
-  const diff=save?save.diff:settings.difficulty, id=save?(save.mission||'01'):(levelId||APP.briefLevel||'01');
-  newMission(id,diff,save||null);
+  // REV-A: todo save (do menu ou da memória) é validado antes de entrar no jogo
+  let cp=null, fallbackId=levelId||APP.briefLevel||'01';
+  if(save){ const v=validateCheckpoint(save); if(v.ok) cp=v.value; else { if(save&&typeof save.mission==='string'&&Object.prototype.hasOwnProperty.call(LEVELS,save.mission)) fallbackId=save.mission; DIAG.report('SAVE_INVALID',v.reason); DIAG.notice('Checkpoint ilegível ('+v.reason+'). A missão recomeça do início.'); } }
+  const diff=cp?cp.diff:(Object.prototype.hasOwnProperty.call(DIFF,settings.difficulty)?settings.difficulty:'soldado'), id=cp?cp.mission:(Object.prototype.hasOwnProperty.call(LEVELS,fallbackId)?fallbackId:'01');
+  try{ newMission(id,diff,cp); }
+  catch(err){ if(!cp) throw err; DIAG.report('SAVE_APPLY','checkpoint não pôde ser aplicado; missão reiniciada',err); DIAG.notice('O checkpoint não pôde ser restaurado. A missão recomeça do início.'); newMission(id,diff,null); }
   AudioSys.ambient(G.level.ambient); AudioSys.setRoom(G.level.ambient==='crypt'||['02','13','16','19','S1'].includes(G.level.id)?(G.level.id==='02'?'crypt':'indoor'):['05'].includes(G.level.id)?'indoor':['06','07','08','12','14','18','20','24'].includes(G.level.id)?'open':'street');
   APP.state='PLAYING'; UI.closeAll(); $('#hud').hidden=false; $('#hud').className='hud preset-'+settings.hud; $('#touch').hidden=!APP.touch;
-  for(const k in keys) keys[k]=false; input.fire=false; input.firePressed=false; input.ads=false; input.adsToggled=false; acc=0;
+  for(const k in keys) keys[k]=false; input.fire=false; input.firePressed=false; input.ads=false; input.adsToggled=false; acc=0; _prevP.ok=false; SIM.alpha=1; hudAcc=1;
   applyCheatsVisual();
   { const t=$('#nadeTag'); if(t&&t.firstChild) t.firstChild.nodeValue=(G.level.nadeKind==='molotov'?'Coquetéis ':'Granadas '); }
   if(!APP.noLock) requestLock();
@@ -177,7 +183,7 @@ function startPlaying(save,levelId){
 }
 function syncOptions(){
   $('#oSens').value=settings.sens; $('#oFov').value=settings.fov; $('#oInvert').checked=settings.invertY; $('#oHud').value=settings.hud; $('#oHit').checked=settings.hitmarkers;
-  $('#oAds').checked=settings.adsToggle; $('#oCrouch').checked=settings.crouchToggle; $('#oBob').checked=settings.bob; $('#oShake').checked=settings.shake; $('#oHelmet').checked=settings.helmetSave; $('#oBlood').value=settings.blood; $('#oChars').value=settings.chars||'modelo'; $('#oBodies').value=settings.bodies||'somem'; $('#oQuality').value=settings.quality; $('#oVol').value=settings.volume; $('#oMus').value=settings.music;
+  $('#oAds').checked=settings.adsToggle; $('#oCrouch').checked=settings.crouchToggle; $('#oBob').checked=settings.bob; $('#oShake').checked=settings.shake; $('#oHelmet').checked=settings.helmetSave; $('#oBlood').value=settings.blood; $('#oChars').value=settings.chars||'modelo'; $('#oBodies').value=settings.bodies||'somem'; $('#oQuality').value=settings.quality; $('#oVol').value=settings.volume; $('#oMus').value=settings.music; $('#oAutoRes').checked=settings.autoRes!==false;
 }
 function bindOptions(){
   const on=(id,ev,fn)=>$(id).addEventListener(ev,fn);
@@ -186,8 +192,9 @@ function bindOptions(){
   on('#oHit','change',e=>{settings.hitmarkers=e.target.checked;saveSettings();}); on('#oAds','change',e=>{settings.adsToggle=e.target.checked;input.ads=false;input.adsToggled=false;saveSettings();});
   on('#oCrouch','change',e=>{settings.crouchToggle=e.target.checked;saveSettings();}); on('#oBob','change',e=>{settings.bob=e.target.checked;saveSettings();});
   on('#oShake','change',e=>{settings.shake=e.target.checked;saveSettings();}); on('#oHelmet','change',e=>{settings.helmetSave=e.target.checked;saveSettings();}); on('#oBlood','change',e=>{settings.blood=e.target.value;saveSettings();}); on('#oBodies','change',e=>{settings.bodies=e.target.value;saveSettings();});
-  on('#oQuality','change',e=>{settings.quality=e.target.value;resize();saveSettings();});
-  on('#oChars','change',e=>{settings.chars=e.target.value;saveSettings(); if(MENU3D.built){ MENU3D.built=false; MENU3D.scene=null; MENU3D.t=0; } });
+  on('#oQuality','change',e=>{settings.quality=e.target.value;RES_SCALE.reset();resize();saveSettings();});
+  on('#oChars','change',e=>{settings.chars=e.target.value;saveSettings(); if(MENU3D.built) MENU3D.destroy(); });
+  on('#oAutoRes','change',e=>{settings.autoRes=e.target.checked;saveSettings(); RES_SCALE.reset(); resize();});
   on('#oVol','input',e=>{settings.volume=+e.target.value;AudioSys.applyVolume();saveSettings();}); on('#oMus','input',e=>{settings.music=+e.target.value;AudioSys.applyVolume();saveSettings();});
 }
 function setDiff(d){ settings.difficulty=d; saveSettings(); document.querySelectorAll('#diffSeg button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.d===d))); $('#diffNote').textContent=DIFF[d].note; }
@@ -202,12 +209,13 @@ function bindScreens(){
   $('#bPCheats').onclick=()=>{ renderCheats(); UI.show('cheats'); };
   $('#bNext').onclick=()=>{ if(APP.showCredits){ showCredits(); return; } if(APP.nextLevel){ UI.closeAll(); openBriefing(APP.nextLevel); } };
   $('#bCredBack').onclick=()=>goMenu();
-  $('#bContinue').onclick=()=>{ const cp=store.get('sdp_checkpoint'); if(cp) startPlaying(cp); };
+  $('#bContinue').onclick=()=>{ const st=readStoredCheckpoint(); if(st.cp) startPlaying(st.cp); else refreshContinue(); };
+  $('#bCpDiscard').onclick=()=>{ clearCheckpoint(); refreshContinue(); };
   $('#bHelp').onclick=()=>UI.show('help'); $('#bOptions').onclick=()=>{ syncOptions(); UI.show('options'); };
   $('#bHelpBack').onclick=()=>UI.back(); $('#bOptBack').onclick=()=>UI.back();
   $('#bBriefBack').onclick=()=>goMenu();
   document.querySelectorAll('#diffSeg button').forEach(b=>b.onclick=()=>setDiff(b.dataset.d));
-  $('#bStart').onclick=()=>{ store.del('sdp_checkpoint'); startPlaying(null,APP.briefLevel); };
+  $('#bStart').onclick=()=>{ clearCheckpoint(); startPlaying(null,APP.briefLevel); };
   $('#bResume').onclick=resumeGame;
   $('#bPOptions').onclick=()=>{ syncOptions(); UI.show('options'); }; $('#bPHelp').onclick=()=>UI.show('help');
   $('#bCheckpoint').onclick=()=>{ if(G&&G.cp) startPlaying(G.cp); };

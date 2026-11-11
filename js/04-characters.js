@@ -144,7 +144,7 @@ function h2BodyGeo(boots){ const key='body'+(boots?1:0); if(H2.geo.has(key)) ret
     B.tube(br.map(([y,a,b])=>({x:x0,y,z:.006,a,b,n:2,w:h2W(y,BW)})),12,false,false,.6); } B.end(2); }
   // pescoço (material 3)
   B.start(); { const NW=[[1.69,{head:1}],[1.62,{head:.5,chest:.5}],[1.57,{chest:1}]]; B.tube([[1.55,.058,.056],[1.6,.055,.053],[1.65,.052,.05],[1.7,.048,.046]].map(([y,a,b])=>({x:0,y,z:-.008,a,b,n:2,w:h2W(y,NW)})),12,false,false,.5); } B.end(3);
-  const g=B.build(); H2.geo.set(key,g); return g; }
+  const g=B.build(); g.boundingSphere=new T.Sphere(new T.Vector3(0,.9,0),1.75); H2.geo.set(key,g); return g; }
 // ---------- cabeça esculpida ----------
 const H2_HS=[.095,.116,.108];
 function h2Gauss(X,Y,cx,cy,sx,sy){ const dx=(X-cx)/sx, dy=(Y-cy)/sy; return Math.exp(-(dx*dx+dy*dy)); }
@@ -224,7 +224,7 @@ function h2Build(h,look,owner){ const P=h.parts, g=h.g, root=h.root; const boots
   for(const m of h.hitMeshes) if(m.userData.region==='equipment'&&m.userData.equip!=='weapon') {}
   // corpo com pele
   root.updateMatrixWorld(true); const bones=H2_BONES.map(b=>g[b]); const uni=h2Mat(look.uniform,'cloth',true), pants=h2Mat(look.pants,'cloth',true), bootM=h2Mat(0x231e19,'leather',true), skinS=h2Mat(look.skin,'skin',true);
-  const body=new T.SkinnedMesh(h2BodyGeo(boots),[uni,pants,bootM,skinS]); body.frustumCulled=false; root.add(body); body.updateMatrixWorld(true);
+  const body=new T.SkinnedMesh(h2BodyGeo(boots),[uni,pants,bootM,skinS]); body.frustumCulled=true; root.add(body); body.updateMatrixWorld(true);
   const inv=bones.map(b=>new T.Matrix4().copy(b.matrixWorld).invert()); const sk=new T.Skeleton(bones,inv); body.bind(sk,body.matrixWorld); h.body=body;
   // cabeça
   const skinM=h2Mat(look.skin,'skin',false), hairM=h2Mat(look.hair,'hair',false);
@@ -264,14 +264,19 @@ function h2Build(h,look,owner){ const P=h.parts, g=h.g, root=h.root; const boots
    O capacete é uma peça separada (pode voar com o tiro); sem
    capacete aparece o cabelo curto e o quepe/boina do jogo.
    ========================================================= */
-const MZ={geo:null,hgeo:null,sgeo:null,img:null,mask:null,ready:false,pend:[],tex:new Map(),mat:new Map()};
+const MZ={geo:null,hgeo:null,sgeo:null,img:null,mask:null,ready:false,pend:[],tex:new Map(),mat:new Map(),
+  cap:8,          // máximo de atlas pintados (1024² cada) mantidos em memória
+  paints:0,latePaints:0,paintMs:0,evicted:0};
+// Esfera de recorte do soldado 3D: cobre o corpo em pé, agachado, deitado e caído,
+// para a GPU poder pular quem está fora da câmera sem sumir com ninguém (P1-07).
+const MZ_BOUNDS=new T.Sphere(new T.Vector3(0,.9,0),1.75);
 function mzBytes(s){ const b=atob(s), u=new Uint8Array(b.length); for(let i=0;i<b.length;i++) u[i]=b.charCodeAt(i); return u.buffer; }
 function mzGeo(p,n,uv,x,si,sw){ const g=new T.BufferGeometry(); const P=new Int16Array(mzBytes(p)), pf=new Float32Array(P.length); for(let i=0;i<P.length;i++) pf[i]=P[i]/16384; g.setAttribute('position',new T.BufferAttribute(pf,3));
   if(n){ const N=new Int8Array(mzBytes(n)), nf=new Float32Array(N.length); for(let i=0;i<N.length;i++) nf[i]=N[i]/127; g.setAttribute('normal',new T.BufferAttribute(nf,3)); }
   if(uv){ const U=new Uint16Array(mzBytes(uv)), uf=new Float32Array(U.length); for(let i=0;i<U.length;i++) uf[i]=U[i]/65535; g.setAttribute('uv',new T.BufferAttribute(uf,2)); }
   g.setIndex(new T.BufferAttribute(new Uint16Array(mzBytes(x)),1));
   if(si){ g.setAttribute('skinIndex',new T.BufferAttribute(new Uint8Array(mzBytes(si)),4)); g.setAttribute('skinWeight',new T.BufferAttribute(new Uint8Array(mzBytes(sw)),4,true)); }
-  if(!n) g.computeVertexNormals(); g.computeBoundingSphere(); return g; }
+  if(!n) g.computeVertexNormals(); g.computeBoundingSphere(); if(si) g.boundingSphere=MZ_BOUNDS.clone(); return g; }
 function mzInit(){ if(MZ.geo||typeof MZ_DATA==='undefined') return; const D=MZ_DATA;
   MZ.geo=mzGeo(D.bp,D.bn,D.bu,D.bx,D.bi,D.bw); MZ.hgeo=mzGeo(D.hp,D.hn,D.hu,D.hx); MZ.sgeo=mzGeo(D.sp,null,null,D.sx);
   let n=0; const done=()=>{ if(++n<2) return; const c=document.createElement('canvas'); c.width=c.height=512; const g=c.getContext('2d'); g.drawImage(MZ.maskImg,0,0,512,512); MZ.mask=g.getImageData(0,0,512,512).data; MZ.ready=true; const p=MZ.pend; MZ.pend=[]; for(const f of p) f(); };
@@ -279,7 +284,10 @@ function mzInit(){ if(MZ.geo||typeof MZ_DATA==='undefined') return; const D=MZ_D
 function mzRGB(c){ return [(c>>16&255)/255,(c>>8&255)/255,(c&255)/255]; }
 function mzMute(c){ const l=.299*c[0]+.587*c[1]+.114*c[2]; return c.map(v=>(v*.8+l*.2)*.93); }
 function mzSkinOdd(c){ const [r,g,b]=mzRGB(c); return !(r>g&&g>=b*.95&&r-b>.12); }   // pele "não humana" (zumbi, robô)
-function mzPaint(cv,tex,look){ const S=1024, g=cv.getContext('2d'); g.drawImage(MZ.img,0,0,S,S); const im=g.getImageData(0,0,S,S), d=im.data, M=MZ.mask, D=MZ_DATA;
+function mzPaint(cv,tex,look){ const t0=performance.now(); mzPaintPixels(cv,tex,look); const ms=performance.now()-t0; MZ.paints++; MZ.paintMs+=ms;
+  // pintura durante o combate é exatamente o engasgo que o pré-aquecimento deve evitar: fica registrada
+  if(typeof APP!=='undefined'&&APP.state==='PLAYING'&&typeof G!=='undefined'&&G&&G.time>1.5){ MZ.latePaints++; DIAG.report('MZ_LATE_PAINT','atlas do soldado pintado durante o jogo ('+ms.toFixed(0)+' ms) — uniforme fora do pré-aquecimento'); } }
+function mzPaintPixels(cv,tex,look){ const S=1024, g=cv.getContext('2d'); g.drawImage(MZ.img,0,0,S,S); const im=g.getImageData(0,0,S,S), d=im.data, M=MZ.mask, D=MZ_DATA;
   const U=mzMute(mzRGB(look.uniform)), P=mzMute(mzRGB(look.pants!=null?look.pants:look.uniform)), H=mzMute(mzRGB(look.helmetColor||0x3d443a)), Lu=D.Lu, Lh=D.Lh;
   const oddSkin=look.skin!=null&&mzSkinOdd(look.skin), SK=mzRGB(look.skin||0xc9a07a), SR=D.skinRef, sk=[SK[0]/SR[0]*.82,SK[1]/SR[1]*.82,SK[2]/SR[2]*.82];
   for(let y=0;y<S;y++){ const my=(y>>1)*512; for(let x=0;x<S;x++){ const mi=(my+(x>>1))*4, i=(y*S+x)*4; const u=M[mi]/255, h=M[mi+1]/255;
@@ -295,22 +303,68 @@ function mzTex(look){ const key=[look.uniform,look.pants,look.helmetColor||0,loo
 function mzMat(look,skinned){ const t=mzTex(look), k=t.uuid+(skinned?'s':''); if(MZ.mat.has(k)) return MZ.mat.get(k);
   const o={map:t}; if(skinned) o.skinning=true; const m=MAT_HQ?new T.MeshPhongMaterial(Object.assign(o,{shininess:7,specular:0x141414})):new T.MeshLambertMaterial(o); MZ.mat.set(k,m); return m; }
 function mzOK(look){ return typeof MZ_DATA!=='undefined'&&!look.noMz; }
+/* Malha distante do soldado 3D: as caixas do modelo clássico, na pose de repouso,
+   fundidas em uma única geometria com cor por vértice e um osso por caixa. */
+const MZ_FAR={geo:new Map(),mat:null,gain:.9};   // gain: o tecido do modelo 3D é mais claro que a cor base do uniforme
+function mzFarGeo(pairs,bones,root){
+  const key=pairs.map(p=>p[1].color.getHex().toString(36)).join('.')+'|'+MZ_FAR.gain; let g=MZ_FAR.geo.get(key); if(g) return g;
+  const pos=[],nor=[],col=[],si=[],sw=[],idx=[]; const inv=new T.Matrix4().copy(root.matrixWorld).invert(), m=new T.Matrix4(), nm=new T.Matrix3(), v=new T.Vector3();
+  for(const [mesh,mat,gain] of pairs){ const bg=mesh.geometry, pa=bg.attributes.position, na=bg.attributes.normal, ia=bg.index; let b=mesh.parent, bi=-1; while(b&&(bi=bones.indexOf(b))<0) b=b.parent; if(bi<0||!ia) continue;
+    mesh.updateMatrixWorld(true); m.multiplyMatrices(inv,mesh.matrixWorld); nm.getNormalMatrix(m); const base=pos.length/3, k0=gain||1, c={r:Math.min(1,mat.color.r*k0),g:Math.min(1,mat.color.g*k0),b:Math.min(1,mat.color.b*k0)};
+    for(let k=0;k<pa.count;k++){ v.fromBufferAttribute(pa,k).applyMatrix4(m); pos.push(v.x,v.y,v.z); v.fromBufferAttribute(na,k).applyMatrix3(nm).normalize(); nor.push(v.x,v.y,v.z); col.push(c.r,c.g,c.b); si.push(bi,0,0,0); sw.push(1,0,0,0); }
+    for(let k=0;k<ia.count;k++) idx.push(base+ia.getX(k)); }
+  g=new T.BufferGeometry(); g.setAttribute('position',new T.Float32BufferAttribute(pos,3)); g.setAttribute('normal',new T.Float32BufferAttribute(nor,3)); g.setAttribute('color',new T.Float32BufferAttribute(col,3));
+  g.setAttribute('skinIndex',new T.Uint16BufferAttribute(si,4)); g.setAttribute('skinWeight',new T.Float32BufferAttribute(sw,4)); g.setIndex(idx); g.boundingSphere=MZ_BOUNDS.clone();
+  MZ_FAR.geo.set(key,g); return g;
+}
+/* Pré-aquece os uniformes que a operação pode trazer no meio do jogo (reforços,
+   ondas) enquanto a fase ainda está carregando, e limita o cache de atlas. */
+function mzWarmLevel(L){
+  if(settings.chars!=='modelo'||typeof MZ_DATA==='undefined'||typeof enemyLook!=='function') return;
+  const warm=new Set(), add=d=>{ try{ const lk=enemyLook(d,L); if(mzOK(lk)) warm.add(mzTex(lk)); }catch(e){ DIAG.report('MZ_WARM','uniforme não pré-aquecido',e); } };
+  for(const d of (L.reinf||[])) add(d);
+  for(const d of (L.enemies||[])) add(d);
+  // variantes padrão que as ondas de reforço costumam usar
+  add({id:'warm_a',weapon:'rifle',helmet:true}); add({id:'warm_b',weapon:'smg',helmet:true}); add({id:'warm_c',weapon:'pistol',officer:true});
+  mzEvict(warm);
+}
+function mzEvict(keep){
+  if(MZ.tex.size<=MZ.cap||!MZ.ready) return;
+  for(const [key,t] of [...MZ.tex]){
+    if(MZ.tex.size<=MZ.cap) break;
+    if((keep&&keep.has(t))||mzTexInScene(t)) continue;
+    for(const [mk,m] of [...MZ.mat]) if(m.map===t){ m.dispose(); MZ.mat.delete(mk); }
+    t.dispose(); if(t.image&&t.image.width){ t.image.width=1; t.image.height=1; } MZ.tex.delete(key); MZ.evicted++;
+  }
+}
+// em uso de verdade = presente numa cena viva (o cache global sozinho não conta)
+function mzTexInScene(t){
+  let used=false; const chk=o=>{ if(used) return; const m=o.material; if(m){ if(Array.isArray(m)){ for(const x of m) if(x.map===t) used=true; } else if(m.map===t) used=true; } };
+  if(typeof scene!=='undefined') scene.traverse(chk); if(!used&&typeof MENU3D!=='undefined'&&MENU3D.scene) MENU3D.scene.traverse(chk); return used;
+}
 function mzBuild(h,look,owner){ mzInit(); const P=h.parts, g=h.g, root=h.root, K=MZ_DATA.sk;
-  for(const k in P){ const m=P[k]; for(const c of m.children.slice()) if(c.isMesh&&!c.userData.region) m.remove(c); m.material=H2_HIDE; }
+  const farPairs=[], farHelm=[], pantsM=P.thigh_L.material;   // LOD distante: caixas clássicas fundidas numa só malha leve (ver mzFarGeo)
+  for(const k in P){ const m=P[k]; for(const c of m.children.slice()) if(c.isMesh&&!c.userData.region) m.remove(c); farPairs.push([m,/^shin_/.test(k)?pantsM:m.material,/^(foot|hair|head|neck|hand)/.test(k)?1:MZ_FAR.gain]); m.material=H2_HIDE; }
   for(const gn of ['pelvis','spine','chest','shL','shR','head']){ const G_=g[gn]; if(!G_) continue; for(const c of G_.children.slice()) if(c.isMesh&&!(c.userData&&c.userData.region)&&!c.userData.mat) G_.remove(c); }
   // proporções do modelo (ombros mais estreitos, braços e tornozelos do Meshy)
   for(const [s,sg] of [['L',1],['R',-1]]){ g['sh'+s].position.set(sg*K.shL[0],K.shL[1]-1.24,K.shL[2]); g['el'+s].position.set(0,K.elL[1]-K.shL[1],0); g['wr'+s].position.set(0,K.wrL[1]-K.elL[1],0); g['an'+s].position.set(0,K.anL[1]-K.knL[1],0); }
   root.updateMatrixWorld(true); const bones=H2_BONES.map(b=>g[b]);
-  const body=new T.SkinnedMesh(MZ.geo,mzMat(look,true)); body.frustumCulled=false; root.add(body); body.updateMatrixWorld(true);
+  const body=new T.SkinnedMesh(MZ.geo,mzMat(look,true)); body.frustumCulled=true; root.add(body); body.updateMatrixWorld(true);
   const inv=bones.map(b=>new T.Matrix4().copy(b.matrixWorld).invert()); body.bind(new T.Skeleton(bones,inv),body.matrixWorld); h.body=body; h.mz=true; h.lod=[];
+  // LOD distante: 1 draw call e ~190 triângulos, presa ao mesmo esqueleto (os ossos e as áreas de acerto não mudam)
+  let farMesh=null;
+  try{ farMesh=new T.SkinnedMesh(mzFarGeo(farPairs,bones,root),MZ_FAR.mat||(MZ_FAR.mat=new T.MeshLambertMaterial({vertexColors:true,skinning:true}))); farMesh.frustumCulled=true; farMesh.visible=false; root.add(farMesh); farMesh.updateMatrixWorld(true); farMesh.bind(body.skeleton,body.bindMatrix); }
+  catch(err){ farMesh=null; DIAG.report('MZ_FAR_LOD','LOD distante do soldado indisponível; malha completa em todas as distâncias',err); }
+  h.lodFar=farMesh?{on:false,pairs:farHelm,near:[body],far:[farMesh]}:null;
   const hairM=h2Mat(look.hair||0x2e2117,'hair',false); const scalp=new T.Mesh(MZ.sgeo,hairM); g.head.add(scalp); h.scalp=scalp;
-  if(h.helmet){ const [shell,brim]=h.helmetMeshes; shell.material=H2_HIDE; if(brim) brim.material=H2_HIDE; for(const c of h.helmet.children.slice()) if(c!==shell&&c!==brim) h.helmet.remove(c);
-    const hm_=new T.Mesh(MZ.hgeo,mzMat(look,false)); h.helmet.add(hm_); scalp.visible=false; }
+  if(h.helmet){ const [shell,brim]=h.helmetMeshes; farHelm.push([shell,shell.material]); if(brim) farHelm.push([brim,brim.material]); shell.material=H2_HIDE; if(brim) brim.material=H2_HIDE; for(const c of h.helmet.children.slice()) if(c!==shell&&c!==brim) h.helmet.remove(c);
+    const hm_=new T.Mesh(MZ.hgeo,mzMat(look,false)); h.helmet.add(hm_); scalp.visible=false; h.mzHelmet=hm_; }
   if(h.cap){ for(const c of h.cap.children.slice()) h.cap.remove(c); const cm=h2Mat(look.capColor||(look.cap==='beret'?0x1d1d22:look.cap==='officer'?0x3a3e36:0x4a5040),'cloth',false); const m=new T.Mesh(h2CapGeo(look.cap==='officer'?'officer':look.cap==='beret'?'beret':'field'),cm); m.position.y=look.cap==="beret"?-.06:look.cap==="officer"?-.075:-.08; m.scale.set(.94,1,.96); h.cap.add(m); m.userData={char:owner,region:'equipment',equip:'cap'};
     if(look.cap==='officer'){ const v=new T.Mesh(H2.geo.get('visor')||(H2.geo.set('visor',(()=>{ const q=new T.CylinderGeometry(.1,.1,.008,20,1,false,-Math.PI/2,Math.PI); q.scale(1,1,.55); return q; })()),H2.geo.get('visor')),h2Mat(0x121212,'leather',false)); v.position.set(0,-.091,.09); v.rotation.x=.32; h.cap.add(v); }
     h.capMeshes.length=0; h.cap.traverse(o=>{ if(o.isMesh){ o.userData={char:owner,region:'equipment',equip:'cap'}; h.capMeshes.push(o); } }); }
   if(h.weapon&&h.wtype){ for(const m of h.weaponMeshes) m.material=H2_HIDE; const wk=h.wtype; const metalW=h2Mat(0x26282a,'metal',false), wood=h2Mat(0x4e3420,'leather',false), dark=h2Mat(0x141414,'dark',false);
     for(const [geo,mat] of [[h2Gun(wk,'metal'),metalW],[h2Gun(wk,'wood'),wood],[h2Gun(wk,'dark'),dark]]){ if(!geo.attributes.position.count) continue; h.weapon.add(new T.Mesh(geo,mat)); } }
+  if(h.mzHelmet&&h.lodFar) h.lodFar.near.push(h.mzHelmet);
 }
 mzInit();
 /* =========================================================

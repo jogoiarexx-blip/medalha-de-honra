@@ -289,14 +289,24 @@ function setDebugWire(on){
 }
 function logShot(o,ch,region,raw,final,ev){ if(!G) return; G.lastShot={id:G.shotId,target:ch?ch.id:'—',region,raw:raw.toFixed?raw.toFixed(1):raw,final:final.toFixed?final.toFixed(1):final,ev,hp:ch?Math.max(0,ch.hp).toFixed(0):'—'}; }
 function lastShotLog(t){ if(G&&G.lastShot) G.lastShot.ev=(G.lastShot.ev?G.lastShot.ev+' · ':'')+t; }
-let fpsAcc=0,fpsN=0,fpsShow=0,frameMax=0;
+let fpsAcc=0,fpsN=0,fpsShow=0,frameMax=0,dbgT=0;
 function updateDebug(dt){
   fpsAcc+=dt; fpsN++; frameMax=Math.max(frameMax,dt); if(fpsAcc>.5){ fpsShow=fpsN/fpsAcc; fpsAcc=0; fpsN=0; }
   if(!APP.debug||!G) return;
   const s=G.lastShot, counts={}; for(const e of G.enemies) counts[e.state]=(counts[e.state]||0)+1;
   const props=W.props.filter(p=>!p.removed);
-  $('#debug').textContent=`FPS ${fpsShow.toFixed(0)}  pior quadro ${(frameMax*1000).toFixed(0)} ms
+  if(fpsAcc!==0&&dbgT++%6!==0) return;      // o painel não precisa ser reescrito a cada quadro
+  const pf=PERF.snapshot(), mz=typeof MZ!=='undefined'?MZ:null;
+  $('#debug').textContent=`FPS ${fpsShow.toFixed(0)}  pior quadro ${(frameMax*1000).toFixed(0)} ms  ·  ${BUILD_ID}
+quadro p50 ${pf.p50.toFixed(1)}  p95 ${pf.p95.toFixed(1)}  p99 ${pf.p99.toFixed(1)} ms  ·  1% low ${pf.low1.toFixed(0)} fps  (${pf.samples} amostras)
+simulação ${pf.simMsAvg.toFixed(2)} ms/quadro (pico ${pf.simMsMax.toFixed(1)})  ·  render ${pf.renderMsAvg.toFixed(2)} ms  ·  passos ${SIM.lastSteps}
+tempo de simulação descartado ${pf.droppedSimMs.toFixed(0)} ms em ${pf.droppedEvents} evento(s)
 draw calls ${renderer.info.render.calls}  tri ${renderer.info.render.triangles}
+GPU: geometrias ${pf.geometries}  texturas ${pf.textures}  programas ${pf.programs}  ·  liberados ${RES.stats.geometries}g/${RES.stats.textures}t em ${RES.stats.sweeps} troca(s)
+perfil ${settings.quality}  escala ${Math.round(RES_SCALE.scale*100)}%${settings.autoRes===false?' (fixa)':''}  pós ${POST.ok&&settings.quality!=='baixo'?(POST.passes||0)+' passes':'desligado'}
+IA ${AI_BUDGET.ms.toFixed(2)} ms/passo (pico ${AI_BUDGET.peak.toFixed(1)}, orçamento ${AI_BUDGET.budget})  intervalo distante ×${AI_BUDGET.far.toFixed(2)}
+soldado 3D: ${mz?mz.tex.size+' atlas, '+mz.paints+' pinturas ('+mz.latePaints+' em combate)':'—'}  LOD longe ${typeof LOD_STATS!=='undefined'?LOD_STATS.far:0}/${G.actors.length}
+${DIAG.log.length?'diagnóstico:\n'+DIAG.tail(3):'diagnóstico: sem ocorrências'}
 objetos físicos ${props.length} (capacetes ${props.filter(p=>p.kind==='helmet').length})
 luz no jogador ${G.player.light.toFixed(2)}
 IA: ${Object.entries(counts).map(([k,v])=>k+' '+v).join(' · ')}
@@ -314,8 +324,10 @@ ${s&&s.ev?s.ev:''}`;
 let acc=0, last=performance.now(), menuT=0;
 function simStep(dt){
   simTime+=dt; matricesFresh=false; cheatTick(); motesTick(dt);
+  const ai0=performance.now();
   for(const e of G.enemies) e.update(dt);
   if(G.ally) G.ally.update(dt);
+  AI_BUDGET.sample(performance.now()-ai0);
   matricesFresh=false;
   updatePlayer(dt);
   updateProps(dt); updateNades(dt); updateRockets(dt); updateBolts(dt); updateDoors(dt); updatePickups(); updateMission(dt); updateInteraction(dt);
@@ -325,11 +337,15 @@ function updateCamera(dt){
   const P=G.player;
   const eyeH=pStance(CFG.player.eye,CFG.player.eyeCrouch,.42)+(P.prone>.5?Math.sin(P.bob*.5)*.015*clamp(Math.hypot(P.vx,P.vz),0,1):0)-(P.dead?Math.min(1.3,P.deadT*1.4):0);
   const bob=settings.bob&&P.onGround?Math.sin(P.bob*2)*.03*clamp(Math.hypot(P.vx,P.vz)/3,0,1)*(1-P.adsT*.8):0;
-  camera.position.set(P.pos.x,(P.ys!=null?P.ys:P.pos.y)+eyeH+bob,P.pos.z);
+  // posição de desenho interpolada entre o passo anterior e o atual (sem interpolar em teleporte)
+  let cx=P.pos.x, cy=(P.ys!=null?P.ys:P.pos.y), cz=P.pos.z;
+  if(SIM.interp&&_prevP.ok&&SIM.alpha<1){ const dx=cx-_prevP.x, dy=cy-_prevP.y, dz=cz-_prevP.z; if(dx*dx+dy*dy+dz*dz<1){ const a=SIM.alpha; cx=_prevP.x+dx*a; cy=_prevP.y+dy*a; cz=_prevP.z+dz*a; } }
+  camera.position.set(cx,cy+eyeH+bob,cz);
   const sh=settings.shake?P.shake:0;
   camera.rotation.set(P.pitch+(Math.random()-.5)*.012*sh,P.yaw+(Math.random()-.5)*.012*sh,P.dead?Math.min(1.1,P.deadT):0);
-  const w=WEAPONS[P.cur]; camera.fov=G.camMode?38:lerp(settings.fov,w.fovADS*settings.fov/75,P.adsT); camera.updateProjectionMatrix();
+  const w=WEAPONS[P.cur]; setCameraFov(G.camMode?38:lerp(settings.fov,w.fovADS*settings.fov/75,P.adsT));
 }
+const _vmBase=new T.Vector3(), _vmFwd=new T.Vector3();   // vetores de rascunho: nada de alocação por quadro
 function updateViewmodel(dt){
   const P=G.player, m=VM.models[P.cur]; if(!m) return;
   VM.root.position.copy(camera.position); VM.root.quaternion.copy(camera.quaternion);
@@ -347,7 +363,7 @@ function updateViewmodel(dt){
   if(m.lh){ if(s.state==='RELOAD'){ const w=WEAPONS[P.cur]; const tt=clamp(s.t/w.reload.end,0,1); const k=Math.sin(tt*Math.PI), k2=Math.sin(clamp((tt-.2)/.6,0,1)*Math.PI); m.lh.position.set((P.cur==='smg'?-.18:-.04)*k,-.3*k2-.04*k,.08*k2); m.lh.rotation.set(.6*k2,0,-.4*k2); } else { m.lh.position.multiplyScalar(1-Math.min(1,dt*12)); m.lh.rotation.x*=1-Math.min(1,dt*12); m.lh.rotation.z*=1-Math.min(1,dt*12); } }
   let insY=0, insZ=0, insX=0; if(VM.inspectT>0){ if(P.adsT>.1||s.state!=='READY'&&s.state!=='IDLE'&&s.state!==undefined&&s.state!=='READY'||P.sprinting||G.lastFireT>simTime-.3) VM.inspectT=0; else { VM.inspectT-=dt; const t=1-VM.inspectT/2.4; const e1=Math.sin(clamp(t/.45,0,1)*Math.PI/2), e2=Math.sin(clamp((t-.45)/.4,0,1)*Math.PI); const back=t>.85?1-(t-.85)/.15:1; insZ=(.9*e1-1.4*e2*0)*back; insY=(-.7*e2)*back+(.25*e1)*back; insX=(-.25*e1+.35*e2)*back; } }
   const sp=Math.hypot(P.vx,P.vz); const bobX=settings.bob?Math.sin(P.bob)*.012*clamp(sp/3,0,1):0, bobY=settings.bob?Math.abs(Math.cos(P.bob))*.01*clamp(sp/3,0,1):0;
-  const base=V3().lerpVectors(m.hip,m.ads,P.adsT);
+  const base=_vmBase.lerpVectors(m.hip,m.ads,P.adsT);
   m.g.position.set(base.x+bobX*(1-P.adsT*.85),base.y-bobY*(1-P.adsT*.85)-lower*.25,base.z+VM.kick);
   m.g.rotation.set(VM.kickRot+rotX+insX,insY,rotZ+insZ); if(VM.inspectT>0) m.g.position.x-=.06*Math.abs(insZ);
   if(VM.throwT>0){ VM.throwT-=dt; const k=Math.sin(clamp(VM.throwT/.5,0,1)*Math.PI); m.g.position.y-=k*.22; m.g.rotation.x-=k*.5; }
@@ -356,26 +372,67 @@ function updateViewmodel(dt){
   G.flashLightT-=dt; G.flashLight.position.copy(camera.position); G.flashLight.intensity=G.flashLightT>0?2.2:0;
   VM.lamp.visible=P.lantern&&!P.dead; VM.lamp.position.y=-.25-P.adsT*.14+bobY; VM.lamp.rotation.z=bobX*3;
   { const lampOn=P.lantern&&!P.dead; for(const k in VM.models){ const mm=VM.models[k]; if(mm.lh) mm.lh.visible=!lampOn; } }
-  const fwd=V3(0,0,-1).applyQuaternion(camera.quaternion); G.lanternLight.position.copy(camera.position).addScaledVector(fwd,.35); G.lanternLight.position.y-=.3;
+  const fwd=_vmFwd.set(0,0,-1).applyQuaternion(camera.quaternion); G.lanternLight.position.copy(camera.position).addScaledVector(fwd,.35); G.lanternLight.position.y-=.3;
   G.lanternLight.intensity=P.lantern&&!P.dead?1.55+Math.sin(simTime*9)*.05+Math.sin(simTime*23)*.03:0;
 }
 function updateLamps(dt){ for(const L of W.lamps){ if(L.broken) continue; L.ph+=dt; L.light.intensity=L.base*(1+Math.sin(L.ph*7.3)*.02+Math.sin(L.ph*13.1)*.015); if(L.cone&&L.id!=='SL') L.cone.material.opacity=.075; } }
+/* ---------- passo fixo com teto explícito e sem descarte silencioso (REV-B · P0-02) ----------
+   - no máximo SIM.maxSteps passos por quadro (não entra em espiral se a máquina não acompanha);
+   - o atraso que sobra continua no acumulador e é recuperado nos quadros seguintes;
+   - só o que passa de SIM.maxBacklog é descartado, e esse tempo fica registrado
+     em PERF.droppedSimMs (aparece no painel F3);
+   - a câmera e os atores são desenhados interpolados entre o passo anterior e o atual. */
+let hudAcc=0;
+const SIM={maxSteps:5,maxBacklog:CFG.step*6,maxFrame:.1,interp:true,alpha:1,lastSteps:0};
+const _prevP={x:0,y:0,z:0,ok:false};
+function simSavePrev(){
+  const P=G.player; _prevP.x=P.pos.x; _prevP.y=(P.ys!=null?P.ys:P.pos.y); _prevP.z=P.pos.z; _prevP.ok=true;
+  const A=G.actors; for(let i=0;i<A.length;i++){ const a=A[i]; a._px=a.pos.x; a._pz=a.pos.z; }
+}
+function advanceSim(dt){
+  acc+=dt; let n=0;
+  if(acc>=CFG.step){ const t0=performance.now();
+    while(acc>=CFG.step&&n<SIM.maxSteps){ simSavePrev(); simStep(CFG.step); acc-=CFG.step; n++; }
+    const ms=performance.now()-t0; PERF.simSteps+=n; PERF.simMs+=ms; if(ms>PERF.simMsMax) PERF.simMsMax=ms; }
+  if(acc>SIM.maxBacklog){ PERF.drop((acc-SIM.maxBacklog)*1000); acc=SIM.maxBacklog; }
+  SIM.lastSteps=n; SIM.alpha=SIM.interp?clamp(acc/CFG.step,0,1):1;
+  return n;
+}
+// Posição de desenho dos atores vivos: entre o passo anterior e o atual (só X/Z; a altura segue a animação).
+function interpolateActors(){
+  if(!SIM.interp) return; const a=SIM.alpha, A=G.actors; let moved=false;
+  for(let i=0;i<A.length;i++){ const e=A[i]; if(e.dead||e._px===undefined) continue; const dx=e.pos.x-e._px, dz=e.pos.z-e._pz;
+    if(dx===0&&dz===0) continue; if(dx*dx+dz*dz>1){ continue; }   // teleporte: não interpola
+    const r=e.h.root.position; r.x=e._px+dx*a; r.z=e._pz+dz*a; moved=true; }
+  if(moved) matricesFresh=false;
+}
 function frame(now){
-  const dt=Math.min(.1,(now-last)/1000); last=now;
+  const rawMs=now-last; last=now;
+  const dt=Math.min(SIM.maxFrame,rawMs/1000);
+  if(rawMs<1000) PERF.frame(rawMs);               // acima disso foi aba em segundo plano, não quadro lento
   pollKeyboard(); pollGamepad(dt); pollTouch();
   if(APP.state==='PLAYING' && G){
-    if(!UI.frozen()){ acc+=dt*(CHEATS.slowmo&&APP.state==='PLAYING'?.55:1); let n=0; while(acc>=CFG.step&&n<5){ simStep(CFG.step); acc-=CFG.step; n++; } if(n>=5) acc=0; }
-    updateCamera(dt); updateViewmodel(dt); updateHUD(dt); updateLamps(dt); FX.update(UI.frozen()?0:dt);
+    if(!UI.frozen()){
+      if(rawMs<1000&&rawMs/1000>SIM.maxFrame) PERF.drop(rawMs-SIM.maxFrame*1000);   // quadro mais longo que o teto: tempo perdido, registrado
+      advanceSim(dt*(CHEATS.slowmo?.55:1)); interpolateActors();
+    }
+    updateCamera(dt); updateViewmodel(dt);
+    // HUD no máximo a 60 Hz: em monitores de 120/144 Hz os dados não mudam mais rápido que isso.
+    hudAcc+=dt; if(hudAcc>=1/61){ updateHUD(hudAcc); hudAcc=0; }
+    updateLamps(dt); FX.update(UI.frozen()?0:dt);
     AudioSys.update(dt,G.combatT>0?1:0,G.enemies.some(e=>!e.dead&&(e.state==='INVESTIGATE'||e.state==='SEARCH'||(e.awareness||0)>.35)));
   } else if(G&&(MENU3D.on=APP.state==='MENU'&&$('#briefing').hidden)){
     MENU3D.update(dt); VM.root.visible=false; AudioSys.update(dt,0);
   } else if(G){
-    menuT+=dt*.05; const r=15, mc=G.level.menuCam; camera.position.set(mc.cx+Math.sin(menuT)*r*.6,mc.y,mc.cz+Math.cos(menuT)*r*.4); camera.lookAt(mc.tx,1.6,mc.tz); camera.fov=60; camera.updateProjectionMatrix();
+    menuT+=dt*.05; const r=15, mc=G.level.menuCam; camera.position.set(mc.cx+Math.sin(menuT)*r*.6,mc.y,mc.cz+Math.cos(menuT)*r*.4); camera.lookAt(mc.tx,1.6,mc.tz); setCameraFov(60);
     for(const a of G.actors) a.animate(dt); updateLamps(dt); VM.root.visible=false; AudioSys.update(dt,0);
   }
   if(G) updateAtmo(dt);
   if(APP.state!=='MENU') MENU3D.on=false;
+  const r0=performance.now();
   renderFrame(APP.state==='PLAYING'&&G&&!G.player.dead&&!G.camMode,dt);
+  PERF.renderMs+=performance.now()-r0;
+  if(rawMs<1000) RES_SCALE.tick(rawMs,APP.state==='PLAYING'&&!UI.frozen()&&document.visibilityState!=='hidden');
   updateDebug(dt);
   requestAnimationFrame(frame);
 }

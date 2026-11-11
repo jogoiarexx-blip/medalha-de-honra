@@ -116,8 +116,26 @@ function poseDogRig(d,time,dt,opts={}){
   if(opts.dead){d.head.rotation.x=.45;d.tail.rotation.y=0;d.jaw.rotation.x=0;}
 }
 
+/* REV-C · P0-04: desmonta a sala e agenda a liberação dos recursos de GPU.
+   A varredura acontece depois que a sala nova estiver montada, para que
+   texturas e materiais reaproveitados não sejam descartados à toa. */
+MENU3D.destroy=function(){
+  if(this.scene){
+    const old=RES.collect(this.scene,this._pendingSweep||undefined);
+    // solta os cães da cena antiga para o integrador do pastor não guardar referências mortas
+    if(this.dog&&this.dog.root&&this.dog.root.parent) this.dog.root.parent.remove(this.dog.root);
+    this._pendingSweep=old; this.rebuilds=(this.rebuilds||0)+1;
+  }
+  this.scene=null; this.built=false; this.t=0; this.dog=null; this.flick=0;
+};
 MENU3D.build=function(){
   if(this.built) return; this.built=true;
+  try{ this._build(); }
+  catch(err){ DIAG.report('MENU3D_BUILD','sala do menu não pôde ser montada; menu segue sem o cenário 3D',err); this.failed=true; if(!this.scene){ this.scene=new T.Scene(); this.scene.background=new T.Color(0x07060a); } if(!this.cam){ this.cam=new T.PerspectiveCamera(52,1,.05,60); this.cam.rotation.order='YXZ'; } }
+  if(this._pendingSweep){ const old=this._pendingSweep; this._pendingSweep=null; RES.sweep(old); }
+};
+MENU3D._build=function(){
+  this.failed=false;
   const S=new T.Scene(); this.scene=S; S.background=new T.Color(0x07060a); S.fog=new T.Fog(0x0a0807,11,26);
   this.cam=new T.PerspectiveCamera(52,1,.05,60); this.cam.rotation.order='YXZ';
   const HQ=MAT_HQ, Lm=o=>HQ?new T.MeshPhongMaterial(Object.assign({shininess:6,specular:0x0c0c0c},o)):new T.MeshLambertMaterial(o);
@@ -239,8 +257,8 @@ function m3Walk(h,ph,amp){ const g=h.g, s=Math.sin(ph); g.hipL.rotation.x=s*.55*
 const _m3v=new T.Vector3();
 function m3Reach(h,side,wx,wy,wz,pole){ const g=h.g; h.root.updateMatrixWorld(true); _m3v.set(wx,wy,wz); g.chest.worldToLocal(_m3v); const p=pole||[side==='L'?1:-1,-.6,-.4]; ikArm(g['sh'+side],g['el'+side],g['wr'+side],_m3v.x,_m3v.y,_m3v.z,p[0],p[1],p[2]); }
 MENU3D.update=function(dt){
-  this.build(); const t=(this.t+=dt), Lt=this.layout, cam=this.cam;
-  cam.aspect=camera.aspect; cam.fov=camera.aspect<1?70:52; cam.updateProjectionMatrix();
+  this.build(); if(this.failed) return; const t=(this.t+=dt), Lt=this.layout, cam=this.cam;
+  { const fv=camera.aspect<1?70:52; if(cam.aspect!==camera.aspect||cam.fov!==fv){ cam.aspect=camera.aspect; cam.fov=fv; cam.updateProjectionMatrix(); } }
   const narrow=camera.aspect<1.25; cam.position.set((narrow?.3:-1.0)+Math.sin(t*.09)*.18,(narrow?2.0:1.7)+Math.sin(t*.14)*.04,(narrow?4.6:4.0)+Math.sin(t*.07)*.12);
   _m3v.set((narrow?1.9:.15)+Math.sin(t*.06)*.2,narrow?-.2:1.0,-4.3); cam.lookAt(_m3v);
   // luzes
@@ -293,13 +311,29 @@ MENU3D.update=function(dt){
 };
 const _m3c=new T.Color(), _m3c2=new T.Vector3();
 
+/* REV-A · P0-01: o botão Continuar só aparece para um checkpoint que passou
+   pela validação; checkpoint ilegível vira aviso, nunca exceção. */
+function refreshContinue(){
+  const st=readStoredCheckpoint(), cp=st.cp, note=$('#cpNote');
+  APP.menuCp=cp; $('#bContinue').hidden=!cp;
+  if(cp){
+    let info='';
+    try{ const L=LEVELS[cp.mission]; const cur=L.objectives().find(o=>!o.optional&&cp.obj[o.id]==='active'); let t=cur?String(cur.text).split(' (')[0]:''; if(t.length>44) t=t.slice(0,42)+'…'; info=L.op+(t?' · '+t:'')+' · '+DIFF[cp.diff].label; }
+    catch(err){ DIAG.report('MENU_CP_INFO','resumo do checkpoint indisponível',err); info=(LEVELS[cp.mission]&&LEVELS[cp.mission].op)||'Checkpoint'; }
+    $('#contInfo').textContent=info;
+    if(st.repaired.length) DIAG.report('SAVE_REPAIRED',st.repaired.join('; '));
+  }
+  let msg='';
+  if(st.source==='backup') msg='O checkpoint mais recente estava ilegível ('+st.reason+'). “Continuar” usa a cópia de segurança anterior.';
+  else if(st.present&&!cp) msg='Checkpoint ilegível ('+st.reason+'). As operações concluídas estão preservadas; inicie a missão em Operações.';
+  if(msg) DIAG.report('SAVE_INVALID',st.reason);
+  if(note){ note.hidden=!msg; $('#cpNoteText').textContent=msg; $('#bCpDiscard').hidden=!(st.present&&!cp); }
+}
 function goMenu(){
   APP.state='MENU'; releaseLock(); AudioSys.ambient(null); UI.closeAll(); $('#hud').hidden=true; $('#touch').hidden=true; applyCheatsVisual();
   if(!G||G.ending) newMission(G&&G.ending?G.levelId:'01',settings.difficulty);
-  const cp=store.get('sdp_checkpoint');
-  $('#bContinue').hidden=!cp;
-  if(cp){ const L=LEVELS[cp.mission||'01']; const cur=L.objectives().find(o=>!o.optional&&cp.obj&&cp.obj[o.id]==='active'); let t=cur?cur.text.split(' (')[0]:''; if(t.length>44) t=t.slice(0,42)+'…'; $('#contInfo').textContent=L.op+(t?' · '+t:'')+' · '+DIFF[cp.diff].label; }
-  const camp=store.get('sdp_campaign'); const n=camp&&camp.done?Object.keys(camp.done).length:0;
+  refreshContinue();
+  const camp=campaign(); const n=camp&&camp.done?Object.keys(camp.done).length:0;
   $('#recordLine').textContent=n?`Operações concluídas: ${n} de ${LEVEL_ORDER.length}.`:'';
   UI.show('menu');
 }

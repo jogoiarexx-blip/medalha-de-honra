@@ -859,7 +859,7 @@ Enemy.prototype.fadeBody=function(){
   if(t>=1){ this.gone=true; this.h.root.visible=false; const me=this; W.shootables=W.shootables.filter(m=>m.userData.char!==me);
     if(this.h.lanternLight) this.h.lanternLight.intensity=0; if(this.mark) this.mark.visible=false; }
 };
-function restartLevel(){ if(!G) return; const id=G.levelId, d=G.diff, keep=settings.difficulty; store.del('sdp_checkpoint'); settings.difficulty=d; startPlaying(null,id); settings.difficulty=keep; }
+function restartLevel(){ if(!G) return; const id=G.levelId, d=G.diff, keep=settings.difficulty; clearCheckpoint(); settings.difficulty=d; startPlaying(null,id); settings.difficulty=keep; }
 /* ---- inspeção ---- */
 function clearInspect(e,line){
   e.sus=0; e.clearedT=simTime; e.waitT2=0; e.closeT=0; e.awareness=0; e.alertLevel=0; e.susWhy=''; G.inspector=null; G.escort=null; e.aimTarget=0; e.toReturn();

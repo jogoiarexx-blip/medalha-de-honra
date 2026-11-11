@@ -4,6 +4,28 @@
 /* =========================================================
    ATORES
    ========================================================= */
+/* LOD do soldado 3D (REV-D · P1-07). Perto: malha Meshy com pele e rig. Longe:
+   as caixas clássicas (as mesmas das áreas de acerto) assumem o desenho — sem
+   deformação de malha pesada, em 1 draw call e ~190 triângulos. A distância é corrigida pelo zoom
+   (luneta/câmera) e tem histerese para não piscar na fronteira. */
+/* Orçamento da IA (REV-G · P1-10). A percepção já é escalonada (cada inimigo
+   "pensa" a cada 0,2 s perto e 0,55 s longe, com fases defasadas). Aqui o custo
+   real do laço de inimigos é medido; se passar do orçamento, só o intervalo de
+   quem está longe (>30 m) é alongado. Tiros, projéteis e áreas de acerto
+   continuam no passo fixo de 60 Hz, sem redução. */
+const AI_BUDGET={ms:0,peak:0,budget:4,far:1,maxFar:2.2,
+  sample(ms){ this.ms+=(ms-this.ms)*.05; if(ms>this.peak) this.peak=ms;
+    if(this.ms>this.budget) this.far=Math.min(this.maxFar,this.far+.02); else if(this.ms<this.budget*.6) this.far=Math.max(1,this.far-.005); }};
+const LOD_STATS={far:0,swaps:0,force:null}, LOD_FAR_IN=44, LOD_FAR_OUT=38;   // force: true/false fixa o nível (uso do QA)
+function lodSoldier(a){
+  const L=a.h.lodFar; let far=false;
+  if(APP.state==='PLAYING'&&!APP.debug){ const dx=a.pos.x-camera.position.x, dz=a.pos.z-camera.position.z, d=Math.sqrt(dx*dx+dz*dz)*(camera.fov/75); far=L.on?d>LOD_FAR_OUT:d>LOD_FAR_IN; }
+  if(LOD_STATS.force!==null) far=LOD_STATS.force;
+  if(far===L.on) return; L.on=far; LOD_STATS.far+=far?1:-1; LOD_STATS.swaps++;
+  for(const pr of L.pairs) pr[0].material=far?pr[1]:H2_HIDE;   // casco do capacete (some sozinho se o capacete voar)
+  for(const o of L.near) o.visible=!far;
+  for(const o of L.far) o.visible=far;
+}
 class Actor{
   constructor(def,look){
     this.id=def.id; this.def=def;
@@ -43,6 +65,7 @@ class Actor{
   animate(dt){
     const g=this.h.g, r=this.react, k=Math.exp(-dt*7.5);
     if(this.h.lod&&G&&G.player){ const dx=this.pos.x-G.player.pos.x, dz=this.pos.z-G.player.pos.z, v=dx*dx+dz*dz<520||APP.state==='MENU'; if(v!==this.h.lodV){ this.h.lodV=v; for(const m of this.h.lod) m.visible=v; } }
+    if(this.h.lodFar) lodSoldier(this);
     for(const key in r) r[key]*=k;
     this.crouch=lerp(this.crouch,this.crouchTarget,1-Math.exp(-dt*7));
     this.aimBlend=lerp(this.aimBlend,this.aimTarget,1-Math.exp(-dt*6));
@@ -218,11 +241,17 @@ function separateActor(a){
 
 /* ---------------- INIMIGO ---------------- */
 const SKINS=[0xc9a07a,0xb88a66,0xd4ae8a,0xbf9470], HAIRS=[0x2e2117,0x5b4128,0x1e1a17,0x7a6040];
+// Aparência de um inimigo a partir da definição (a mesma regra vale para o
+// pré-aquecimento das texturas do soldado 3D antes do combate — P1-08).
+function enemyLook(def,level){
+  const r=mulberry32(String(def.id||'x').split('').reduce((a,c)=>a+c.charCodeAt(0),0));
+  const tro=!!(def.tropical||(level&&level.tropical));
+  return Object.assign({uniform:tro?(def.officer?0x8a7a54:0x9c8a5e):def.officer?0x3a3e36:0x4a5040,pants:tro?(def.officer?0x6e6248:0x857452):def.officer?0x2b2d29:0x3f4537,skin:pick(SKINS,r),hair:pick(HAIRS,r),helmet:!!def.helmet,helmetColor:tro?0x9a8a64:0,capColor:tro?0xa08e62:0,cap:def.officer?'officer':(def.helmet?null:'field'),weapon:def.weapon,boots:true,lantern:!!def.lantern},(def.faction==='it'&&typeof IT_LOOK!=='undefined')?IT_LOOK:{},def.look||{});
+}
+const _faP=new T.Vector3();   // rascunho de fireAt (sem alocar um vetor por inimigo a cada disparo)
 class Enemy extends Actor{
   constructor(def){
-    const r=mulberry32(def.id.split('').reduce((a,c)=>a+c.charCodeAt(0),0));
-    const tro=!!(def.tropical||(G&&G.level&&G.level.tropical));
-    super(def,Object.assign({uniform:tro?(def.officer?0x8a7a54:0x9c8a5e):def.officer?0x3a3e36:0x4a5040,pants:tro?(def.officer?0x6e6248:0x857452):def.officer?0x2b2d29:0x3f4537,skin:pick(SKINS,r),hair:pick(HAIRS,r),helmet:!!def.helmet,helmetColor:tro?0x9a8a64:0,capColor:tro?0xa08e62:0,cap:def.officer?'officer':(def.helmet?null:'field'),weapon:def.weapon,boots:true,lantern:!!def.lantern},(def.faction==='it'&&typeof IT_LOOK!=='undefined')?IT_LOOK:{},def.look||{}));
+    super(def,enemyLook(def,G&&G.level));
     this.isEnemy=true; this.type=def.weapon; this.ew=EW[def.weapon]; this.officer=!!def.officer;
     this.hasWeapon=true; this.mag=this.ew.mag; this.reloadT=0; this.shotCD=0; this.burstLeft=0;
     this.helmetState=def.helmet?'ATTACHED':'NONE'; this.helmetDur=CFG.helmet.durability; this.hasCap=!!this.h.cap;
@@ -266,7 +295,7 @@ class Enemy extends Actor{
     const pv=P.dead?0:this.visibility(P.pos.x,P.pos.z,pInfo);
     const av=(A&&A.targetable())?this.visibility(A.pos.x,A.pos.z,A.targetInfo()):0;
     const dP=Math.hypot(P.pos.x-this.pos.x,P.pos.z-this.pos.z);
-    if(disguiseOn()&&this.state!=='COMBAT'&&this.state!=='RADIO'&&this.state!=='DISARMED'&&this.state!=='RECOVER'){ this.disguiseThink(pv,dP,dt); if(this.state!=='COMBAT'){ if(this.state!=='INSPECT') this.checkCorpses(); this.thinkDt=dP<30?.2:.55; this.thinkT=this.thinkDt; return; } }
+    if(disguiseOn()&&this.state!=='COMBAT'&&this.state!=='RADIO'&&this.state!=='DISARMED'&&this.state!=='RECOVER'){ this.disguiseThink(pv,dP,dt); if(this.state!=='COMBAT'){ if(this.state!=='INSPECT') this.checkCorpses(); this.thinkDt=dP<30?.2:.55*AI_BUDGET.far; this.thinkT=this.thinkDt; return; } }
     if(this.state==='COMBAT'||this.state==='RADIO'){
       let t=null;
       if(pv>0 && (av<=0 || dP<=Math.hypot(A.pos.x-this.pos.x,A.pos.z-this.pos.z)+3)) t='player'; else if(av>0) t='ally';
@@ -287,7 +316,7 @@ class Enemy extends Actor{
       }
       if(this.state!=='COMBAT') this.checkCorpses();
     }
-    const near=dP<30; this.thinkDt=near?.2:.55; this.thinkT=this.thinkDt;
+    const near=dP<30; this.thinkDt=near?.2:.55*AI_BUDGET.far; this.thinkT=this.thinkDt;
   }
   checkCorpses(){
     for(const e of G.enemies){
@@ -315,7 +344,12 @@ class Enemy extends Actor{
       if((d<9&&Math.abs(e.pos.y-this.pos.y)<2) || (d<22 && !segFirst(this.pos.x,this.pos.y+1.5,this.pos.z,e.pos.x,e.pos.y+1.5,e.pos.z))) e.enterCombat(this.lastKnown.x,this.lastKnown.z,true);
     }
   }
-  toInvestigate(x,z){ this.wake(); this.state='INVESTIGATE'; this.invPoint={x,z}; this.setPath(x,z); this.lookT=0; this.aimTarget=.7; }
+  toInvestigate(x,z){ this.wake();
+    // Rajada de tiros pede o mesmo destino várias vezes por segundo: a rota em andamento é mantida
+    // em vez de refazer a busca de caminho a cada disparo (era o maior pico de custo da IA).
+    const same=this.state==='INVESTIGATE'&&this.invPoint&&this.path&&simTime-(this._invT||-9)<.6&&Math.abs(this.invPoint.x-x)<1.5&&Math.abs(this.invPoint.z-z)<1.5;
+    this.state='INVESTIGATE'; this.lookT=0; this.aimTarget=.7; if(same) return;
+    this.invPoint={x,z}; this._invT=simTime; this.setPath(x,z); }
   toSearch(){ this.state='SEARCH'; this.searchT=14; this.lookT=0; if(this.lastKnown) this.setPath(this.lastKnown.x,this.lastKnown.z); this.releaseCover(); this.aimTarget=.8; this.crouchTarget=0; }
   toReturn(){ this.state='RETURN'; this.setPath(this.post.x,this.post.z); this.aimTarget=0; this.crouchTarget=0; this.invPoint=null; }
   releaseCover(){ if(this.cover&&this.cover.occupant===this) this.cover.occupant=null; this.cover=null; this.atCover=false; }
@@ -463,7 +497,7 @@ class Enemy extends Actor{
     const aimY=segFirst(m.x,m.y,m.z,t.x,t.chest,t.z)?t.head-.08:t.chest;
     const aim=V3(t.x,aimY,t.z);
     // não atira através de companheiros
-    for(const e of G.enemies){ if(e===this||e.dead) continue; if(distPointSeg(V3(e.pos.x,e.pos.y+1.2,e.pos.z),m,aim)<.5 && e.pos.distanceTo(this.pos)<m.distanceTo(aim)) return false; }
+    { const reach=m.distanceTo(aim); for(const e of G.enemies){ if(e===this||e.dead) continue; if(distPointSeg(_faP.set(e.pos.x,e.pos.y+1.2,e.pos.z),m,aim)<.5 && e.pos.distanceTo(this.pos)<reach) return false; } }
     const P=G.player; const moving=Math.hypot(P.vx,P.vz)>1.2;
     let spread=this.ew.spread*D().spread*(1+this.aimPenalty*1.5)*(1+this.suppression*1.1)*(moving&&this.tgtKind==='player'?1.35:1);
     if(this.reactionT>-1.2) spread*=1.7;

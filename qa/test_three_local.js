@@ -12,11 +12,12 @@ assert(three.includes('SPDX-License-Identifier: MIT'),'Licenca Three.js nao enco
 assert(three.length>580000,'Build Three.js r128 incompleto');
 assert(/src="js\/vendor\/three-r128\.min\.js"/.test(html),'Three.js local nao esta no HTML');
 assert(!html.includes('cdnjs.cloudflare.com/ajax/libs/three.js'),'Referencia ao CDN antigo');
+// As tags podem trazer ?v=... (controle de cache): compara-se o caminho, nao a tag inteira.
 for(const dep of ['js/vendor/GLTFLoader-r128.js','js/24a-dog-meshy.js','js/25-boot.js']){
-  assert(html.includes('src="'+dep+'"'),'Dependencia nao encontrada: '+dep);
+  assert(html.includes('src="'+dep),'Dependencia nao encontrada: '+dep);
 }
 const positions=['js/vendor/three-r128.min.js','js/vendor/GLTFLoader-r128.js','js/24a-dog-meshy.js','js/25-boot.js']
-  .map(p=>html.indexOf('src="'+p+'"'));
+  .map(p=>html.indexOf('src="'+p));
 assert(positions.every((pos,i)=>i===0||pos>positions[i-1]),'Ordem das bibliotecas e do boot incorreta');
 const fx=read('js/05-effects.js'),cemetery=read('js/09-paris-operations-01-03.js');
 assert(fx.includes('map:SOFTTEX||null'),'Fallback da textura de particulas ausente');

@@ -297,10 +297,12 @@
     d.root.add(mesh);
     d._meshy={model:mesh,mesh,cycle:0,state:'idle'};
     if(d._wantsDogHelmet){
-      const cap=new T.Mesh(
-        new T.SphereGeometry(.18,12,7,0,Math.PI*2,0,Math.PI*.54),
-        new T.MeshLambertMaterial({color:0x596346,side:T.DoubleSide})
-      );
+      // Capacete compartilhado entre todos os cães (mesma geometria e material).
+      if(!shared.capGeo){
+        shared.capGeo=new T.SphereGeometry(.18,12,7,0,Math.PI*2,0,Math.PI*.54);
+        shared.capMat=new T.MeshLambertMaterial({color:0x596346,side:T.DoubleSide});
+      }
+      const cap=new T.Mesh(shared.capGeo,shared.capMat);
       cap.position.set(0,1.025,.38);d.root.add(cap);d._meshy.cap=cap;
     }
     // O cachorro antigo so e ocultado depois que o substituto foi anexado.
@@ -323,11 +325,21 @@
   }
   DATA.syncVariant=syncVariant;
 
+  function inLiveScene(x){
+    let o=x&&x.root; if(!o)return false;
+    while(o.parent)o=o.parent;
+    return o===scene||(typeof MENU3D!=='undefined'&&o===MENU3D.scene);
+  }
+  DATA.inLiveScene=inLiveScene;
+  const WEIGHTS=new Float32Array(HEAD_COUNT);   // rascunho reutilizado (sem alocar por quadro)
+
   makeDogRig=function(helmet){
     const d=oldMake(helmet);
     d._wantsDogHelmet=!!helmet;
-    if(DATA.instances.length>45){
-      DATA.instances=DATA.instances.filter(x=>x.root&&x.root.parent);
+    // Só ficam na lista os cães presos a uma cena viva (missão atual ou menu);
+    // os de missões anteriores são soltos para o coletor de lixo.
+    if(DATA.instances.length>16){
+      DATA.instances=DATA.instances.filter(inLiveScene);
     }
     DATA.instances.push(d);
     if(useMeshy()){
@@ -345,7 +357,7 @@
     if(!useMeshy()||!d._meshy)return;
     const m=d._meshy,o=opts||{};
     const speed=Math.max(0,Math.min(8,o.speed||0)),delta=Math.min(.06,Math.max(0,dt||0));
-    const weights=new Array(HEAD_COUNT).fill(0);
+    const weights=WEIGHTS;weights.fill(0);
     if(o.dead){
       weights[5]=1;
     }else if(o.resting){
@@ -381,7 +393,7 @@
         shared=buildMorphs(gltf);
         DATA.status='ready';
         for(const d of DATA.instances){
-          if(d.root&&d.root.parent)syncVariant(d);
+          if(inLiveScene(d))syncVariant(d);
         }
       }catch(e){
         DATA.error=String(e);DATA.status='fallback';shared=null;

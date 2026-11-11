@@ -87,7 +87,10 @@ const AudioSys={
     const AC=window.AudioContext||window.webkitAudioContext; if(!AC) return;
     try{ this.ctx=new AC(); }catch(e){ return; }
     const c=this.ctx;
-    this.master=c.createGain(); this.master.connect(c.destination);
+    this.master=c.createGain();
+    // Limitador no barramento mestre: várias explosões/tiros somados não estouram a saída.
+    try{ const lim=c.createDynamicsCompressor(); lim.threshold.value=-8; lim.knee.value=6; lim.ratio.value=14; lim.attack.value=.003; lim.release.value=.22; this.master.connect(lim); lim.connect(c.destination); this.limiter=lim; }
+    catch(e){ this.master.connect(c.destination); if(typeof DIAG!=='undefined') DIAG.report('AUDIO_LIMITER','limitador indisponível; áudio segue sem ele',e); }
     this.sfx=c.createGain(); this.sfx.connect(this.master);
     this.mus=c.createGain(); this.mus.connect(this.master);
     this.combatBus=c.createGain(); this.combatBus.gain.value=0; this.combatBus.connect(this.mus);

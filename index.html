@@ -94,6 +94,7 @@
         <button class="btn music-activate" id="bMusic" type="button" aria-label="Ativar música do jogo">♫ Ativar trilha sonora</button>
         <button class="btn" id="bExtras">Extras</button>
       </div>
+      <p class="cpnote" id="cpNote" role="status" hidden><span id="cpNoteText"></span> <button type="button" class="cplink" id="bCpDiscard" hidden>Descartar checkpoint</button></p>
       <p class="fine">Projeto independente, inspirado nos princípios de design do GDD v2.0 (FPS de espionagem na Segunda Guerra). Personagens, mapa, textos e sons são originais. <span id="recordLine"></span></p>
     </div>
   </section>
@@ -194,6 +195,7 @@
         <label for="oBodies">Corpos <small style="display:block;font-size:12px;opacity:.75">Sumir deixa o jogo mais leve, mas guardas não acham mais corpos depois disso.</small></label><select id="oBodies"><option value="somem">Somem após 5 s</option><option value="ficam">Ficam no chão</option></select>
         <label for="oChars">Personagens <small style="display:block;font-size:12px;opacity:.75">Modelo 3D com textura por fase, detalhados ou o visual clássico de blocos. Muda na hora a sala do menu; nas fases, vale ao iniciar a missão.</small></label><select id="oChars"><option value="modelo">Modelo 3D (soldado novo)</option><option value="detalhado">Detalhados</option><option value="classico">Clássicos (blocos)</option></select>
         <label for="oQuality">Qualidade gráfica <small style="display:block;font-size:12px;opacity:.75">Médio e Alto: luz por pixel, relevo, brilho e névoa. Vale na próxima missão.</small></label><select id="oQuality"><option value="baixo">Baixo</option><option value="medio">Médio</option><option value="alto">Alto</option></select>
+        <label for="oAutoRes">Resolução adaptativa <small style="display:block;font-size:12px;opacity:.75">Reduz a resolução aos poucos quando o aparelho não sustenta o ritmo e volta quando há folga.</small></label><input id="oAutoRes" type="checkbox">
         <label for="oVol">Volume de efeitos</label><input id="oVol" type="range" min="0" max="1" step="0.05">
         <label for="oMus">Volume da música</label><input id="oMus" type="range" min="0" max="1" step="0.05">
       </div>
@@ -230,7 +232,7 @@
         <kbd>M</kbd><span>Abrir a planta do lugar, quando você tiver uma</span>
         <kbd>Tab</kbd><span>Diário de campo (não pausa)</span>
         <kbd>Esc</kbd><span>Pausa · fecha o documento aberto</span>
-        <kbd>F3</kbd><span>Painel de depuração de combate</span>
+        <kbd>F3</kbd><span>Painel de depuração: combate, tempos de quadro, memória de vídeo e diagnóstico</span>
         <kbd>Controle</kbd><span>Analógicos, RT atira, LT mira, A interage, B agacha, X recarrega, Start pausa</span>
       </div>
       <p class="fine" style="margin-top:16px">Cada região do corpo reage ao tiro: braços pioram a mira, pernas tiram o equilíbrio, a mão da arma pode derrubá-la. Tiro na cabeça ou no pescoço mata na hora, com qualquer arma; o capacete voa longe. Nas Opções, dá para fazer o capacete segurar o primeiro tiro, como no GDD. O círculo ao lado da saúde mostra quanta luz incide sobre você.</p>
@@ -285,15 +287,18 @@
 <script src="js/vendor/GLTFLoader-r128.js"></script>
 <script src="js/modelos/soldado-meshy-dados.js"></script>
 <script src="js/00-core.js"></script>
+<script src="js/00a-diagnostics.js"></script>
 <script src="js/01-audio.js"></script>
 <script src="js/01a-menu-track.js"></script>
 <script src="js/02-renderer.js"></script>
+<script src="js/02a-resource-scope.js"></script>
 <script src="js/03-world.js"></script>
 <script src="js/04-characters.js"></script>
 <script src="js/05-effects.js"></script>
 <script src="js/06-actors.js"></script>
 <script src="js/07-player-combat.js"></script>
 <script src="js/08-mission-framework.js"></script>
+<script src="js/08a-save-guard.js"></script>
 <script src="js/09-paris-operations-01-03.js"></script>
 <script src="js/10-heavy-weapons.js"></script>
 <script src="js/11-paris-operation-04.js"></script>

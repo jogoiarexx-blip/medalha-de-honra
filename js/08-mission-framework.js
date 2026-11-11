@@ -54,10 +54,12 @@ function newGameState(levelId,diff){
     radioMsg(who,text,cls){ this.radioQ.push({who,text,cls}); }};
 }
 function newMission(levelId,diff,save){
-  if(MAT_Q!==settings.quality){ for(const k in HMAT) delete HMAT[k]; makeMaterials(); }
+  // REV-C: anota o que a cena antiga usava para liberar da GPU depois de montar a nova
+  const oldRes=RES.collect(scene);
+  if(MAT_Q!==settings.quality){ for(const k in HMAT){ RES._mat(HMAT[k],oldRes); delete HMAT[k]; } for(const k in MAT){ const m=MAT[k]; if(m&&m.isMaterial) RES._mat(m,oldRes); } if(typeof H2!=='undefined'){ for(const m of H2.mat.values()) RES._mat(m,oldRes); H2.mat.clear(); } if(typeof MZ!=='undefined'){ for(const m of MZ.mat.values()) RES._mat(m,oldRes); MZ.mat.clear(); } makeMaterials(); }
   while(scene.children.length) scene.remove(scene.children[0]);
   scene.add(camera); renderer.shadowMap.enabled=false;
-  W.photo=[];
+  W.photo=[]; LOD_STATS.far=0;
   W.solids=[]; W.shootables=[]; W.lamps=[]; W.doors={}; W.interactables=[]; W.covers=[]; W.pickups=[]; W.props=[]; W.nades=[]; W.rockets=[]; W.walk=[]; W.glass=[]; W.shards=[]; W.nav={nodes:[],edges:[],link:17};
   FX.parts=[]; FX.decals=[]; FX.tracers=[]; FX.flashes=[]; FX.init();
   G=newGameState(levelId,diff); const L=G.level;
@@ -78,6 +80,8 @@ function newMission(levelId,diff,save){
   if(!P.weapons.includes(P.cur)) P.cur='pistol'; showVM(P.cur);
   rebuildRadioUI(); refreshObjectiveUI(true);
   matricesFresh=false;
+  if(typeof mzWarmLevel==='function') mzWarmLevel(L);
+  RES.sweep(oldRes);
 }
 function buildCovers(){
   W.covers=[];
@@ -93,7 +97,7 @@ function buildCovers(){
 function insideSolid(x,z,r){ const h=heightAt(x,z); for(const t of W.solids){ if(!t.active) continue; if(t.walk){ if(t.maxY<=h+.42) continue; } else if(t.maxY<h+.3||t.minY>h+1.6) continue; if(x>t.minX-r&&x<t.maxX+r&&z>t.minZ-r&&z<t.maxZ+r) return true; } return false; }
 function applyLoadout(levelId){
   const L=LEVELS[levelId], P=G.player; if(!L.loadout) return;
-  const c=(store.get('sdp_campaign')||{}).carry;
+  const c=campaign().carry;
   if(c && c.from===L.prev){ P.weapons=[...c.weapons]; P.ammo=JSON.parse(JSON.stringify(c.ammo)); P.cur=c.cur||'pistol'; P.hp=entryHp(c.hp); G.carried=true; }
   else { const l=L.loadout; P.weapons=[...l.weapons]; P.ammo=JSON.parse(JSON.stringify(l.ammo)); P.cur=l.cur; P.hp=100; }
   if(CHEATS.arsenal){ const full={pistol:{mag:8,reserve:40},smg:{mag:32,reserve:128},silenced:{mag:6,reserve:24},rifle:{mag:5,reserve:30},xbow:{mag:1,reserve:10},pzf:{mag:1,reserve:2}}; for(const w in full){ if(!P.weapons.includes(w)) P.weapons.push(w); if(!P.ammo[w]) P.ammo[w]=full[w]; } }
@@ -173,10 +177,11 @@ function snapshot(){
     enemies:G.enemies.map(e=>({id:e.id,def:e.def,dead:e.dead,hp:e.hp,x:e.pos.x,z:e.pos.z,yaw:e.yaw,helmet:e.helmetState,helmetDur:e.helmetDur,cap:e.hasCap,weapon:e.hasWeapon,alert:e.alertLevel,lanternBroken:!!e.lanternBroken,ko:!!e.ko,asleep:!!e.asleep,wounds:e.wounds||null,wf:e.woundFloor||null})),
     taken:[...G.taken],docs:[...G.docs],stats:Object.assign({},G.stats),alarm:G.alarm,radioDead:G.radioDead,discovered:[...G.discovered]};
 }
-function checkpoint(){ if(!G||G.ending||G.player.dead) return; G.cp=snapshot(); store.set('sdp_checkpoint',G.cp); }
+function checkpoint(){ if(!G||G.ending||G.player.dead) return; G.cp=snapshot(); writeCheckpoint(G.cp); }
 function applySave(s){
   const P=G.player;
-  P.pos.set(s.player.x,heightAt(s.player.x,s.player.z),s.player.z); P.ys=null; P.yaw=s.player.yaw; P.cur=s.player.cur; P.weapons=s.player.weapons; P.ammo=s.player.ammo; P.key=!!s.player.key; if(s.player.nades!==undefined) P.nades=s.player.nades;
+  // cópias: o estado de jogo não pode alterar o checkpoint guardado em G.cp
+  P.pos.set(s.player.x,heightAt(s.player.x,s.player.z),s.player.z); P.ys=null; P.yaw=s.player.yaw; P.cur=s.player.cur; P.weapons=[...s.player.weapons]; P.ammo=JSON.parse(JSON.stringify(s.player.ammo)); P.key=!!s.player.key; if(s.player.nades!==undefined) P.nades=s.player.nades;
   P.hp=entryHp(s.player.hp);
   for(const o of G.objectives) if(s.obj[o.id]) o.state=s.obj[o.id];
   G.flags=Object.assign({},s.flags,{waitHint:false,downHint:false}); G.introT=20;
@@ -184,20 +189,20 @@ function applySave(s){
   buildNav();
   for(const id of s.lamps){ const L=W.lamps.find(l=>l.id===id); if(L) breakLamp(L,false); }
   G.taken=new Set(s.taken); for(const p of W.pickups) if(G.taken.has(p.id)){ p.taken=true; p.mesh.visible=false; }
-  G.docs=s.docs||[]; G.stats=Object.assign(G.stats,s.stats); G.alarm=!!s.alarm; G.radioDead=!!s.radioDead; G.discovered=new Set(s.discovered||[]); G.time=s.time||0;
+  G.docs=[...(s.docs||[])]; G.stats=Object.assign(G.stats,s.stats); G.alarm=!!s.alarm; G.radioDead=!!s.radioDead; G.discovered=new Set(s.discovered||[]); G.time=s.time||0;
   const A=G.ally; if(A&&s.ally){ A.pos.set(s.ally.x,0,s.ally.z); A.mode=s.ally.mode; A.hp=s.ally.hp; A.joined=s.ally.joined; A.hidden=s.ally.hidden; if(A.mode==='WAIT'&&A.joined) A.waitPos={x:A.pos.x,z:A.pos.z}; }
   for(const es of s.enemies){
     let e=G.enemies.find(x=>x.id===es.id);
-    if(!e){ e=new Enemy(es.def); G.enemies.push(e); G.actors.push(e); addTakedown(e); }
+    if(!e){ if(!es.def) continue; e=new Enemy(es.def); G.enemies.push(e); G.actors.push(e); addTakedown(e); }
     e.pos.set(es.x,heightAt(es.x,es.z),es.z); e.yaw=es.yaw; e.hp=es.hp; e.alertLevel=es.alert;
-    if(es.helmet!=='ATTACHED' && e.h.helmet){ removeShootables(e.h.helmetMeshes); e.h.helmet.parent.remove(e.h.helmet); e.helmetState='DETACHED'; }
+    if(es.helmet!=='ATTACHED' && e.h.helmet && e.h.helmet.parent){ removeShootables(e.h.helmetMeshes); e.h.helmet.parent.remove(e.h.helmet); e.helmetState='DETACHED'; }
     e.helmetDur=es.helmetDur;
     if(es.wounds){ e.wounds=es.wounds; e.woundFloor=es.wf||{armL:0,armR:0,legL:0,legR:0}; }
-    if(!es.cap && e.h.cap){ removeShootables(e.h.capMeshes); e.h.cap.parent.remove(e.h.cap); e.hasCap=false; }
+    if(!es.cap && e.h.cap && e.h.cap.parent){ removeShootables(e.h.capMeshes); e.h.cap.parent.remove(e.h.cap); e.hasCap=false; }
     if(es.lanternBroken) breakLantern(e,true);
     if(es.dead){ e.killInstant(); e.ko=!!es.ko; if(!G.taken.has('drop_'+e.id)) spawnDrop(e); continue; }
     if(!es.asleep&&e.asleep){ e.asleep=false; e.doze=0; e.crouchTarget=0; }
-    if(!es.weapon && e.h.weapon){ removeShootables(e.h.weaponMeshes); e.h.weapon.parent.remove(e.h.weapon); e.hasWeapon=false; e.state='DISARMED'; e.fleeing=false; }
+    if(!es.weapon && e.h.weapon && e.h.weapon.parent){ removeShootables(e.h.weaponMeshes); e.h.weapon.parent.remove(e.h.weapon); e.hasWeapon=false; e.state='DISARMED'; e.fleeing=false; }
     else if(e.alertLevel){ e.state='RETURN'; e.setPath(e.post.x,e.post.z); }
   }
   if(G.level.restore) G.level.restore(s);
@@ -210,7 +215,7 @@ function missionComplete(){
   AudioSys.play('objective'); MUS.stinger('win'); for(const o of G.objectives){ if(!o.optional&&o.state==='active') o.state='done'; if(o.optional&&o.autoDone&&o.state==='active') o.state='done'; }
   if(G.level.outro) G.radioMsg(G.level.outro[0],G.level.outro[1]);
   $('#fade').classList.add('on');
-  const g=G; setTimeout(()=>{ $('#fade').classList.remove('on'); if(G!==g||APP.state!=='PLAYING') return; store.del('sdp_checkpoint'); showResults(); },1600);
+  const g=G; setTimeout(()=>{ $('#fade').classList.remove('on'); if(G!==g||APP.state!=='PLAYING') return; clearCheckpoint(); showResults(); },1600);
 }
 function missionFail(title,text){
   if(!G||G.ending||APP.state!=='PLAYING') return; G.ending=true;
@@ -230,7 +235,7 @@ function showResults(){
   const cells=[[`${mins}:${String(secs).padStart(2,'0')}`,'Tempo'],[s.shots?Math.round(acc*100)+'%':'—','Precisão'],[Math.round(hp),'Saúde final'],[s.kills,'Abatidos'],[s.takedowns,'Rendidos'],[s.disarms,'Desarmados'],[s.heads,'Tiros na cabeça'],[s.helmets,'Capacetes soltos'],[s.photos,'Fotos'],[optDone+'/'+opts.length,'Opcionais'],[s.alerts,'Alertas'],[G.alarm?'Sim':'Não','Alarme']];
   $('#rGrid').innerHTML=cells.map(([b,l])=>`<div><b>${b}</b><span>${l}</span></div>`).join('');
   const order={'MÉDIO':1,'BOM':2,'EXCELENTE':3};
-  const camp=store.get('sdp_campaign')||{done:{}}; camp.done=camp.done||{};
+  const camp=sanitizeCampaign(store.get('sdp_campaign'));
   const prev=camp.done[G.levelId]; if(anyCheat()){ $('#rText').textContent+=' (Códigos ativos: classificação não registrada.)'; } else if(!prev||order[rating]>order[prev.rating]||(order[rating]===order[prev.rating]&&G.time<prev.time)) camp.done[G.levelId]={rating,time:G.time,diff:G.diff};
   const P=G.player; camp.carry={from:G.levelId,weapons:[...P.weapons],ammo:JSON.parse(JSON.stringify(P.ammo)),cur:P.cur,hp:P.hp};
   store.set('sdp_campaign',camp);

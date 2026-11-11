@@ -281,3 +281,8 @@ button{font:inherit;color:inherit}
 /* Ativação de áudio exigida pelos navegadores: discreta e acessível. */
 #bMusic[hidden]{display:none!important}
 #bMusic.music-activate{border-color:rgba(217,164,65,.65);color:var(--amber);}
+
+/* aviso de checkpoint (REV-A): legível, discreto, sem bloquear o menu */
+.cpnote{margin:0;max-width:46ch;padding:8px 12px;border-left:3px solid var(--alert,#cf4a31);background:rgba(10,14,17,.72);color:#e6dfcc;font:500 15px/1.4 "Barlow Condensed",system-ui,sans-serif;letter-spacing:.02em}
+.cplink{appearance:none;background:none;border:0;padding:0;margin-left:4px;color:#e9aa40;font:inherit;text-decoration:underline;cursor:pointer}
+.cplink:hover,.cplink:focus-visible{color:#fff2c0;outline:none}

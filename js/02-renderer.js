@@ -13,11 +13,34 @@ const camera=new T.PerspectiveCamera(75,1,.05,260); camera.rotation.order='YXZ';
 scene.add(camera);
 function resize(){
   const w=canvas.clientWidth||innerWidth, h=canvas.clientHeight||innerHeight;
-  renderer.setPixelRatio(QUALITY[settings.quality].pr()); renderer.setSize(w,h,false);
-  camera.aspect=w/h; camera.updateProjectionMatrix();
+  const q=QUALITY[settings.quality]||QUALITY.medio;
+  renderer.setPixelRatio(q.pr()*RES_SCALE.scale); renderer.setSize(w,h,false);
+  camera.aspect=w/h; camera.updateProjectionMatrix(); CAM_PROJ.fov=camera.fov; CAM_PROJ.aspect=camera.aspect;
   if(typeof POST!=='undefined'&&POST.ok) POST.setSize();
 }
 addEventListener('resize',resize);
+// A matriz de projeção só é refeita quando FOV ou proporção mudam de verdade (P1-09).
+const CAM_PROJ={fov:-1,aspect:-1};
+function setCameraFov(fov){ if(Math.abs(fov-CAM_PROJ.fov)>.004||camera.aspect!==CAM_PROJ.aspect){ camera.fov=fov; camera.updateProjectionMatrix(); CAM_PROJ.fov=fov; CAM_PROJ.aspect=camera.aspect; } }
+/* ---------- resolução adaptativa com histerese (REV-F · P1-06) ----------
+   Mede o tempo real de quadro em janelas de 2 s. Se o jogo não sustenta o
+   orçamento, reduz a escala de renderização um degrau; só volta a subir depois
+   de várias janelas folgadas, e cada recaída alonga a espera (não fica oscilando).
+   Nunca troca de resolução a cada quadro. Desligável em Opções. */
+const RES_SCALE={scale:1,min:.6,stepDown:.1,stepUp:.05,winT:0,winN:0,winMs:0,goodWins:0,badWins:0,needGood:4,changes:0,lastChange:0,
+  reset(){ this.scale=1; this.winT=0; this.winN=0; this.winMs=0; this.goodWins=0; this.badWins=0; this.needGood=4; },
+  tick(dtMs,active){
+    if(settings.autoRes===false||!active){ this.winT=0; this.winN=0; this.winMs=0; return; }
+    this.winT+=dtMs; this.winN++; this.winMs+=dtMs; if(this.winT<2000) return;
+    const avg=this.winMs/this.winN; this.winT=0; this.winN=0; this.winMs=0;
+    // alvo: 60 fps em Médio/Alto, 30 fps como piso em Baixo
+    const budget=settings.quality==='baixo'?33.4:16.7;
+    if(avg>budget*1.3){ this.goodWins=0; if(++this.badWins>=2&&this.scale>this.min+1e-3){ this.badWins=0; this.apply(Math.max(this.min,this.scale-this.stepDown)); this.needGood=Math.min(30,this.needGood*2); } }
+    else if(avg<budget*1.06){ this.badWins=0; if(++this.goodWins>=this.needGood&&this.scale<1-1e-3){ this.goodWins=0; this.apply(Math.min(1,this.scale+this.stepUp)); } }
+    else { this.badWins=0; this.goodWins=0; }
+  },
+  apply(v){ this.scale=Math.round(v*100)/100; this.changes++; this.lastChange=performance.now(); resize(); },
+};
 const POST={ok:false,
   init(){
     try{
@@ -29,7 +52,7 @@ const POST={ok:false,
       this.final=sm({tDiffuse:{value:null},tBloom:{value:null},bloom:{value:.9},time:{value:0},grain:{value:.03},vig:{value:1},hurt:{value:0},tint:{value:new T.Vector3(1,1,1)},sat:{value:1},con:{value:1}},
         'uniform sampler2D tDiffuse,tBloom; uniform float bloom,time,grain,vig,hurt,sat,con; uniform vec3 tint; varying vec2 vUv; float rnd(vec2 c){ return fract(sin(dot(c,vec2(12.9898,78.233)))*43758.5453); } void main(){ vec3 c=texture2D(tDiffuse,vUv).rgb; c+=texture2D(tBloom,vUv).rgb*bloom; float l=dot(c,vec3(.2126,.7152,.0722)); c*=mix(vec3(.86,.95,1.14),vec3(1.07,1.,.88),smoothstep(.04,.55,l)); c=mix(vec3(l),c,1.06); c=c*1.08/(1.+c*.1); c=(c-.45)*con+.45; c=mix(vec3(dot(c,vec3(.2126,.7152,.0722))),c,sat); c*=tint; c=max(c,0.); vec2 d=vUv-.5; c*=clamp(1.-dot(d,d)*vig*1.5,0.,1.); c=mix(c,vec3(dot(c,vec3(.33)))*vec3(1.3,.5,.45),hurt); c+=(rnd(vUv*vec2(1311.,717.)+time)-.5)*grain; gl_FragColor=vec4(c,1.); }');
       this.ok=true; this.setSize();
-    }catch(e){ this.ok=false; }
+    }catch(e){ this.ok=false; this.fail('POST_INIT','pós-processamento indisponível; imagem segue sem bloom e correção de cor',e); }
   },
   setSize(){
     if(!this.ok) return; const v=new T.Vector2(); renderer.getDrawingBufferSize(v); const w=Math.max(2,v.x|0), h=Math.max(2,v.y|0);
@@ -37,11 +60,16 @@ const POST={ok:false,
     for(const k of ['rt','bA','bB']) if(this[k]) this[k].dispose();
     this.rt=mk(w,h,true); this.bw=Math.max(2,w>>2); this.bh=Math.max(2,h>>2); this.bA=mk(this.bw,this.bh,false); this.bB=mk(this.bw,this.bh,false);
   },
+  // Falha de pós-processamento nunca vira tela preta: desliga a cadeia, registra e segue no render direto.
+  fail(code,msg,err){ this.ok=false; DIAG.report(code,msg,err); if(!this.warned){ this.warned=true; DIAG.notice('Efeitos de imagem desligados neste aparelho (o jogo continua normalmente).'); } },
+  // Passes de blur por perfil: Baixo 0 (cadeia desligada), Médio 1, Alto 2.
+  blurPasses(){ return settings.quality==='alto'?2:1; },
   pass(mat,target){ this.quad.material=mat; renderer.setRenderTarget(target); renderer.render(this.scene,this.cam); },
   render(useVM,dt){
     renderer.setRenderTarget(this.rt); renderer.clear(); if(MENU3D.on) renderer.render(MENU3D.scene,MENU3D.cam); else renderer.render(scene,camera); if(useVM){ renderer.clearDepth(); renderer.render(vmScene,camera); }
     this.bright.uniforms.tDiffuse.value=this.rt.texture; this.bright.uniforms.threshold.value=MENU3D.on?.55:(G&&G.level&&G.level.bloomTh)||.6; this.pass(this.bright,this.bA);
-    for(let i=0;i<2;i++){ this.blur.uniforms.tDiffuse.value=this.bA.texture; this.blur.uniforms.dir.value.set((i+1)/this.bw,0); this.pass(this.blur,this.bB); this.blur.uniforms.tDiffuse.value=this.bB.texture; this.blur.uniforms.dir.value.set(0,(i+1)/this.bh); this.pass(this.blur,this.bA); }
+    const NB=this.blurPasses(); this.passes=2+NB*2+1;
+    for(let i=0;i<NB;i++){ this.blur.uniforms.tDiffuse.value=this.bA.texture; this.blur.uniforms.dir.value.set((i+1)/this.bw,0); this.pass(this.blur,this.bB); this.blur.uniforms.tDiffuse.value=this.bB.texture; this.blur.uniforms.dir.value.set(0,(i+1)/this.bh); this.pass(this.blur,this.bA); }
     const u=this.final.uniforms; u.tDiffuse.value=this.rt.texture; u.tBloom.value=this.bA.texture; u.time.value=(u.time.value+dt)%100; u.grain.value=settings.quality==='alto'?.04:.02; u.bloom.value=settings.quality==='alto'?1:.8;
     const GR=MENU3D.on?MENU3D.grade:G&&G.grade; if(GR){ u.tint.value.set(GR[0],GR[1],GR[2]); u.sat.value=GR[3]; u.con.value=GR[4]; } else { u.tint.value.set(1,1,1); u.sat.value=1; u.con.value=1; }
     const P=G&&G.player; u.hurt.value=P&&APP.state==='PLAYING'?clamp((40-P.hp)/40,0,1)*.32+(P.dead?.4:0):0;
@@ -50,7 +78,10 @@ const POST={ok:false,
 };
 function renderFrame(useVM,dt){
   renderer.info.reset();
-  if(POST.ok&&settings.quality!=='baixo'){ POST.render(useVM,dt); return; }
+  if(POST.ok&&settings.quality!=='baixo'){
+    try{ POST.render(useVM,dt); return; }
+    catch(e){ POST.fail('POST_RENDER','falha ao compor o quadro; pós-processamento desligado',e); renderer.setRenderTarget(null); }
+  }
   renderer.setRenderTarget(null); renderer.clear(); if(MENU3D.on) renderer.render(MENU3D.scene,MENU3D.cam); else renderer.render(scene,camera); if(useVM){ renderer.clearDepth(); renderer.render(vmScene,camera); }
 }
 
