@@ -1,0 +1,22 @@
+name: Exportar snapshot para integracao REV-A-G
+on:
+  push:
+    paths:
+      - ".github/workflows/export-revag-snapshot.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Exportar codigo do repositorio atual
+        uses: actions/upload-artifact@v4
+        with:
+          name: moh-repo-snapshot-revag
+          path: |
+            .
+            !.git
+          hidden-files: true
+          retention-days: 1
