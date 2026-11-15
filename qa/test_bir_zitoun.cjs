@@ -41,5 +41,6 @@ test('duas fumaças restauradas mostram 2/2 sem marcador de lata pendente',()=>{
 test('identificação da cisterna/pista fica só na 08 e deixa o vão livre',()=>{
  const added=[],pins=[],c=vm.createContext({T,BOX:(...a)=>new T.BoxGeometry(...a),canvasTex:()=>new T.Texture(),G:{refs:{}},W:{solids:[],shootables:[],lamps:[]},RES:{pin:f=>pins.push(f)},dressAdd:m=>added.push(m)}),p=path.join(__dirname,'../js/23f-bir-zitoun-scenery.js');
  if(fs.existsSync(p))vm.runInContext(fs.readFileSync(p,'utf8'),c);vm.runInContext("improveBirZitounScenery({id:'07'})",c);assert.equal(added.length,0);vm.runInContext("improveBirZitounScenery({id:'08'})",c);assert.ok(added.length>=6);const n=added.length;vm.runInContext("improveBirZitounScenery({id:'08'})",c);assert.equal(added.length,n);
+ const lane=new T.Box3(new T.Vector3(46,0,19),new T.Vector3(50,3,25));for(const m of added)assert.ok(!new T.Box3().setFromObject(m).intersectsBox(lane),'placa na chegada do caminhão da onda oeste');
  const passage=new T.Box3(new T.Vector3(4,0,8.36),new T.Vector3(7.4,2.3,9.64));for(const m of added)assert.ok(!new T.Box3().setFromObject(m).intersectsBox(passage));assert.equal(c.W.solids.length+c.W.shootables.length+c.W.lamps.length,0);assert.equal(new Set(added.map(m=>m.material)).size,2);assert.equal(pins.flatMap(f=>f()).length,2);
 });

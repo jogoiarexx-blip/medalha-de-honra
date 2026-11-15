@@ -5,7 +5,7 @@ withGame(async({page,logs,boot})=>{
   APP.noLock=true;settings.quality='baixo';settings.autoRes=false;
   const build=()=>{const old=Math.random;Math.random=mulberry32(308);try{startPlaying(null,'08');}finally{Math.random=old;}};
   const sig=()=>({solids:W.solids.map(s=>[s.minX,s.maxX,s.minY,s.maxY,s.minZ,s.maxZ]),nav:W.nav.nodes,doors:Object.keys(W.doors),objectives:G.objectives.map(o=>o.id),lights:scene.children.filter(o=>o.isLight).length});
-  const views=[['cisterna',[2,1.7,8.6],[6,1.6,9]],['pista',[42,1.7,24],[49,1.8,21]]];
+  const views=[['cisterna',[2,1.7,8.6],[6,1.6,9]],['pista',[42,1.7,18],[49,1.8,15]]];
   const frame=([name,p,t])=>{MENU3D.on=false;VM.root.visible=false;camera.position.set(...p);camera.lookAt(...t);scene.updateMatrixWorld(true);renderFrame(false,.016);return {name,calls:renderer.info.render.calls,tris:renderer.info.render.triangles,png:canvas.toDataURL('image/png').split(',')[1]};};
   build();const upgrade=improveBirZitounScenery;improveBirZitounScenery=()=>{};let before,beforeSig;try{build();beforeSig=sig();before=views.map(frame);}finally{improveBirZitounScenery=upgrade;}
   build();const afterSig=sig(),after=views.map(frame),closedBlocked=!segClear2D(4.6,9,7.4,9,.32,true);
