@@ -478,3 +478,18 @@ Segunda rodada — grupo de estado APROVADO: https://github.com/jogoiarexx-blip/
 - Limites: os percursos testados são locais e em posições controladas. A matriz geral usa conclusão forçada; não comprova objetivos/extracão jogados. Android físico, missão completa, avaliação em movimento e memória de 60 minutos continuam pendentes. Não declarar todas as fases reformadas nem desempenho de celular a partir do SwiftShader.
 
 **Retomar em CP-03D:** analisar o cenário da operação 06 — Acendendo a Tocha, Bordj el-Hamra, sul de Túnis — e escolher correções/acabamento com evidências. Preservar CP-03A/B/C e manter CP-02C (recarga/arma) pendente enquanto cenários forem a prioridade.
+
+### CP-03D — plano em execução — 15/11/2026
+
+Base `b330a64d7eff60a9811ae02adc5b0785dd419d57`. Continuação autorizada no cenário 06 — Acendendo a Tocha, Bordj el-Hamra.
+
+Problemas observados: `tent()` desenha seis postes de altura h-1,2, inclusive dois sob a cumeeira que fica em h; só quatro cantos recebem colisores e estes chegam a h. Há colisão invisível acima dos cantos e apoios centrais sem suporte/colisão coerentes. O laço de postes do depósito põe um poste em X=24 dentro do corte X=23..24,6. `restore06()` desativa esse arame após o `buildNav()` do carregamento, sem reconstruir arestas — a passagem carregada fica aberta fisicamente, mas não no grafo.
+
+Decisão: corrigir apoios/colisores da barraca compartilhada por 06/07; distribuir postes fora do vão; reconstruir navegação depois da restauração do arame. Acrescentar sinalização funcional, faixa de cancela e acabamento estático de portal/muralhas, mantendo objetivos, fotos, portas, disfarce, sinalizadores e saves. Usar Three.js r128, atlas e agrupamento já existentes, sem novas luzes.
+
+- [ ] Regressões RED/GREEN: apoios/postes reais da barraca, vão do arame, aresta de navegação restaurada.
+- [ ] Testes do acabamento: isolamento, recursos compartilhados, idempotência, passagens e alvos fotográficos livres; implementar sinalização e acabamento.
+- [ ] Chromium: capturas antes/depois, barracas e vão abertos de fato, arame/save/grafo, escada e portas; troca de perfil/recarga, recursos e orçamento de +16 chamadas/+5.000 triângulos por câmera.
+- [ ] Revisão independente, regressões 06/07 e gerais, publicação e resultado final neste MD.
+
+Foco: apoios iguais no visual e colisão; nenhuma placa cobrindo foto/interação; vão cortável continua abrindo e carregando; escada da torre livre; funcionalidade compartilhada na 07 preservada. Android físico e percurso humano completo permanecem pendentes.

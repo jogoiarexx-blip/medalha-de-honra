@@ -28,7 +28,12 @@ function tanker(x,z){ const a=addBlock(x-3,x+3,z-1.05,z+1.05,.9,{mat:MAT.truck,s
   a.mesh.visible=false; b.mesh.visible=false; t.visible=false; const B=vehB(); const desert=G&&G.level&&['06','07','08'].includes(G.level.id); vehTruck(B,desert?0x8a7c5c:0x3b4434,'tank',{tankMat:M6.tank}); B.place(x,z,Math.PI/2); }
 function tent(x0,x1,z0,z1,h,mat){ const cx=(x0+x1)/2, cz=(z0+z1)/2, w=x1-x0, d=z1-z0;
   for(const s of [-1,1]){ const r=new T.Mesh(new T.PlaneGeometry(w+.4,Math.hypot(d/2,1.2)+.2),mat); r.position.set(cx,h-.6,cz+s*d/4); r.rotation.x=-Math.PI/2+s*Math.atan2(1.2,d/2); r.rotation.order='XYZ'; r.material.side=T.DoubleSide; scene.add(r); }
-  for(const [x,z] of [[x0,z0],[x1,z0],[x0,z1],[x1,z1],[x0,cz],[x1,cz]]) addMesh(BOX(.1,h-1.2,.1),M6.wood,x,(h-1.2)/2,z,'wood'); for(const x of [x0,x1]) addSolidOnly(x-.08,x+.08,z0-.08,z0+.08,h), addSolidOnly(x-.08,x+.08,z1-.08,z1+.08,h); }
+  for(const x of [x0,x1]) for(const z of [z0,cz,z1]){
+    const height=z===cz?h:h-1.2;
+    addMesh(BOX(.1,height,.1),M6.wood,x,height/2,z,'wood');
+    addSolidOnly(x-.05,x+.05,z-.05,z+.05,height);
+  }
+  addMesh(BOX(w,.1,.1),M6.wood,cx,h,cz,'wood'); }
 function bomberMesh(){ const g=new T.Group(); const m=hm(0x2a2c2e); const f=new T.Mesh(BOX(1.4,1.4,14),m); g.add(f); const w=new T.Mesh(BOX(22,.3,3),m); w.position.z=1; g.add(w); const t=new T.Mesh(BOX(7,.25,1.8),m); t.position.z=-6.2; g.add(t); const v=new T.Mesh(BOX(.25,2.6,1.6),m); v.position.set(0,1.2,-6.2); g.add(v); for(const x of [-5,-2.4,2.4,5]){ const e=new T.Mesh(new T.CylinderGeometry(.45,.45,2.2,8),m); e.rotation.x=Math.PI/2; e.position.set(x,-.1,2); g.add(e); } scene.add(g); return g; }
 const ENEMY_DEFS_06=[
   {id:'g1',x:-25.4,z:3,yaw:-Math.PI/2,weapon:'rifle',helmet:true},
@@ -58,6 +63,16 @@ function light06(x,z){
   if(x>-19.8&&x<7.8&&z>-19.8&&z<-11) return .42;
   if(h>3&&z<-13) return .4;
   return .62;
+}
+function fuelFencePosts06(){
+  const posts=[];
+  for(let x=21.5;x<44.2;x+=2.5){
+    posts.push([x,1.15,-16.05,.1,2.3,.1,0]);
+    if(x<23||x>24.6) posts.push([x,1.15,16.05,.1,2.3,.1,0]);
+  }
+  for(const x of [23,24.6]) posts.push([x,1.15,16.05,.1,2.3,.1,0]);
+  for(let z=-16;z<16.2;z+=2.5) posts.push([44.05,1.15,z,.1,2.3,.1,0]);
+  return posts;
 }
 function buildLevel06(){
   M5=mats05(); M6=mats06(); const M=M6; G.cred=1; G.disguise={blown:false}; photos06();
@@ -140,7 +155,7 @@ function buildLevel06(){
   // ---- depósito de combustível ----
   const fence=(x0,x1,z0,z1)=>{ const s=addSolidOnly(x0,x1,z0,z1,2.3); s.see=true; return s; };
   fence(21,44,-16.1,-16); fence(44,44.1,-16,16.1); fence(21,23,16,16.1); fence(24.6,44,16,16.1); const wire=fence(23,24.6,16,16.1);
-  { const posts=[]; for(let x=21.5;x<44.2;x+=2.5){ posts.push([x,1.15,-16.05,.1,2.3,.1,0],[x,1.15,16.05,.1,2.3,.1,0]); } for(let z=-16;z<16.2;z+=2.5) posts.push([44.05,1.15,z,.1,2.3,.1,0]); instanced(UNIT,M.wood,posts);
+  { const posts=fuelFencePosts06(); instanced(UNIT,M.wood,posts);
     const wires=[]; for(const y of [.6,1.2,1.8,2.25]){ wires.push([32.5,y,-16.05,23,.02,.02,0],[44.05,y,0,.02,.02,32,0],[22,y,16.05,2,.02,.02,0],[34.3,y,16.05,19.4,.02,.02,0]); } instanced(UNIT,MAT.darkMetal,wires); }
   const wireMesh=[]; for(const y of [.6,1.2,1.8,2.25]){ const w=addMesh(BOX(1.6,.02,.02),MAT.darkMetal,23.8,y,16.05,null); wireMesh.push(w); }
   drums(23,26,-6,-3.4,1.8); drums(23,25.6,4,7,1.8); drums(36,39.4,-1.6,1,1.8); drums(40,43,10,13,1.8,M.drumG); drums(27.6,30,-14.6,-13,1.8);
@@ -250,7 +265,7 @@ function update06(dt){
 function restore06(s){
   const F=G.flags, R=G.refs; G.cred=F.stamped?2:1; G.disguise={blown:!!F.blown};
   if(obj('gate').state==='done') setDoorOpenInstant(W.doors.barrier);
-  if(F.wireCut){ R.wire.active=false; for(const w of R.wireMesh) w.visible=false; }
+  if(F.wireCut){ R.wire.active=false; for(const w of R.wireMesh) w.visible=false; buildNav(); }
   G.player.holster=!F.blown;
   if(F.raid){ F.raid=false; startRaid06(); G.raidT=40; for(const b of G.bombs) b.done=true; for(const b of G.bombers) b.position.x=-200; }
 }
