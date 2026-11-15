@@ -298,3 +298,5 @@ Critérios: uma aplicação de dano por projétil/ator, parede antes do alvo blo
 
 - Primeira execução CP-02A (`43663003832`): combate, CP-01, saves, telas e memória passaram. O teste de perfis encontrou proporção de câmera ainda antiga em duas mudanças rápidas de viewport; o código de resize de produção não mudou nesta revisão. Removida espera fixa de 150 ms do teste: agora aguarda canvas/câmera acompanharem o viewport real em até 10 s e registra timeout/valores se não acompanharem. Nova execução deve comprovar o resultado.
 - QA de navegador dividido em três grupos independentes (estado, recursos, campanha) em runners separados, sem cancelar os demais grupos quando um falha. Todos os testes são mantidos, com artefatos separados por grupo.
+
+- Segunda execução CP-02A (`43663684257`): o grupo de estado detectou instabilidade da fixture de capacete no estilo Modelo 3D (sem interseção, nenhum dano/hit contabilizado). A mira usava a origem do objeto, que pode ficar fora do casco. A fixture passou a mirar o centro da bounding box transformado para o mundo e exige uma interseção antes de conferir dano; código de produção não alterado.

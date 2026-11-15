@@ -20,8 +20,10 @@ withGame(async({page,logs})=>{
       e=reset();const plate=new T.Mesh(new T.BoxGeometry(1,1,.2),new T.MeshBasicMaterial());plate.position.set(0,1,-3);plate.userData={char:e,region:'head',armor:true};scene.add(plate);W.shootables=[plate];
       shoot(V3(0,1,0),V3(0,0,-1));const armor={hp:e.hp,marker:$('#hitmarker').className,heads:G.stats.heads};scene.remove(plate);
       // Real helmet geometry; weak round transfers enough damage to a weakened enemy.
-      e=reset();settings.helmetSave=true;e.hp=.1;const shell=e.h.helmetMeshes[0];W.shootables=[shell];const hc=shell.getWorldPosition(V3());
-      shoot(hc.clone().add(V3(0,0,3)),V3(0,0,-1),5);
+      e=reset();settings.helmetSave=true;e.hp=.1;const shell=e.h.helmetMeshes[0];W.shootables=[shell];shell.geometry.computeBoundingBox();const hc=shell.localToWorld(shell.geometry.boundingBox.getCenter(V3()));
+      const helmetOrigin=hc.clone().add(V3(0,0,3)), helmetRay=new T.Raycaster(helmetOrigin,V3(0,0,-1));
+      if(!shell.visible||!helmetRay.intersectObject(shell,false).length) throw Error('fixture sem interseção geométrica no capacete: '+style);
+      shoot(helmetOrigin,V3(0,0,-1),5);
       const helmet={dead:e.dead,marker:$('#hitmarker').className,hits:G.stats.hits,heads:G.stats.heads};
       // Surrender preserves health and removes the real weapon from shootables.
       e=reset();W.shootables=[...e.h.hitMeshes];const hp=e.hp;yieldEnemy(e,true);
