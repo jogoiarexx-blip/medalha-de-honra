@@ -22,6 +22,12 @@ function startServer(){
 const CHROME_ARGS=['--no-sandbox','--enable-webgl','--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader','--disable-dev-shm-usage','--autoplay-policy=no-user-gesture-required'];
 // Mensagens de driver/rede que não são defeitos do jogo.
 const NOISE=[/GPU stall due to ReadPixels/,/fonts\.(googleapis|gstatic)\.com/,/ERR_TUNNEL_CONNECTION_FAILED/,/ERR_INTERNET_DISCONNECTED/,/ERR_NAME_NOT_RESOLVED/,/ERR_FAILED/,/GL Driver Message/,/Automatic fallback to software WebGL/,/GroupMarkerNotSet/];
+function requestFailureLine(url,reason,navigating){
+  // Recarregar a página interrompe streams de mídia da página anterior.
+  // Só esse cancelamento conhecido é esperado: scripts e outras falhas seguem visíveis.
+  if(navigating&&reason==='net::ERR_ABORTED'&&/\/audio\/menu-principal\.mp3(?:\?|$)/.test(url)) return null;
+  return 'requestfailed: '+url+' ('+(reason||'motivo indisponível')+')';
+}
 async function withGame(fn,opts={}){
   const {chromium}=require('playwright');
   const {srv,url}=await startServer();
@@ -35,8 +41,12 @@ async function withGame(fn,opts={}){
     const page=await ctx.newPage();
     page.on('console',m=>{ if(['warning','error'].includes(m.type())){ const t=m.text(); if(!NOISE.some(re=>re.test(t))) logs.push(m.type()+': '+t.slice(0,400)); } });
     page.on('pageerror',e=>logs.push('pageerror: '+(e.stack||e.message).slice(0,600)));
-    page.on('requestfailed',r=>{ const u=r.url(); if(!NOISE.some(re=>re.test(u))) logs.push('requestfailed: '+u); });
-    const boot=async()=>{ await page.goto(url,{waitUntil:'domcontentloaded'}); await page.waitForFunction(()=>!!window.__SDP,{timeout:30000}); };
+    let navigating=false;
+    page.on('requestfailed',r=>{ const u=r.url(); if(NOISE.some(re=>re.test(u))) return;
+      const reason=r.failure()?.errorText||'', line=requestFailureLine(u,reason,navigating);
+      if(line) logs.push(line); else console.log('QA: recarga cancelou stream anterior do menu ('+reason+')');
+    });
+    const boot=async()=>{ navigating=true; try{ await page.goto(url,{waitUntil:'domcontentloaded'}); await page.waitForFunction(()=>!!window.__SDP,{timeout:30000}); }finally{ navigating=false; } };
     await boot();
     return await fn({page,logs,url,ctx,boot});
   } finally { await browser.close(); srv.close(); }
@@ -46,4 +56,4 @@ function finish(name,failures,extra){
   if(failures.length){ console.error('FALHOU: '+name); for(const f of failures) console.error('  - '+f); process.exit(1); }
   console.log('PASSOU: '+name+(extra?' — '+extra:''));
 }
-module.exports={withGame,startServer,errorsOf,finish,ROOT,CHROME_ARGS};
+module.exports={requestFailureLine,withGame,startServer,errorsOf,finish,ROOT,CHROME_ARGS};
