@@ -8,16 +8,16 @@ Atualizado em **15/11/2026 (Brasil)**. Documento de continuidade: ler antes de c
 |---|---|
 | Repositório correto | https://github.com/jogoiarexx-blip/medalha-de-honra |
 | Base analisada | `edca70c8f74a736921939ca149e9e83e9decea50` (`main`) |
-| Build atual | `cp03b-2026-11-15` |
-| Entrega atual | CP-03B: acabamento dos cenários 02–04; operação 01 mantém CP-03A |
-| Mudança de gameplay nesta revisão | Nenhuma: kit estático; corrigida textura/emissão visual das fachadas da 04 |
-| Etapa atual | CP-03B ENTREGUE; CP-02C, percurso humano/Android pendentes |
-| Próximo trabalho | CP-03C: analisar cenário da operação 05 — O Hotel da Medina (Túnis) |
+| Build atual | `cp03c-2026-11-15` |
+| Entrega atual | CP-03C: fachada corrigida e acabamento do Hotel da Medina, operação 05 |
+| Mudança de gameplay nesta revisão | Paredes/vidros frontais da 05 alinhados às alas; ornamentos sem novos obstáculos |
+| Etapa atual | CP-03C ENTREGUE; CP-02C, percurso humano/Android pendentes |
+| Próximo trabalho | CP-03D: analisar cenário da operação 06 — Acendendo a Tocha, Bordj el-Hamra |
 | Campanha | 24 operações principais + 3 secretas registradas |
 | Fases com percurso humano comprovado | Nenhuma |
 | Integração da operação 01 | Objetivos, save/load e extração aprovados no Chromium com posições controladas; percurso normal pendente |
 
-**Ponto de retomada:** CP-03B entregue e publicado; evidências ao fim deste documento. Lote 02–04: materiais diurnos próprios do cais corrigidos, mausoléus/hotel/cais com acabamento estático. Próximo cenário previsto: operação 05 — O Hotel da Medina, em Túnis (CP-03C). CP-02C (recarga/arma) continua pendente pela prioridade em cenários; percurso humano e Android físico seguem pendentes.
+**Ponto de retomada:** CP-03C entregue e publicado; evidências ao fim deste documento. Fachada da operação 05 corrigida, mantendo IDs de vidro dos saves; acabamento de entrada, pátio, fonte e placas. Próximo cenário: operação 06 — Acendendo a Tocha (CP-03D). CP-02C (recarga/arma) continua pendente pela prioridade em cenários; percurso humano e Android físico seguem pendentes.
 
 ## 2. O que já existe e deve ser preservado
 
@@ -445,9 +445,36 @@ Problema observado no código: a rotina frontal usa uma composição de janelas 
 
 Decisão: manter a arquitetura Three.js r128, iluminação e passagens existentes. Ampliar o acabamento com kit estático compartilhado/mesclado: molduras e soleiras da fachada, azulejos/rodapés do pátio, borda e água da fonte, placas de quartos/rouparia. A correção frontal altera somente seus trechos físicos; escadas, portas móveis, objetivos e saves preservados. Não criar novo modelo de andares nem obstáculos decorativos.
 
-- [ ] Reproduzir fachadas invertidas/vidros obstruídos com teste; corrigir e conferir limites/aberturas.
-- [ ] Testes do kit: isolamento, idempotência, recursos compartilhados e vãos livres; implementar acabamento.
-- [ ] Chromium: antes/depois, limites da fachada, passagens/escadas, save/reentrada, troca de perfil e recarga do navegador; orçamento de +16 chamadas/+5.000 triângulos por câmera.
-- [ ] Revisão independente, regressões gerais, publicação e registro final.
+- [x] Reproduzir fachadas invertidas/vidros obstruídos com teste; corrigidos limites/aberturas e preservados IDs legados de vidro (teste também viu falhar uma alteração de ID durante implementação).
+- [x] Testes do kit: isolamento, idempotência, recursos compartilhados e vãos livres; acabamento implementado.
+- [x] Chromium: antes/depois conferidos; limites da fachada, passagens/escadas, save/reentrada, troca de perfil e recarga real Alto aprovados; orçamento abaixo de +16 chamadas/+5.000 triângulos por câmera.
+- [x] Revisão independente, regressões gerais, publicação e registro final.
 
 Foco: vidro alinhado à abertura real; placas fora da porta deslizante; ausência de peças sobre degraus; recursos preservados após troca de fase/perfil e recarga; nada do kit em outras fases. Comparar decoração isoladamente do conserto físico para não confundir ganho visual com prova de colisão. Android físico e percurso humano completo seguem pendentes.
+
+Validação local CP-03C: cinco testes novos falharam antes das suas implementações/correções e depois passaram; 52 testes isolados no total, sintaxe e seis verificações estruturais aprovados. Revisão independente sem defeitos importantes. PR https://github.com/jogoiarexx-blip/medalha-de-honra/pull/6.
+
+Primeira rodada (`43748635261`, candidato `442f40012092cbbfd56a2e604acf456f7f2ea443`): capturas, limite/cobertura de vidros, passagens e escada principal, vidro `fw10b` quebrado após save, materiais/textura sem dispose na troca de fase/perfil e recarga real Alto passaram. A igualdade física falhou exclusivamente nas cinco alturas aleatórias de palmeiras: o Three também consome Math.random ao gerar UUIDs, e os caches frios consumiam amostras extras (comprovado: uma Texture consome quatro chamadas). Acrescentado pré-aquecimento antes das duas montagens com a mesma semente, mantendo asserção integral; nenhum código de produção alterado nesse ajuste. Novo candidato `142101c06e586fcb611af326bc3ba5ee4f41d850` aguarda nova rodada.
+
+Capturas iniciais conferidas: fonte com borda/filetes, moldura de entrada, faixas/pilastras do pátio e placa 07 legível. Fachada Alto após recarregar também renderizada. Ambas as imagens antes/depois usam o conserto da fachada; comparação mede decoração, enquanto testes separados comprovam os limites físicos. Nenhuma afirmação de antes/depois com a fachada antiga.
+
+| Câmera / Baixo | Chamadas antes → depois | Triângulos antes → depois |
+|---|---:|---:|
+| Fachada | 1.999 → 2.007 | 250.334 → 251.304 |
+| Pátio | 868 → 874 | 139.782 → 140.728 |
+| Quartos | 442 → 444 | 85.000 → 85.682 |
+
+Contagens confirmadas também na segunda rodada estabilizada, dentro do limite +16/+5.000. SwiftShader não representa FPS de Android. A integração exercita trechos locais, não a missão completa; correção de fachada muda apenas seus colisores e posição de vidros, mantendo os nomes de checkpoint.
+
+Segunda rodada — grupo de estado APROVADO: https://github.com/jogoiarexx-blip/medalha-de-honra/actions/runs/43748907728. As duas montagens após pré-aquecimento têm assinatura física integral idêntica, e todos os trechos de passagem e escada passaram antes/depois. Vidro `fw10b` restaurado quebrado; seis materiais e atlas sem eventos de descarte na troca 05→04→05/Alto e presentes em RES.live. Nova navegação de página restaurou missão 05/kit CP-03C/vidro quebrado, perfil Alto ativo e imagem não preta. Isso valida a fixture, não um percurso completo da operação.
+
+### Resultado final — CP-03C — 15/11/2026
+
+- Código e testes validados: `142101c06e586fcb611af326bc3ba5ee4f41d850` (último commit só pré-aquece caches na fixture; produção idêntica ao candidato inicial conferido).
+- CI completo aprovado: https://github.com/jogoiarexx-blip/medalha-de-honra/actions/runs/43748907728 — estrutural, estado, recursos e campanha; QA separado do pastor também aprovado.
+- Inclui 52 testes isolados, sintaxe/seis verificações estruturais, testes de cenários CP-03A/B/C, entradas/combate/alturas, saves/migração, menus, memória, perfis, áudio/IA, matriz técnica de 27 operações e captura geral de cinco cenas. Asserções de recursos/recarga reais do kit da Medina também passaram.
+- Revisão independente: nenhum defeito importante ou menor exigindo alteração. Capturas de fachada/pátio/quartos e fachada Alto após recarga conferidas. Orçamento +16 chamadas/+5.000 triângulos respeitado nas três vistas; os números da tabela foram confirmados na segunda rodada.
+- Publicação: PR https://github.com/jogoiarexx-blip/medalha-de-honra/pull/6 — commit de integração `f5348a18d5bcaa51f2179da2c7e9040cf852cea0`. Esta atualização final altera somente documentação.
+- Limites: os percursos testados são locais e em posições controladas. A matriz geral usa conclusão forçada; não comprova objetivos/extracão jogados. Android físico, missão completa, avaliação em movimento e memória de 60 minutos continuam pendentes. Não declarar todas as fases reformadas nem desempenho de celular a partir do SwiftShader.
+
+**Retomar em CP-03D:** analisar o cenário da operação 06 — Acendendo a Tocha, Bordj el-Hamra, sul de Túnis — e escolher correções/acabamento com evidências. Preservar CP-03A/B/C e manter CP-02C (recarga/arma) pendente enquanto cenários forem a prioridade.
