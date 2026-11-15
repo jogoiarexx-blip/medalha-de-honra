@@ -15,6 +15,9 @@ withGame(async({page,logs,boot})=>{
     return {name,calls:renderer.info.render.calls,tris:renderer.info.render.triangles,lum:lum/768,png:canvas.toDataURL('image/png').split(',')[1]};
    });
   };
+  // A primeira montagem cria caches; UUIDs do Three também consomem Math.random.
+  // Pré-aquecer antes das duas montagens com a mesma semente evita variar palmeiras.
+  build();
   // Antes/depois da decoração: ambas já usam a fachada corrigida.
   const upgrade=improveMedinaScenery;improveMedinaScenery=()=>{};let before,beforeSig,beforeClear;
   try{build();beforeSig=sig();beforeClear=probes();before=capture();}finally{improveMedinaScenery=upgrade;}
