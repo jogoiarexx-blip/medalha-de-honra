@@ -29,7 +29,10 @@ withGame(async({page,logs})=>{
   // documento por cima da pausa não pode prender a pausa
   await page.evaluate(()=>openDoc('note')); await page.keyboard.press('Escape'); await expect('documento sobre a pausa',s=>s.stack.includes('doc')||!s.stack.includes('pause')?'fechar o documento desfez a pausa de forma inconsistente':'');
   await page.click('#bResume'); await expect('continuar',s=>s.app!=='PLAYING'||s.frozen?'jogo não retomou':'');
-  await page.waitForTimeout(400); if(!((await st()).t>tP)) f.push('o tempo não voltou a correr após continuar');
+  // Em SwiftShader um quadro pode levar mais de 400 ms. Esperar a condição real
+  // diferencia ausência de quadro de simulação presa; timeout inclui estado/stack.
+  await page.waitForFunction(t=>APP.state==='PLAYING'&&!UI.frozen()&&G.time>t,tP,{timeout:10000})
+    .catch(async()=>f.push('o tempo não voltou a correr após continuar: '+JSON.stringify(await st())));
   // diário não pausa
   await page.keyboard.press('Tab'); await expect('diário',s=>!s.stack.includes('journal')||s.frozen?'diário não abriu ou congelou o jogo':'');
   const jn=await page.evaluate(()=>{ toggleJournal(); toggleJournal(); toggleJournal(); return document.querySelectorAll('#jObj li').length+'/'+G.objectives.filter(o=>o.state!=='hidden').length; });
