@@ -388,3 +388,18 @@ Arquivos: `03-world.js`, `06-actors.js`, `07-player-combat.js`, novo `23a-paris-
 - Revisão pontual do ajuste de QA: posição restaurada deve ser comparada com a gravada. Os demais campos da matriz ainda usam estado vivo entre avaliações e podem exigir estabilização própria se houver falha futura; o ajuste atual não comprova separadamente a exatidão da gravação original.
 
 **Entrega encerrada: CP-03A, cenário da operação 01. Retomar em CP-03B, cenários das operações 02–04.**
+
+### CP-03B — plano em execução — 15/11/2026
+
+Pedido: continuar cenários 02–04, conforme ponto de retomada aprovado. Base `cadd046c6158fd3ceb99d6b5143a2f5a9123b3b5`. Implementação na branch própria, mantendo a cópia de trabalho já utilizada.
+
+Decisão: ampliar o kit estático existente, com materiais compartilhados e atlas local. Reutilizar o mesclador evita dependências/assets pesados. Uma troca completa de modelos e novas luzes não são necessárias para este lote. Portas, passagens, colisores, objetivos, salvamento e dificuldade continuam com o comportamento existente.
+
+Problema identificado: `mats04()` usa `TEX.facade` noturna e emissão .1 para suas três fachadas; `polishLevel()` só corrige `MAT.facadeA/B/C`, portanto não alcança os materiais próprios da 04. As demais mudanças são acabamento visual, não bugs comprovados.
+
+- [ ] Teste RED/GREEN para fachadas próprias da 04 nos perfis Lambert/Phong; aplicar textura diurna e emissão zero.
+- [ ] Testes RED/GREEN para kit 02–04 isolado/idempotente, sem novos obstáculos/alvos/luzes; implementar cornijas/molduras de mausoléus, acabamento/placas do hotel e detalhes de cais/barcaça.
+- [ ] Integração Chromium: capturas antes/depois, contratos da missão preservados, passagens locais, save/reentrada, isolamento por fase; acréscimo máximo de 16 draw calls e 5.000 triângulos por câmera fixa.
+- [ ] Revisão independente, regressões gerais, publicação e resultado final neste documento.
+
+Foco da revisão: molduras não atravessarem portas móveis; detalhes do cais não cobrirem acesso de extração; materiais persistirem após recarregar/trocar qualidade; faces/textos orientados corretamente; operação 01 manter seu kit anterior. Testar esses contratos e conferir imagens antes de publicar. Limites herdados: percurso humano completo e Android físico pendentes; descida à barcaça da 04 continua sendo interação de extração, sem criar escada navegável neste lote.

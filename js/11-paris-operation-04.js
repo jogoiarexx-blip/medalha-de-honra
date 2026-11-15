@@ -20,9 +20,9 @@ const WAVES04=[
 function mats04(){
   const HQ=MAT_HQ, L=(o,ex)=>{ if(!HQ) return new T.MeshLambertMaterial(o); const p=Object.assign({shininess:6,specular:0x0d0d0d},o,ex||{}); if(p.map&&p.bump!==false){ p.bumpMap=p.map; p.bumpScale=p.bumpScale||.035; } delete p.bump; return new T.MeshPhongMaterial(p); };
   return {
-    facA:L({map:TEX.facade,emissiveMap:TEX.facadeEm,emissive:0xffffff,emissiveIntensity:.1,color:0xe0d2bc}),
-    facB:L({map:TEX.facade,emissiveMap:TEX.facadeEm,emissive:0xffffff,emissiveIntensity:.1,color:0xc4b8a6}),
-    facC:L({map:TEX.facade,emissiveMap:TEX.facadeEm,emissive:0xffffff,emissiveIntensity:.1,color:0xbcc0bc}),
+    facA:L({map:facadeDayTex(),emissiveMap:TEX.facadeEm,emissive:0xffffff,emissiveIntensity:0,color:0xe0d2bc}),
+    facB:L({map:facadeDayTex(),emissiveMap:TEX.facadeEm,emissive:0xffffff,emissiveIntensity:0,color:0xc4b8a6}),
+    facC:L({map:facadeDayTex(),emissiveMap:TEX.facadeEm,emissive:0xffffff,emissiveIntensity:0,color:0xbcc0bc}),
     wall:L({map:TEX.plaster,color:0xd6cab2}), court:L({map:TEX.concrete,color:0xa49e90}), rubble:L({map:TEX.concrete,color:0x8a8070}),
     press:L({color:0x2b2d2f},{specular:0x666666,shininess:70}), paper:L({color:0xdcd4c0}), quay:L({map:TEX.mstone||TEX.concrete,color:0xa8a090}),
     barge:L({map:TEX.wood,color:0x6a4a30}), bus:L({color:0x2a2622},{specular:0x111111,shininess:8}), busP:L({color:0x5a3a2a}),

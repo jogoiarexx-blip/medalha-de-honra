@@ -56,6 +56,10 @@ Os testes de navegador usam o Chromium do Playwright (`npm install --no-save pla
 
 **Status honesto:** nenhum teste automático declara uma fase "zerada". Jogar os objetivos até a extração, FPS em Android/PC reais e memória por 60 minutos continuam `NÃO TESTADO` até haver registro humano.
 
+## Cenários CP-03B — operações 02–04
+
+O cemitério recebe cornijas e molduras de mausoléus; o hotel ganha acabamento nos vãos, rodapés e placas; o cais recebe detalhes de pedra, amarração e bordas/tábuas da barcaça. As fachadas próprias da operação 04 usam vidro diurno e emissão zero. Decoração estática agrupada, sem novos obstáculos nem luzes. A extração pela escada da 04 mantém a interação existente.
+
 ## Cenários CP-03A — operação 01
 
 A Rue des Lanternes recebe vitrines de época, molduras, calçadas, sarjetas e detalhes da fonte. Halos de chão acompanham os lampiões destrutíveis, sem novas luzes pontuais. A colisão da fonte acompanha melhor a base circular. O kit usa atlas e peças estáticas fundidas; as outras operações continuam no plano de cenários do checkpoint.
