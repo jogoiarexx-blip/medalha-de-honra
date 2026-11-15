@@ -56,6 +56,12 @@ Os testes de navegador usam o Chromium do Playwright (`npm install --no-save pla
 
 **Status honesto:** nenhum teste automático declara uma fase "zerada". Jogar os objetivos até a extração, FPS em Android/PC reais e memória por 60 minutos continuam `NÃO TESTADO` até haver registro humano.
 
+## Melhorias CP-02B (14/11/2026)
+
+- Tiros verticais e oblíquos consideram o topo/base do volume de acerto, com alcance e cobertura preservados.
+- Carregar um checkpoint e recuperar um aliado preso reconstrói sua altura pelo piso do cenário, mantendo o formato dos saves.
+- `qa/test_vertical.cjs` e `qa/test_cp02b_browser.cjs` cobrem os casos verticais e a restauração em altura; continuam sendo testes controlados, não percurso humano.
+
 ## Melhorias CP-02A (14/11/2026)
 
 - A IA considera o piso onde o aliado está ao enxergá-lo e resolver tiros em diferentes alturas.

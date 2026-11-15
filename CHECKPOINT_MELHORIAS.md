@@ -8,7 +8,7 @@ Atualizado em **14/11/2026 (Brasil)**. Documento de continuidade: ler antes de c
 |---|---|
 | Repositório correto | https://github.com/jogoiarexx-blip/medalha-de-honra |
 | Base analisada | `edca70c8f74a736921939ca149e9e83e9decea50` (`main`) |
-| Build atual | `cp02a-2026-11-14` |
+| Build atual | `cp02b-2026-11-14` |
 | Entrega atual | CP-02A: alturas de aliados e feedback de armadura/capacete; CP-01 preservado |
 | Mudança de gameplay nesta revisão | Altura de aliados, feedback de armadura e neutralização via capacete corrigidos; ver CP-02A ao final |
 | Etapa atual | CP-02A ENTREGUE; CP-02B pendente; CP-01 com percurso/aparelho pendentes |
@@ -317,3 +317,16 @@ Critérios: uma aplicação de dano por projétil/ator, parede antes do alvo blo
 | Percurso humano, qualidade visual/áudio ouvidos e Android físico | PENDENTE | Não inferir esses resultados a partir das fixtures e do SwiftShader |
 
 **Entrega encerrada:** CP-02A. **Próximo checkpoint:** CP-02B, nas duas lacunas verticais registradas acima.
+
+### CP-02B — plano, implementação e retomada — 14/11/2026
+
+Base: `0890efe014778fc86f5920ed8f31aadd7f2d6931`. Escopo: fechar as duas lacunas verticais do checkpoint e a recuperação do aliado presa ao mesmo Y=0.
+
+- [x] Reproduzir antes de corrigir: raios verticais/quase verticais, entrada por topo/base, origem dentro do volume; aliado WAIT/FOLLOW restaurado e recuperação em piso elevado. 9 regressões falharam na base antiga.
+- [x] `03-world.js`: interseção do intervalo radial com intervalo vertical de cilindro fechado; respeita alcance/cobertura e não aloca objetos no caminho de tiro. Origem interna tem distância de impacto zero; direção vazia não acerta.
+- [x] `08-mission-framework.js`: altura do aliado reconstruída por `heightAt(x,z)` ao carregar; sem acrescentar campo Y nem mudar versão/chaves do save.
+- [x] `06-actors.js`: recuperação de aliado preso usa o piso do ponto de navegação.
+- [x] 16 testes novos isolados + 20 regressões anteriores = 36 aprovados localmente; integração nova `qa/test_cp02b_browser.cjs` testa Enemy.fireAt, jogador/aliado, cobertura e save/load/recuperação reais em posições controladas.
+- [ ] Aprovar integração Chromium e verificações gerais; revisar e publicar.
+
+Estado: IMPLEMENTADO — aguardando CI antes de publicar. Manter CP-01 (percurso humano/Android) pendente. Após CP-02B: CP-02C, clareza de recarga/bloqueio da arma e reações de combate; depois CP-03, acabamento de Paris. O modelo de piso continua de uma altura por X/Z; esta entrega não cria edifícios com pavimentos sobrepostos.

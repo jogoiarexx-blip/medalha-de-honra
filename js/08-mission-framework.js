@@ -201,7 +201,7 @@ function applySave(s){
   for(const id of s.lamps){ const L=W.lamps.find(l=>l.id===id); if(L) breakLamp(L,false); }
   G.taken=new Set(s.taken); for(const p of W.pickups) if(G.taken.has(p.id)){ p.taken=true; p.mesh.visible=false; }
   G.docs=[...(s.docs||[])]; G.stats=Object.assign(G.stats,s.stats); G.alarm=!!s.alarm; G.radioDead=!!s.radioDead; G.discovered=new Set(s.discovered||[]); G.time=s.time||0;
-  const A=G.ally; if(A&&s.ally){ A.pos.set(s.ally.x,0,s.ally.z); A.mode=s.ally.mode; A.hp=s.ally.hp; A.joined=s.ally.joined; A.hidden=s.ally.hidden; if(A.mode==='WAIT'&&A.joined) A.waitPos={x:A.pos.x,z:A.pos.z}; }
+  const A=G.ally; if(A&&s.ally){ A.pos.set(s.ally.x,heightAt(s.ally.x,s.ally.z),s.ally.z); A.mode=s.ally.mode; A.hp=s.ally.hp; A.joined=s.ally.joined; A.hidden=s.ally.hidden; if(A.mode==='WAIT'&&A.joined) A.waitPos={x:A.pos.x,z:A.pos.z}; }
   for(const es of s.enemies){
     let e=G.enemies.find(x=>x.id===es.id);
     if(!e){ if(!es.def) continue; e=new Enemy(es.def); G.enemies.push(e); G.actors.push(e); addTakedown(e); }

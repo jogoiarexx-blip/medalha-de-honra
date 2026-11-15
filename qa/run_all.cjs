@@ -5,6 +5,8 @@
 const {spawnSync}=require('node:child_process'),fs=require('node:fs'),path=require('node:path');
 const ROOT=path.resolve(__dirname,'..'), quick=process.argv.includes('--rapido');
 const SUITE=[
+  ['test_vertical.cjs','Isolado','CP-02B: cilindro fechado, restauração e recuperação do aliado'],
+  ['test_cp02b_browser.cjs','Navegador','CP-02B: tiros verticais e saves em piso elevado'],
   ['test_combat.cjs','Isolado','Combate: dano único, armadura, capacete e alturas'],
   ['test_cp02_browser.cjs','Navegador','CP-02A: combate e alturas com três estilos'],
   ['test_request_failure.cjs','Isolado','Cancelamento esperado de stream durante recarga'],
