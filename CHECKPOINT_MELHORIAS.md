@@ -8,16 +8,16 @@ Atualizado em **14/11/2026 (Brasil)**. Documento de continuidade: ler antes de c
 |---|---|
 | Repositório correto | https://github.com/jogoiarexx-blip/medalha-de-honra |
 | Base analisada | `edca70c8f74a736921939ca149e9e83e9decea50` (`main`) |
-| Build atual | `cp02b-2026-11-14` |
-| Entrega atual | CP-02B entregue: tiros verticais e altura do aliado no save/recuperação |
-| Mudança de gameplay nesta revisão | Volume de acerto fechado com alcance/cobertura; aliado restaurado/recuperado no piso correto |
-| Etapa atual | CP-02B ENTREGUE; CP-02C pendente; percurso humano/Android continuam pendentes |
-| Próximo trabalho | CP-02C: feedback de recarga e bloqueio da arma; revisar projéteis especiais em altura antes de ampliar o escopo |
+| Build atual | `cp03a-2026-11-14` |
+| Entrega atual | CP-03A: acabamento das ruas/fachadas e correção da fonte na operação 01 |
+| Mudança de gameplay nesta revisão | Colisão da fonte acompanha melhor a base circular; demais peças novas são decorativas |
+| Etapa atual | CP-03A entregue; CP-02C pendente por prioridade do usuário; percurso humano/Android pendentes |
+| Próximo trabalho | CP-03B: analisar e corrigir os demais cenários de Paris, começando pelas operações 02–04 |
 | Campanha | 24 operações principais + 3 secretas registradas |
 | Fases com percurso humano comprovado | Nenhuma |
 | Integração da operação 01 | Objetivos, save/load e extração aprovados no Chromium com posições controladas; percurso normal pendente |
 
-**Ponto de retomada:** CP-02B entregue e validado automaticamente. Próximo desenvolvimento: CP-02C (clareza de recarga/bloqueio da arma e reações de combate), nos módulos `07-player-combat.js`, `17-input-ui.js` e `06-actors.js`. Não refazer correções de CP-01/02A/02B; percurso completo e Android físico seguem pendentes.
+**Ponto de retomada:** CP-03A conclui o primeiro lote de cenários, somente na operação 01. Prioridade atual: CP-03B, revisar operações 02–04 e registrar seus problemas antes de expandir o kit visual. CP-02C (recarga/arma) permanece pendente. Não refazer CP-01/02A/02B; percurso humano e Android físico seguem pendentes.
 
 ## 2. O que já existe e deve ser preservado
 
@@ -352,8 +352,39 @@ O usuário priorizou explicitamente os cenários após CP-02B. CP-02C (recarga/a
 - [x] Halos de chão ligados aos oito lampiões existentes; não acrescentar PointLights nem mudar percepção/alcance da iluminação. Apagar halo ao quebrar lampião e ao restaurar save com lampião quebrado.
 - [x] Corrigir colisão da fonte: sete faixas inscritas na base circular e pilar, substituindo o quadrado antigo menor que a borda visível. Preservar cantos externos e passagens.
 - [x] Criar regressões isoladas: colisão, isolamento por fase, compartilhamento de materiais, idempotência e lampião. Quatro testes novos aprovados após falhas observadas antes da implementação.
-- [ ] Conferir imagens antes/depois no Chromium, incremento de chamadas/triângulos, rotas e regressões gerais antes de publicar.
+- [x] Conferir imagens antes/depois no Chromium, incremento de chamadas/triângulos e rotas. Resultado completo da publicação registrado abaixo.
 
 Orçamento desta entrega: até +24 draw calls e +4.000 triângulos nas câmeras fixas; comparar mesma cena/perfil/resolução, sem usar FPS por software como FPS de celular. Cache de materiais/texturas/geometrias registrado em RES.pin.
 
 Arquivos: `03-world.js`, `06-actors.js`, `07-player-combat.js`, novo `23a-paris-scenery.js`, index/diagnóstico e QA. A maior parte é decorativa; somente a fonte altera colisores. Portas, objetivos, pontos de navegação e ações da missão devem permanecer iguais. Próximo cenário: revisar os demais ambientes de Paris e seus próprios problemas visuais, mantendo a validação real de percurso/Android pendente.
+
+### Evidências CP-03A — operação 01
+
+- Código candidato: `e04fe9983baf7e6d323e293e8cecb24b18c31421`; PR https://github.com/jogoiarexx-blip/medalha-de-honra/pull/4.
+- Capturas `paris-rua-antes/depois.png` e `paris-praca-antes/depois.png` conferidas: vitrines/molduras e calçadas visíveis, borda e filetes da fonte presentes. Artefatos no grupo `qa-campanha-estado` do CI.
+- A comparação visual desativa somente a decoração nova. Ambas as capturas usam os novos colisores da fonte; ela não compara os colisores com a versão antiga. A correção física tem testes próprios de borda/canto e resolução do jogador.
+
+| Câmera fixa / perfil Baixo | Antes | Depois | Acréscimo |
+|---|---:|---:|---:|
+| Rua — chamadas de desenho | 650 | 663 | +13 |
+| Rua — triângulos | 197.898 | 200.302 | +2.404 |
+| Praça — chamadas de desenho | 474 | 483 | +9 |
+| Praça — triângulos | 168.698 | 171.080 | +2.382 |
+
+- Chromium: fonte empurra jogador da borda para Z=2,44; canto (1,9;1,9) livre; rota até Lucien validada segmento a segmento; portas, interações, objetivos e nós de navegação mantidos. Lampião quebrado continua apagado após save/load; operação 02 não recebe o kit da 01.
+- Revisão independente sem defeitos importantes. Contagem de PointLights registrada (13); ausência de novas luzes verificada no código, não por asserção comparativa automática.
+- Limites: capturas fixas e testes controlados não certificam percurso humano completo. Android físico, escuta do áudio e memória durante 60 minutos seguem pendentes. Não afirmar que todos os 27 cenários foram melhorados.
+
+**Próximo trabalho — CP-03B:** analisar os cenários das operações 02–04, identificar falhas de geometria/textura/passagens e ampliar o acabamento onde fizer sentido. Manter CP-02C (recarga/arma) pendente enquanto cenários forem a prioridade.
+
+- Primeira rodada CP-03A (`43668966877`): estado/cenários, recursos e estrutural aprovados; matriz falhou em LOAD da operação 24. Inspeção encontrou uma comparação temporal inválida no teste: referência era posição viva após gravar, e não a posição do checkpoint. Teste ajustado para comparar com `st.cp.player.x/z`, mantendo tolerância de 5 cm e registrando saved/live/restored em caso de diferença. Produção não mudou; nova rodada obrigatória antes da publicação.
+
+### Resultado final — CP-03A — 14/11/2026
+
+- Código e testes aprovados: `e04fe9983baf7e6d323e293e8cecb24b18c31421` (mesmo cenário visual do candidato inicial; último commit altera somente o teste de posição).
+- CI completo: https://github.com/jogoiarexx-blip/medalha-de-honra/actions/runs/43669437771 — estrutural, estado, recursos e campanha concluídos com sucesso. QA separado do pastor também aprovado.
+- Evidências: 40 testes isolados, sintaxe e seis verificações estruturais; cenários/custos, colisão/passagem, lampião/save; regressões de combate, entradas, saves, menus, memória, perfis, áudio, IA; matriz técnica das 27 operações e captura de cinco cenas aprovadas. A matriz usa conclusão forçada e não certifica objetivos/extracões jogados.
+- Publicação: PR #4 integrado no commit `56beae1def934b7f6fb280b3aab9953ba3f03afe`. Esta atualização final altera somente documentação.
+- Revisão pontual do ajuste de QA: posição restaurada deve ser comparada com a gravada. Os demais campos da matriz ainda usam estado vivo entre avaliações e podem exigir estabilização própria se houver falha futura; o ajuste atual não comprova separadamente a exatidão da gravação original.
+
+**Entrega encerrada: CP-03A, cenário da operação 01. Retomar em CP-03B, cenários das operações 02–04.**
