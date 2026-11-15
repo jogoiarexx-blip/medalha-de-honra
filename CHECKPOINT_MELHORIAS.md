@@ -8,16 +8,16 @@ Atualizado em **15/11/2026 (Brasil)**. Documento de continuidade: ler antes de c
 |---|---|
 | Repositório correto | https://github.com/jogoiarexx-blip/medalha-de-honra |
 | Base analisada | `edca70c8f74a736921939ca149e9e83e9decea50` (`main`) |
-| Build atual | `cp03c-2026-11-15` |
-| Entrega atual | CP-03C: fachada corrigida e acabamento do Hotel da Medina, operação 05 |
-| Mudança de gameplay nesta revisão | Paredes/vidros frontais da 05 alinhados às alas; ornamentos sem novos obstáculos |
-| Etapa atual | CP-03C ENTREGUE; CP-02C, percurso humano/Android pendentes |
-| Próximo trabalho | CP-03D: analisar cenário da operação 06 — Acendendo a Tocha, Bordj el-Hamra |
+| Build atual | `cp03d-2026-11-15` |
+| Entrega atual | CP-03D: correções das barracas 06/07, vão/nav do arame e acabamento do forte 06 |
+| Mudança de gameplay nesta revisão | Colisores dos postes acompanham a malha; carregar arame cortado atualiza o grafo |
+| Etapa atual | CP-03D ENTREGUE; CP-02C, percurso humano/Android pendentes |
+| Próximo trabalho | CP-03E: analisar cenário da operação 07 — Areias em Chamas, Oued el-Kebir |
 | Campanha | 24 operações principais + 3 secretas registradas |
 | Fases com percurso humano comprovado | Nenhuma |
 | Integração da operação 01 | Objetivos, save/load e extração aprovados no Chromium com posições controladas; percurso normal pendente |
 
-**Ponto de retomada:** CP-03C entregue e publicado; evidências ao fim deste documento. Fachada da operação 05 corrigida, mantendo IDs de vidro dos saves; acabamento de entrada, pátio, fonte e placas. Próximo cenário: operação 06 — Acendendo a Tocha (CP-03D). CP-02C (recarga/arma) continua pendente pela prioridade em cenários; percurso humano e Android físico seguem pendentes.
+**Ponto de retomada:** CP-03D entregue e publicado; evidências ao fim deste documento. Barracas compartilhadas 06/07 corrigidas, postes fora do vão cortável, grafo restaurado após o corte e forte 06 sinalizado. Próximo cenário: operação 07 — Areias em Chamas (CP-03E); não refazer a correção das barracas. CP-02C (recarga/arma), percurso humano e Android físico continuam pendentes.
 
 ## 2. O que já existe e deve ser preservado
 
@@ -487,9 +487,42 @@ Problemas observados: `tent()` desenha seis postes de altura h-1,2, inclusive do
 
 Decisão: corrigir apoios/colisores da barraca compartilhada por 06/07; distribuir postes fora do vão; reconstruir navegação depois da restauração do arame. Acrescentar sinalização funcional, faixa de cancela e acabamento estático de portal/muralhas, mantendo objetivos, fotos, portas, disfarce, sinalizadores e saves. Usar Three.js r128, atlas e agrupamento já existentes, sem novas luzes.
 
-- [ ] Regressões RED/GREEN: apoios/postes reais da barraca, vão do arame, aresta de navegação restaurada.
-- [ ] Testes do acabamento: isolamento, recursos compartilhados, idempotência, passagens e alvos fotográficos livres; implementar sinalização e acabamento.
-- [ ] Chromium: capturas antes/depois, barracas e vão abertos de fato, arame/save/grafo, escada e portas; troca de perfil/recarga, recursos e orçamento de +16 chamadas/+5.000 triângulos por câmera.
-- [ ] Revisão independente, regressões 06/07 e gerais, publicação e resultado final neste MD.
+- [x] Regressões RED/GREEN: quatro barracas das operações 06/07, vão do arame e ordem de reconstrução da navegação. Oito testes novos falharam antes de implementar/corrigir e passaram depois.
+- [x] Kit de acabamento implementado e testes isolados aprovados para isolamento, compartilhamento/idempotência e passagens; fotografias verificadas na integração de navegador.
+- [x] Chromium: capturas antes/depois conferidas; fotografias, passagens/escada, arame/save/grafo e cancela aprovados. Materiais/texturas sem descarte, troca de perfil e recarga real Alto aprovadas; orçamento abaixo de +16 chamadas/+5.000 triângulos por câmera.
+- [x] Revisão independente, regressões 06/07 e gerais, publicação e resultado final neste MD.
 
 Foco: apoios iguais no visual e colisão; nenhuma placa cobrindo foto/interação; vão cortável continua abrindo e carregando; escada da torre livre; funcionalidade compartilhada na 07 preservada. Android físico e percurso humano completo permanecem pendentes.
+
+Validação local CP-03D: 60 testes isolados, sintaxe de todos os scripts e seis verificações estruturais aprovados. Candidato `9713650b7c4bd28d9f3390d90d7e8110e927ef88` (inclui atualização do identificador de cache do módulo 15, para o navegador receber as correções). PR https://github.com/jogoiarexx-blip/medalha-de-honra/pull/7. Código compartilhado de barracas tem teste nas quatro posições/tamanhos usados pela 06 e 07; a matriz geral deve conferir ambas também.
+
+Revisão independente: nenhum defeito crítico/importante. Apoios e colisores conferidos; postes do vão e ordem de restore/grafo corretos; placas/UVs/cache/portas/fotos sem conflitos encontrados. Menor pendente: a integração específica testa isolamento do kit na 07, mas não a travessia real dos NPCs em torno dos dois novos apoios centrais nessa operação. As coordenadas de início/patrulha foram inspecionadas sem sobreposição e há regressão geométrica das quatro barracas; a matriz geral deve exercitar a 07, sem substituir um percurso humano/NPC completo.
+
+### Evidências CP-03D — grupo de estado
+
+CI https://github.com/jogoiarexx-blip/medalha-de-honra/actions/runs/43769744563: grupo de estado APROVADO. Capturas de entrada, barracas, QG, arame e entrada Alto após recarga conferidas; placas legíveis, cancela listrada acompanha abertura e vão cortado sem poste central. Ambas as versões antes/depois usam as correções físicas; a comparação visual mede somente o acabamento, não substitui regressões dos defeitos originais.
+
+- Assinaturas físicas, navegação inicial, objetivos, alvos, luzes e posições fotográficas idênticas antes/depois do acabamento. Os três trechos de referência (portal, pátio/QG e escada da torre) passam nas duas versões.
+- `photoCandidate()` continua encontrando `schedule` e `flak` válidos nos pontos de câmera controlados, antes/depois. Não equivale a jogar os objetivos da fase inteira.
+- Aresta direta (23,8;15,1)→(23,8;17): ausente com arame fechado, presente após usar o corte e após carregar checkpoint. A recarga real da página preserva arame desativado, cancela OPEN e textura listrada no perfil Alto.
+- Nenhum evento dispose nos quatro materiais e duas texturas do kit na troca 06→07→06/Alto; todos os recursos presentes em RES.live. Kit não aplicado na 07.
+
+| Câmera / Baixo | Chamadas antes → depois | Triângulos antes → depois |
+|---|---:|---:|
+| Entrada | 1.111 → 1.115 | 226.784 → 227.172 |
+| Barracas | 370 → 373 | 110.180 → 110.520 |
+| QG | 414 → 417 | 80.286 → 80.626 |
+| Arame | 892 → 895 | 152.386 → 152.726 |
+
+Valores de câmeras fixas em SwiftShader; não são FPS de aparelho real. A correção compartilhada das barracas tem testes geométricos separados nas quatro instâncias 06/07. Falta comprovar o percurso completo de NPCs perto dos novos apoios na 07 e os percursos humanos/Android.
+
+### Resultado final — CP-03D — 15/11/2026
+
+- Código/testes validados: `9713650b7c4bd28d9f3390d90d7e8110e927ef88`.
+- CI completo aprovado: https://github.com/jogoiarexx-blip/medalha-de-honra/actions/runs/43769744563 — estrutural, estado, recursos e campanha. QA separado do pastor também aprovado.
+- 60 testes isolados, sintaxe/seis verificações estruturais, cenários CP-03A/B/C/D, entradas/combate/alturas, saves/migração, menus, memória, perfis, áudio/IA e captura geral de cinco cenas aprovados. Matriz técnica de 27 operações passou; as linhas 06 e 07 passaram início, simulação, movimento, checkpoint/load, morte, transição forçada e menu.
+- Revisão independente sem defeitos importantes. Capturas antes/depois e recarga Alto conferidas; fotos e vão do arame aprovados na integração. O acabamento respeita orçamento medido, sem novas luzes/alvos.
+- PR https://github.com/jogoiarexx-blip/medalha-de-honra/pull/7 integrado no commit `ed35b202da90072a8ebc0f69e866c3fd3a4b346d`. Esta atualização altera somente documentação.
+- Limitações preservadas: testes de posições/trechos controlados não equivalem a uma missão jogada inteira. Travessia específica dos NPCs junto aos apoios novos da 07, percurso humano, Android físico e memória de 60 minutos continuam pendentes. A matriz geral usa conclusão forçada, não certifica objetivos/extracão jogados.
+
+**Retomar em CP-03E:** analisar cenário da operação 07 — Areias em Chamas, Oued el-Kebir. Não refazer a correção compartilhada das barracas. Preservar sistemas de comboio/cargas/fotografia e escolher próximos problemas a partir de evidências. CP-02C (recarga/arma) permanece pendente pela prioridade em cenários.
