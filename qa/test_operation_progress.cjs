@@ -47,11 +47,12 @@ withGame(async({page,logs})=>{
         if(st.repaired.length) return {fail:'checkpoint recém-gravado precisou de conserto: '+st.repaired.join('; ')};
         return {}; });
       if(row.CHECKPOINT==='PASSOU') await step('LOAD',()=>{ const ref={x:G.player.pos.x,z:G.player.pos.z,obj:JSON.stringify(G.objectives.map(o=>[o.id,o.state])),dead:G.enemies.filter(e=>e.dead).map(e=>e.id).sort().join(),n:G.enemies.length,doors:JSON.stringify(Object.values(W.doors).map(d=>[d.id,d.state==='OPENING'?'OPEN':d.state]).sort()),docs:G.docs.length};
-        const st=readStoredCheckpoint(); startPlaying(st.cp);
+        const st=readStoredCheckpoint(); const savedPos={x:st.cp.player.x,z:st.cp.player.z}; startPlaying(st.cp);
         if(APP.state!=='PLAYING') return {fail:'estado '+APP.state+' após carregar'};
         // Na 20 (sidecar em trilho) a própria fase recua o percurso alguns metros e retira os perseguidores ao restaurar: é o comportamento projetado.
         const onRails=G.levelId==='20';
-        if(!onRails&&Math.hypot(G.player.pos.x-ref.x,G.player.pos.z-ref.z)>.05) return {fail:'posição do jogador não restaurada'};
+        // O laço real continua entre CHECKPOINT e LOAD. O contrato é restaurar o save, não a posição viva posterior.
+        if(!onRails&&Math.hypot(G.player.pos.x-savedPos.x,G.player.pos.z-savedPos.z)>.05) return {fail:'posição do jogador não restaurada: '+JSON.stringify({saved:savedPos,liveBefore:[ref.x,ref.z],restored:[G.player.pos.x,G.player.pos.z]})};
         if(JSON.stringify(G.objectives.map(o=>[o.id,o.state]))!==ref.obj) return {fail:'objetivos diferentes após carregar'};
         if(!onRails&&G.enemies.filter(e=>e.dead).map(e=>e.id).sort().join()!==ref.dead) return {fail:'lista de inimigos abatidos diferente após carregar'};
         if(G.enemies.length<ref.n) return {fail:'inimigos sumiram após carregar ('+G.enemies.length+' < '+ref.n+')'};
