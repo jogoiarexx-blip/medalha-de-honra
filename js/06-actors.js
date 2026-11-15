@@ -635,7 +635,7 @@ class Ally extends Actor{
     const P=G.player.pos, fx=-Math.sin(G.player.yaw), fz=-Math.cos(G.player.yaw);
     let best=null, bd=1e9;
     for(const n of W.nav.nodes){ const dx=n.x-P.x, dz=n.z-P.z, d=Math.hypot(dx,dz); if(d<2.5||d>12) continue; if((dx*fx+dz*fz)/d>-.2) continue; if(d<bd){ bd=d; best=n; } }
-    if(best){ this.pos.set(best.x,0,best.z); this.path=null; this.stuck=0; }
+    if(best){ this.pos.set(best.x,heightAt(best.x,best.z),best.z); this.path=null; this.stuck=0; }
   }
   fire(e){
     const m=this.muzzleWorld(); const aim=V3(e.pos.x,e.pos.y+lerp(1.25,.85,e.crouch),e.pos.z);

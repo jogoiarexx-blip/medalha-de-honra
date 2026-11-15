@@ -125,10 +125,20 @@ function segClear2D(x1,z1,x2,z2,r,npc){
   return true;
 }
 function rayCylinder(o,d,maxT,cx,cz,r,y0,y1){
-  const ox=o.x-cx, oz=o.z-cz, a=d.x*d.x+d.z*d.z; if(a<1e-8) return -1;
-  const b=2*(ox*d.x+oz*d.z), c=ox*ox+oz*oz-r*r, disc=b*b-4*a*c; if(disc<0) return -1;
-  const sq=Math.sqrt(disc); let t=(-b-sq)/(2*a); if(t<0) t=(-b+sq)/(2*a); if(t<0||t>maxT) return -1;
-  const y=o.y+d.y*t; if(y<y0||y>y1) return -1; return t;
+  // Interseção do intervalo radial com a faixa vertical: inclui topo/base,
+  // raios verticais e origem dentro do corpo, sem alocações no caminho de tiro.
+  const ox=o.x-cx, oz=o.z-cz, a=d.x*d.x+d.z*d.z, c=ox*ox+oz*oz-r*r;
+  if(maxT<0||r<0||y1<y0||(a===0&&d.y===0)) return -1;
+  let near=0, far=maxT;
+  if(a>0){
+    const b=ox*d.x+oz*d.z, disc=b*b-a*c; if(disc<0) return -1;
+    const sq=Math.sqrt(disc); near=Math.max(near,(-b-sq)/a); far=Math.min(far,(-b+sq)/a);
+  } else if(c>0) return -1;
+  if(d.y!==0){
+    const t0=(y0-o.y)/d.y, t1=(y1-o.y)/d.y;
+    near=Math.max(near,Math.min(t0,t1)); far=Math.min(far,Math.max(t0,t1));
+  } else if(o.y<y0||o.y>y1) return -1;
+  return near<=far?near:-1;
 }
 const _dpsA=new T.Vector3(), _dpsB=new T.Vector3();   // rascunho: função chamada em laços de IA e de tiro
 function distPointSeg(p,a,b){ const ab=_dpsA.subVectors(b,a), ap=_dpsB.subVectors(p,a); const t=clamp(ap.dot(ab)/Math.max(1e-6,ab.lengthSq()),0,1); return ap.sub(ab.multiplyScalar(t)).length(); }
