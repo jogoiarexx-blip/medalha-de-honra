@@ -9,15 +9,15 @@ Atualizado em **14/11/2026 (Brasil)**. Documento de continuidade: ler antes de c
 | Repositório correto | https://github.com/jogoiarexx-blip/medalha-de-honra |
 | Base analisada | `edca70c8f74a736921939ca149e9e83e9decea50` (`main`) |
 | Build atual | `cp02b-2026-11-14` |
-| Entrega atual | CP-02A: alturas de aliados e feedback de armadura/capacete; CP-01 preservado |
-| Mudança de gameplay nesta revisão | Altura de aliados, feedback de armadura e neutralização via capacete corrigidos; ver CP-02A ao final |
-| Etapa atual | CP-02A ENTREGUE; CP-02B pendente; CP-01 com percurso/aparelho pendentes |
-| Próximo trabalho | CP-02B: colisão vertical e restauração de altura do aliado; percurso completo e Android seguem pendentes |
+| Entrega atual | CP-02B entregue: tiros verticais e altura do aliado no save/recuperação |
+| Mudança de gameplay nesta revisão | Volume de acerto fechado com alcance/cobertura; aliado restaurado/recuperado no piso correto |
+| Etapa atual | CP-02B ENTREGUE; CP-02C pendente; percurso humano/Android continuam pendentes |
+| Próximo trabalho | CP-02C: feedback de recarga e bloqueio da arma; revisar projéteis especiais em altura antes de ampliar o escopo |
 | Campanha | 24 operações principais + 3 secretas registradas |
 | Fases com percurso humano comprovado | Nenhuma |
 | Integração da operação 01 | Objetivos, save/load e extração aprovados no Chromium com posições controladas; percurso normal pendente |
 
-**Ponto de retomada:** CP-02A entregue e validado automaticamente. Próximo desenvolvimento: CP-02B, começando por raios verticais em `03-world.js` e altura do aliado ao restaurar save em `08-mission-framework.js`. MH-04 (percurso completo) e Android físico continuam pendentes; não refazer correções de CP-01/02A.
+**Ponto de retomada:** CP-02B entregue e validado automaticamente. Próximo desenvolvimento: CP-02C (clareza de recarga/bloqueio da arma e reações de combate), nos módulos `07-player-combat.js`, `17-input-ui.js` e `06-actors.js`. Não refazer correções de CP-01/02A/02B; percurso completo e Android físico seguem pendentes.
 
 ## 2. O que já existe e deve ser preservado
 
@@ -327,6 +327,19 @@ Base: `0890efe014778fc86f5920ed8f31aadd7f2d6931`. Escopo: fechar as duas lacunas
 - [x] `08-mission-framework.js`: altura do aliado reconstruída por `heightAt(x,z)` ao carregar; sem acrescentar campo Y nem mudar versão/chaves do save.
 - [x] `06-actors.js`: recuperação de aliado preso usa o piso do ponto de navegação.
 - [x] 16 testes novos isolados + 20 regressões anteriores = 36 aprovados localmente; integração nova `qa/test_cp02b_browser.cjs` testa Enemy.fireAt, jogador/aliado, cobertura e save/load/recuperação reais em posições controladas.
-- [ ] Aprovar integração Chromium e verificações gerais; revisar e publicar.
+- [x] Aprovar integração Chromium e verificações gerais; revisar e publicar.
 
-Estado: IMPLEMENTADO — aguardando CI antes de publicar. Manter CP-01 (percurso humano/Android) pendente. Após CP-02B: CP-02C, clareza de recarga/bloqueio da arma e reações de combate; depois CP-03, acabamento de Paris. O modelo de piso continua de uma altura por X/Z; esta entrega não cria edifícios com pavimentos sobrepostos.
+Estado: VALIDADO AUTOMATICAMENTE E PUBLICADO — CP-02B. Manter CP-01 (percurso humano/Android) pendente. Após CP-02B: CP-02C, clareza de recarga/bloqueio da arma e reações de combate; depois CP-03, acabamento de Paris. O modelo de piso continua de uma altura por X/Z; esta entrega não cria edifícios com pavimentos sobrepostos.
+
+### Resultado final — CP-02B — 14/11/2026
+
+- Código testado: `3d8323fa0d411ca6b3a3c0a6cf6325ee7234e344`.
+- CI aprovado: https://github.com/jogoiarexx-blip/medalha-de-honra/actions/runs/43667211936 — estrutural, estado, recursos e campanha concluídos com sucesso.
+- Publicação: PR https://github.com/jogoiarexx-blip/medalha-de-honra/pull/3 — commit `4982b6b402a281a35a951b8ca669f7a2f2fbe637`. Atualização final deste MD altera somente documentação.
+- Evidências: 36 regressões isoladas, sintaxe, seis testes estruturais, integração de tiros/saves em altura, regressões CP-01/02A, saves/migração, telas, memória, perfis gráficos, áudio/IA, matriz das 27 operações e captura por software aprovados.
+- Revisão independente: nenhum defeito importante identificado.
+- Limitação menor: modos WAIT/FOLLOW são assertados nos testes isolados; a fixture do navegador registra o modo restaurado, mas sua asserção principal é altura/vida/recuperação. A plataforma é um cenário controlado, não um percurso elevado completo.
+- Fora do escopo: projéteis especiais (foguete/tanque/besta) ainda possuem trechos com altura inimiga fixa nos seus chamadores; revisar antes de afirmar cobertura vertical para todo o arsenal.
+- Pendentes: percurso humano da campanha, avaliação visual/áudio humana e desempenho em Android físico. Matriz com conclusão forçada não certifica fases zeradas. O cenário continua usando uma altura de piso por X/Z.
+
+**Retomar em CP-02C:** melhorar feedback de recarga e arma bloqueada por parede sem mudar cadência/dano nem refazer a base; registrar uma falha reproduzível ou um critério visual antes de implementar. Depois seguir para acabamento visual de Paris (CP-03).
