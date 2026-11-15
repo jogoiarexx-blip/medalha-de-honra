@@ -11,13 +11,13 @@ Atualizado em **14/11/2026 (Brasil)**. Documento de continuidade: ler antes de c
 | Build atual | `cp02a-2026-11-14` |
 | Entrega atual | CP-02A: alturas de aliados e feedback de armadura/capacete; CP-01 preservado |
 | Mudança de gameplay nesta revisão | Altura de aliados, feedback de armadura e neutralização via capacete corrigidos; ver CP-02A ao final |
-| Etapa atual | CP-02A — EM VALIDAÇÃO AUTOMÁTICA; CP-01 com percurso/aparelho pendentes |
-| Próximo trabalho | Validar CP-02A no navegador; depois seguir CP-02B e manter percurso/Android pendentes |
+| Etapa atual | CP-02A ENTREGUE; CP-02B pendente; CP-01 com percurso/aparelho pendentes |
+| Próximo trabalho | CP-02B: colisão vertical e restauração de altura do aliado; percurso completo e Android seguem pendentes |
 | Campanha | 24 operações principais + 3 secretas registradas |
 | Fases com percurso humano comprovado | Nenhuma |
 | Integração da operação 01 | Objetivos, save/load e extração aprovados no Chromium com posições controladas; percurso normal pendente |
 
-**Ponto de retomada:** CP-02A implementado e com integração Chromium aprovada; aguardar resultado final da suíte antes de publicar. Próximo desenvolvimento: CP-02B. MH-04 (percurso completo) e Android físico continuam pendentes e não devem ser marcados como concluídos.
+**Ponto de retomada:** CP-02A entregue e validado automaticamente. Próximo desenvolvimento: CP-02B, começando por raios verticais em `03-world.js` e altura do aliado ao restaurar save em `08-mission-framework.js`. MH-04 (percurso completo) e Android físico continuam pendentes; não refazer correções de CP-01/02A.
 
 ## 2. O que já existe e deve ser preservado
 
@@ -97,7 +97,7 @@ As prioridades e soluções são recomendações desta análise. O GDD continua 
 |---|---|---|---|---|
 | CP-00 | Análise e continuidade | Este arquivo, README | Evidências, prioridades e retomada registradas | CONCLUÍDO — documentação |
 | CP-01 | Entradas/estados e operação 01 | `17-input-ui.js`, `09-paris-operations-01-03.js`, `08-mission-framework.js`, QA | MH-01/02/03 tratados conforme reprodução + percurso real da 01 | EM ANDAMENTO |
-| CP-02 | Combate e IA legíveis | `06-actors.js`, `07-player-combat.js`, `12-combat-extensions.js`, `05-effects.js` | Acerto/parede/capacete/desarme/rendição testados sem dano duplicado | CP-02A em validação; CP-02B pendente |
+| CP-02 | Combate e IA legíveis | `06-actors.js`, `07-player-combat.js`, `12-combat-extensions.js`, `05-effects.js` | Acerto/parede/capacete/desarme/rendição testados sem dano duplicado | CP-02A entregue; CP-02B pendente |
 | CP-03 | Paris com acabamento | `03-world.js`, `09-paris-operations-01-03.js`, `11-paris-operation-04.js`, CSS | Operações 01–04 jogadas; iluminação, navegação e props revisados | PROPOSTO |
 | CP-04 | Desempenho e opções | `02-renderer.js`, `02a-resource-scope.js`, cenários, QA | Medição comparável; otimização sem regressão de colisão/interação | PROPOSTO |
 | CP-05 | Campanhas restantes | Módulos das operações 05–24 | Cada operação validada até extração; chefes/veículos e créditos incluídos | PROPOSTO |
@@ -270,10 +270,10 @@ Foco de revisão: toque cancelado/perda de foco, controle mantido ao retomar, do
 
 Escopo desta entrega: corrigir alturas de percepção/colisão dos aliados; distinguir acerto em armadura de corpo; indicar quando o dano transferido pelo capacete neutraliza o alvo. Preservar dano, dificuldade, hitboxes anatômicas, saves e três estilos de personagem. CP-01 continua com percurso/aparelho pendentes; avançar nesta parte isolada de CP-02 não certifica essas validações.
 
-- [ ] Reproduzir em testes: aliado elevado atingido no ar errado; feedback de armadura sobrescrito; neutralização via capacete sem marcador de neutralização.
-- [ ] Corrigir coordenadas verticais em `06-actors.js` e feedback em `07-player-combat.js` sem mudar balanceamento.
-- [ ] Verificar cenários de parede/vidro, regiões sobrepostas, capacete, armadura, arma/desarme e alturas; usar Three.js real nos testes isolados e inimigos reais no Chromium.
-- [ ] Rodar regressões de CP-01 e suíte pertinente, revisar, publicar e registrar resultado/próximo passo neste arquivo.
+- [x] Reproduzir em testes: aliado elevado atingido no ar errado; feedback de armadura sobrescrito; neutralização via capacete sem marcador de neutralização.
+- [x] Corrigir coordenadas verticais em `06-actors.js` e feedback em `07-player-combat.js` sem mudar balanceamento.
+- [x] Verificar cenários de parede/vidro, regiões sobrepostas, capacete, armadura, arma/desarme e alturas; usar Three.js real nos testes isolados e inimigos reais no Chromium.
+- [x] Rodar regressões de CP-01 e suíte pertinente, revisar, publicar e registrar resultado/próximo passo neste arquivo.
 
 Critérios: uma aplicação de dano por projétil/ator, parede antes do alvo bloqueia tiro, armadura mantém marcador metálico, alvo neutralizado não aparece como simples absorção, tiros não atingem aliado em uma altura onde ele não está. `qa/test_combat.cjs` será isolado e `qa/test_cp02_browser.cjs` fará integração. Não declarar percurso de campanha nem FPS Android a partir desses testes.
 
@@ -285,8 +285,8 @@ Critérios: uma aplicação de dano por projétil/ator, parede antes do alvo blo
 - Valores de dano, cadência, precisão, dificuldade, formato/chaves de save e desenho das fases preservados.
 - Testes locais: 11 cenários novos de combate com Three.js/raycast real + 9 regressões anteriores = 20 testes isolados aprovados; seis verificações estruturais e sintaxe aprovadas. Quatro regressões dos cenários novos foram vistas falhando antes da correção.
 - Integração nova: `qa/test_cp02_browser.cjs`, com Enemy/Ally e hitboxes reais nos estilos Modelo 3D/Detalhados/Clássicos; cobertura, dano único, armadura, capacete, rendição e alturas. Usa posições controladas e não comprova trajetória de missão.
-- Estado: IMPLEMENTADO; execução Chromium e suíte geral em validação antes de publicar.
-- Próximo passo de desenvolvimento após a aprovação: CP-02B — revisar clareza de recarga/bloqueio de arma e reações de IA por cobertura/supressão, partindo dos sistemas existentes; manter testes humanos e Android como pendentes.
+- Estado: VALIDADO AUTOMATICAMENTE E PUBLICADO — CP-02A. Avaliação visual humana e aparelho real seguem pendentes.
+- Próximo passo: CP-02B — reproduzir e corrigir tiros exatamente verticais (`rayCylinder`, `03-world.js`) e aliado restaurado em Y=0 (`applySave`, `08-mission-framework.js`), com testes antes da mudança. Depois revisar clareza de recarga/bloqueio de arma e reações por cobertura/supressão. Manter percurso humano e Android como pendentes.
 
 ### Revisão CP-02A
 
@@ -300,3 +300,20 @@ Critérios: uma aplicação de dano por projétil/ator, parede antes do alvo blo
 - QA de navegador dividido em três grupos independentes (estado, recursos, campanha) em runners separados, sem cancelar os demais grupos quando um falha. Todos os testes são mantidos, com artefatos separados por grupo.
 
 - Segunda execução CP-02A (`43663684257`): o grupo de estado detectou instabilidade da fixture de capacete no estilo Modelo 3D (sem interseção, nenhum dano/hit contabilizado). A mira usava a origem do objeto, que pode ficar fora do casco. A fixture passou a mirar o centro da bounding box transformado para o mundo e exige uma interseção antes de conferir dano; código de produção não alterado.
+
+### Resultado final — CP-02A — 14/11/2026
+
+- Código e testes validados: `bce8c3b05da79c85f06245e0ddea86a2664a11de`.
+- CI completo aprovado: https://github.com/jogoiarexx-blip/medalha-de-honra/actions/runs/43663915464 — estrutural, estado, recursos e campanha concluídos com sucesso.
+- Publicação: PR https://github.com/jogoiarexx-blip/medalha-de-honra/pull/2 — commit de integração `c6b202264d8074413a2ece692fd03b3f5edac349`. A atualização final deste MD altera somente documentação.
+
+| Verificação | Resultado | Escopo |
+|---|---|---|
+| 20 testes isolados + sintaxe + 6 verificações estruturais | PASSOU | 11 cenários de combate e 9 regressões anteriores; assets/integrações existentes |
+| Combate CP-02A no Chromium | PASSOU | Modelo 3D/Detalhados/Clássicos; cobertura, dano único, armadura, capacete, rendição e alturas em posições controladas |
+| CP-01, saves, telas e passo fixo | PASSOU | Regressões da primeira entrega, migração/backup e retomada |
+| Memória, perfis gráficos, áudio, IA e pastor | PASSOU | Grupos independentes; resize por condição real e diagnóstico de falha mantido |
+| Matriz de 27 operações e desempenho | PASSOU | Estrutura/progressão técnica com conclusão forçada; captura por software |
+| Percurso humano, qualidade visual/áudio ouvidos e Android físico | PENDENTE | Não inferir esses resultados a partir das fixtures e do SwiftShader |
+
+**Entrega encerrada:** CP-02A. **Próximo checkpoint:** CP-02B, nas duas lacunas verticais registradas acima.
