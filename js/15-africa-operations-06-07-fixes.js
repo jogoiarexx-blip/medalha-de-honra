@@ -554,6 +554,17 @@ function applyDawn07(k){
   scene.fog.color.copy(c(0x101622,0xa08070)); scene.fog.density=lerp(.017,.0095,k); scene.background.copy(scene.fog.color);
   if(R.dawnSky) R.dawnSky.material.opacity=clamp(k*1.25-.1,0,1);
 }
+function buildCulvert07(){
+  // Centro no vão real da cerca (Z=12,8..15,2), com boca aberta e altura útil.
+  const material=new T.MeshLambertMaterial({map:TEX.lime5,color:0x9a948a,side:T.DoubleSide});
+  const geo=new T.CylinderGeometry(1.15,1.15,3.4,20,1,true,0,Math.PI);
+  geo.scale(1.8,1,1);
+  const shell=new T.Mesh(geo,material);shell.rotation.z=Math.PI/2;shell.position.set(-30,0,14);scene.add(shell);
+  for(const x of [-31.7,-28.3]){
+    const points=[];for(let i=0;i<=20;i++){const a=i/20*Math.PI;points.push(new T.Vector3(x,Math.sin(a)*2.07,14+Math.cos(a)*1.15));}
+    scene.add(new T.Mesh(new T.TubeGeometry(new T.CatmullRomCurve3(points),20,.035,5,false),material));
+  }
+}
 function buildLevel07(){
   M5=mats05(); M6=mats06(); M7=mats07(); const M=M6, Q=M7; DAWN07=0;
   scene.background=new T.Color(0x101622); scene.fog=new T.FogExp2(0x101622,.017);
@@ -582,7 +593,7 @@ function buildLevel07(){
   { const posts=[]; for(let x=-30;x<=34;x+=2.5){ if(Math.abs(x)>2.4) posts.push([x,1.2,-30,.1,2.4,.1,0]); posts.push([x,1.2,26,.1,2.4,.1,0]); } for(let z=-30;z<=26;z+=2.5){ posts.push([34,1.2,z,.1,2.4,.1,0]); if(z<12.6||z>15.4) posts.push([-30,1.2,z,.1,2.4,.1,0]); } instanced(UNIT,M.wood,posts);
     const wires=[]; for(const y of [.6,1.2,1.8,2.3]){ wires.push([-16.3,y,-30,27.4,.02,.02,0],[18.3,y,-30,31.4,.02,.02,0],[2,y,26,64,.02,.02,0],[34,y,-2,.02,.02,56,0],[-30,y,-8.6,.02,.02,42.8,0],[-30,y,20.6,.02,.02,10.8,0]); } instanced(UNIT,MAT.darkMetal,wires); }
   for(const y of [.35,.9]){ const w=addMesh(BOX(.02,.02,1.2),MAT.darkMetal,-30.3,y,12.5,null); w.rotation.y=.6; const w2=addMesh(BOX(.02,.02,1.2),MAT.darkMetal,-30.3,y+.2,15.5,null); w2.rotation.y=-.5; }
-  { const c=new T.Mesh(new T.CylinderGeometry(.5,.5,3.4,14,1,true,0,Math.PI),new T.MeshLambertMaterial({map:TEX.lime5,color:0x9a948a,side:T.DoubleSide})); c.rotation.z=Math.PI/2; c.position.set(-30,0,11.5); scene.add(c); addMesh(new T.CircleGeometry(.46,12,0,Math.PI),hm(0x0a0a0a),-31.69,0,11.5,null).rotation.y=-Math.PI/2; }
+  buildCulvert07();
   poster(-7,1.5,-30.12,Math.PI,2.4,.9,(g,w,h)=>{ g.fillStyle='#e8dcc0'; g.fillRect(0,0,w,h); g.fillStyle='#8a1a10'; g.font='bold 22px sans-serif'; g.textAlign='center'; g.fillText('TREIBSTOFFLAGER',w/2,34); g.fillStyle='#1e1e1e'; g.font='bold 16px sans-serif'; g.fillText('RAUCHEN VERBOTEN · FEUER!',w/2,64); g.font='12px sans-serif'; g.fillText('Oued el-Kebir — Nachschub-Kp. 309',w/2,86); });
   // portão
   makeDoor('gate',{x:0,z:-30,y0:.9,w:5,d:.16,h:.16,mat:M.barrier,offset:V3(0,2.6,0),npc:false,nav:true,snd:'door'});
@@ -818,6 +829,7 @@ function restore07(s){
   if(F.twr){ const a=JSON.parse(F.twr); R.tower.hp=a.hp; if(a.c){ R.tower.charge=true; R.tower.ch.visible=true; } if(a.s==='GONE'){ R.tower.state='GONE'; towerWreck07(); } }
   if(F.detonated) G.seq07=null;
   syncTrucks07();
+  buildNav();
   G.player.nades=G.player.nades||0;
 }
 function drawMap07(g,w,h){

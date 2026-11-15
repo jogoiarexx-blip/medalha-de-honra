@@ -232,6 +232,7 @@ function polishLevel(L){
   extendParisScenery(L);
   improveMedinaScenery(L);
   improveBordjScenery(L);
+  improveDepotScenery(L);
   mergeDress();
   // poeira no ar em interiores
   G.motes=null; if(L.motes||['crypt'].includes(L.ambient)||['13','16','19','S1','S2','S3','05','06'].includes(L.id)) G.motes=makeMotes(500);

@@ -526,3 +526,16 @@ Valores de câmeras fixas em SwiftShader; não são FPS de aparelho real. A corr
 - Limitações preservadas: testes de posições/trechos controlados não equivalem a uma missão jogada inteira. Travessia específica dos NPCs junto aos apoios novos da 07, percurso humano, Android físico e memória de 60 minutos continuam pendentes. A matriz geral usa conclusão forçada, não certifica objetivos/extracão jogados.
 
 **Retomar em CP-03E:** analisar cenário da operação 07 — Areias em Chamas, Oued el-Kebir. Não refazer a correção compartilhada das barracas. Preservar sistemas de comboio/cargas/fotografia e escolher próximos problemas a partir de evidências. CP-02C (recarga/arma) permanece pendente pela prioridade em cenários.
+
+### CP-03E — plano em execução — 15/11/2026
+
+Base `c4e00452fcb52ee8e0ae34a5d01d2bf429a2d48b`. Cenário 07 — Areias em Chamas.
+
+Problemas: bueiro desenhado em Z=11,5 apesar do vão/objetivo em Z=14; abertura de 1 m por 0,5 m com disco opaco na entrada. `restore07()` modifica tambores e posições/colisores dos caminhões depois do buildNav do carregamento e não recalcula arestas. Corrigir alinhamento/abertura do bueiro e reconstruir navegação ao fim da restauração, sem reescrever comboio/cargas nem adicionar nós de navegação.
+
+- [ ] RED/GREEN: geometria alinhada, entrada sem tampa e reconstrução após obstáculos/caminhões.
+- [ ] Identificar galpões A/B e entrada com sinalização estática agrupada, sem bloquear portas, foto ou caminhões.
+- [ ] Chromium: passagem do bueiro, foto, save/rotas coerentes, NPCs nas barracas da 07, perfil Alto/recarga e orçamento; capturas antes/depois.
+- [ ] Revisar, executar regressões, publicar e atualizar resultado final.
+
+As capturas do acabamento usam as correções físicas em ambas as montagens. O bueiro é uma malha aberta de acabamento, sem criar novo piso/colisores; a travessia física continua limitada pelo vão existente da cerca. Percurso humano/Android seguem pendentes.
