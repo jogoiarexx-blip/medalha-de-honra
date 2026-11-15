@@ -506,7 +506,7 @@ class Enemy extends Actor{
     const wh=segFirst(m.x,m.y,m.z,end.x,end.y,end.z); const tw=wh?wh.t*maxT:maxT;
     let who=null, th=Infinity;
     if(!P.dead){ const tp=rayCylinder(m,dir,tw,P.pos.x,P.pos.z,.33,P.pos.y,P.pos.y+pStance(1.75,1.15,.55)); if(tp>=0){ who='player'; th=tp; } }
-    const A=G.ally; if(A&&!A.downed&&!A.dead){ const ta=rayCylinder(m,dir,Math.min(tw,th),A.pos.x,A.pos.z,.3,0,lerp(1.8,1.2,A.crouch)); if(ta>=0){ who='ally'; th=ta; } }
+    const A=G.ally; if(A&&!A.downed&&!A.dead){ const ta=rayCylinder(m,dir,Math.min(tw,th),A.pos.x,A.pos.z,.3,A.pos.y,A.pos.y+lerp(1.8,1.2,A.crouch)); if(ta>=0){ who='ally'; th=ta; } }
     const hitT=Math.min(th,tw); const hp=m.clone().addScaledVector(dir,hitT); if(W.glass.length) glassAlongSeg(m,hp);
     const dmg=this.ew.dmg*D().dmg;
     if(who==='player') hurtPlayer(dmg,this.pos);
@@ -588,7 +588,7 @@ class Ally extends Actor{
     this.isAlly=true; this.hp=def.hp||150; this.maxHp=this.hp; this.nm=def.name||'LUCIEN'; this.nmT=def.title||'Lucien'; this.mode='WAIT'; this.joined=false; this.downed=false; this.downT=0; this.shotCD=1; this.tgt=null; this.scanT=0; this.hidden=true; this.ffCD=0; this.crouchTarget=.7; this.aimTarget=.2; this.waitPos={x:def.x,z:def.z};
   }
   targetable(){ return !this.dead&&!this.downed&&!this.hidden; }
-  targetInfo(){ return {light:lightAt(this.pos.x,this.pos.z),crouch:this.crouch>.5,moving:this.speedNow>.4,sprint:this.speedNow>3,head:lerp(1.65,1.1,this.crouch),chest:lerp(1.25,.8,this.crouch)}; }
+  targetInfo(){ return {light:lightAt(this.pos.x,this.pos.z),crouch:this.crouch>.5,moving:this.speedNow>.4,sprint:this.speedNow>3,head:this.pos.y+lerp(1.65,1.1,this.crouch),chest:this.pos.y+lerp(1.25,.8,this.crouch)}; }
   takeDamage(o){
     if(this.downed||this.dead) return;
     if(o.shooter==='player'){ if(this.ffCD<=0){ G.radioMsg(this.nm,'Cuidado, Élise! Sou eu!'); this.ffCD=4; } }

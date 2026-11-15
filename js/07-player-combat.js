@@ -235,7 +235,7 @@ function resolveShot(o){
             AudioSys.play('helmet',h.point); FX.burst(h.point,6,0xffe2a0,3.2,.2,2,1,n); detachHelmet(ch,n,o.dir,base);
             ch.takeDamage({dmg:ch.hp+1,region:'head',dir:o.dir,point:h.point,shooter:o.shooter});
             if(isPlayer){ G.stats.hits++; G.stats.heads++; hitMarker('kill head'); headTag(); logShot(o,ch,'cabeça (pelo capacete)',base,ch.maxHp,'neutralizado · capacete soltou'); }
-          } else { helmetHit(ch,h,o.dir,base,o.shooter); if(isPlayer) hitMarker('equip'); }
+          } else { const killed=helmetHit(ch,h,o.dir,base,o.shooter); if(isPlayer) hitMarker(killed?'kill equip':'equip'); }
           break; }
         if(equipHit.has(ch)) continue; equipHit.add(ch);
         if(ud.equip==='lantern'){ breakLantern(ch); if(isPlayer){ hitMarker('equip'); logShot(o,ch,'lanterna',0,0,'quebrada'); } if(ch.isEnemy&&ch.state!=='COMBAT'){ ch.awareness+=.7; ch.enterCombat(G.player.pos.x,G.player.pos.z); } continue; }
@@ -246,13 +246,13 @@ function resolveShot(o){
       damaged.add(ch); hitChar=ch; end=h.point;
       const mult=REGIONS[ud.region]?REGIONS[ud.region].m:1;
       let dmg=base*mult; if(isPlayer&&ch.isAlly) dmg*=.5;
-      const armorHit=!!ud.armor; if(armorHit){ dmg=base*.16; AudioSys.play('clank',h.point,1); FX.burst(h.point,7,0xffe2a0,3.4,.18,2,1); if(isPlayer){ hitMarker('equip'); limbTag('ARMADURA'); } if(ch.isEnemy&&!ch.dead){ ch.staggerT=Math.max(ch.staggerT,.3); } }
+      const armorHit=!!ud.armor; if(armorHit){ dmg=base*.16; AudioSys.play('clank',h.point,1); FX.burst(h.point,7,0xffe2a0,3.4,.18,2,1); if(isPlayer) limbTag('ARMADURA'); if(ch.isEnemy&&!ch.dead){ ch.staggerT=Math.max(ch.staggerT,.3); } }
       if(isPlayer&&CHEATS.oneshot&&ch.isEnemy) dmg=999;
       const headshot=!armorHit&&ch.isEnemy&&(ud.region==='head'||ud.region==='neck'); if(headshot) dmg=Math.max(dmg,ch.hp+1);
       let furtive=false; if(isPlayer&&o.weapon.silent&&ch.isEnemy&&!headshot&&!armorHit&&ch.state!=='COMBAT'&&ch.state!=='RADIO'&&h.distance<30&&(ud.region==='chest'||ud.region==='abdomen'||ud.region==='pelvis')&&dmg<ch.hp){ dmg=ch.hp+1; furtive=true; }
       const killed=ch.takeDamage({dmg,region:ud.region,dir:o.dir,point:h.point,shooter:o.shooter});
-      AudioSys.play('body',h.point,.8);
-      if(isPlayer && ch.isEnemy){ G.stats.hits++; if(ud.region==='head'||ud.region==='neck') G.stats.heads++; hitMarker(killed?(headshot?'kill head':'kill'):'body'); if(headshot) headTag(); logShot(o,ch,REGIONS[ud.region].n,base,dmg,killed?'neutralizado':''); }
+      if(!armorHit) AudioSys.play('body',h.point,.8);
+      if(isPlayer && ch.isEnemy){ G.stats.hits++; if(headshot) G.stats.heads++; hitMarker(killed?(headshot?'kill head':armorHit?'kill equip':'kill'):armorHit?'equip':'body'); if(headshot) headTag(); logShot(o,ch,REGIONS[ud.region].n,base,dmg,killed?'neutralizado':''); }
       if(furtive&&killed) limbTag('TIRO FURTIVO');
       break;
     }
@@ -281,10 +281,11 @@ function helmetHit(ch,h,dir,base,shooter){
   let ev='absorveu '+absorbed.toFixed(1)+' (durab. '+Math.max(0,ch.helmetDur).toFixed(1)+')';
   if(ch.helmetDur<=0||absorbed>=CFG.helmet.detachThreshold){ detachHelmet(ch,n,dir,absorbed); ev+=' · SOLTOU'; }
   const transfer=base*CFG.helmet.transferRatio*directness;
-  ch.takeDamage({dmg:transfer,region:'head',dir,point:h.point,shooter});
+  const killed=ch.takeDamage({dmg:transfer,region:'head',dir,point:h.point,shooter});
   if(ch.react){ ch.react.hx+=-.5; ch.react.hz+=(Math.random()-.5)*.6; }
   if(ch.isEnemy&&!ch.dead){ ch.staggerT=Math.max(ch.staggerT,1.1); ch.reactionT=Math.max(ch.reactionT,1); ch.burstLeft=0; ch.aimPenalty=Math.min(1.5,ch.aimPenalty+.8); }
-  if(shooter==='player'){ G.stats.hits++; logShot({weapon:{dmg:base}},ch,'capacete',base,transfer,ev); }
+  if(shooter==='player'){ G.stats.hits++; logShot({weapon:{dmg:base}},ch,'capacete',base,transfer,killed?ev+' · neutralizado':ev); }
+  return !!killed;
 }
 function detachHelmet(ch,n,dir,impulse){
   if(ch.helmetState!=='ATTACHED') return;

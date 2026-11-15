@@ -34,10 +34,14 @@ const {withGame,errorsOf,finish}=require('./lib/harness.cjs');
     if(dog.status==='ready'&&(!dog.model||dog.proc)) f.push('Modelo 3D: pastor GLB pronto mas não exibido'); if(dog.status!=='ready'&&!dog.proc) f.push('Modelo 3D: cão invisível enquanto o GLB não está pronto'); if(Math.abs(dog.scale-.85)>1e-6) f.push('escala do cão do menu mudou ('+dog.scale+')');
     // redimensionamento em vários formatos, em jogo
     for(const [w,h,name] of [[1920,1080,'16:9'],[1024,768,'4:3'],[2560,1080,'ultrawide'],[390,844,'retrato'],[844,390,'19,5:9']]){
-      await page.setViewportSize({width:w,height:h}); await page.waitForTimeout(150);
+      await page.setViewportSize({width:w,height:h});
+      // Em renderização por software, o evento de resize pode chegar depois de
+      // 150 ms. Aguardar a câmera e o canvas acompanharem o viewport real.
+      await page.waitForFunction(()=>{ const c=document.querySelector('#view'); return Math.abs(camera.aspect-innerWidth/innerHeight)<.01&&Math.abs(camera.aspect-c.clientWidth/c.clientHeight)<.01; },null,{timeout:10000})
+        .catch(()=>f.push(name+': resize não estabilizou em 10 s'));
       const r=await page.evaluate(()=>{ if(APP.state!=='PLAYING') startPlaying(null,'01'); MENU3D.on=false; updateCamera(.016); renderFrame(true,.016); const c=document.querySelector('#view'), hp=document.querySelector('#healthPanel').getBoundingClientRect(), am=document.querySelector('#ammoPanel').getBoundingClientRect();
         return {aspect:camera.aspect,want:c.clientWidth/c.clientHeight,calls:renderer.info.render.calls,hpIn:hp.left>=0&&hp.bottom<=innerHeight+1,amIn:am.right<=innerWidth+1&&am.bottom<=innerHeight+1}; });
-      if(Math.abs(r.aspect-r.want)>.01) f.push(name+': proporção da câmera não acompanhou a janela'); if(r.calls<20) f.push(name+': cena não renderizou'); if(!r.hpIn||!r.amIn) f.push(name+': painel de saúde/munição fora da tela');
+      if(Math.abs(r.aspect-r.want)>.01) f.push(name+': proporção da câmera não acompanhou a janela ('+r.aspect+' / '+r.want+')'); if(r.calls<20) f.push(name+': cena não renderizou'); if(!r.hpIn||!r.amIn) f.push(name+': painel de saúde/munição fora da tela');
     }
     await page.setViewportSize({width:1280,height:720});
     // falha simulada do pós-processamento: sem tela preta, com registro

@@ -31,7 +31,7 @@ jobs:
         run: |
           for f in js/*.js; do node --check "$f"; done
       - name: Entradas e tarefas por sessão (regressões isoladas)
-        run: node --test qa/test_input_session.cjs qa/test_request_failure.cjs
+        run: node --test qa/test_input_session.cjs qa/test_request_failure.cjs qa/test_combat.cjs
       - name: Testes estruturais
         run: |
           node qa/test_three_local.js
@@ -41,10 +41,15 @@ jobs:
           node qa/test_pastor_visibilidade.js
           node qa/test_glb_assets.cjs
   navegador:
+    name: navegador (${{ matrix.grupo }})
     runs-on: ubuntu-24.04
     timeout-minutes: 45
     permissions:
       contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        grupo: [estado, recursos, campanha]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -54,35 +59,35 @@ jobs:
         run: |
           npm install --no-save playwright@1.56.1
           npx playwright install --with-deps chromium
-      - name: CP-01 — entradas, sessão e objetivos da operação 01
-        run: node qa/test_cp01_browser.cjs
-      - name: Contrato das 27 operações
-        run: node qa/test_registry_27.cjs
-      - name: Saves corrompidos, migração e backup
-        run: node qa/test_save_migration.cjs
-      - name: Passo fixo sem perda silenciosa
-        run: node qa/test_frame_pacing.cjs
-      - name: Transições de tela
-        run: node qa/test_state_transitions.cjs
-      - name: Memória de GPU em reinícios e trocas
-        run: node qa/test_reloads_memory.cjs
-      - name: Perfis gráficos e de aparelho
-        run: node qa/test_hardware_profiles.cjs
-      - name: Estados de áudio
-        run: node qa/test_audio_states.cjs
-      - name: Orçamento da IA
-        run: node qa/test_ai_budget.cjs
-      - name: Matriz por operação (27 fases)
-        run: node qa/test_operation_progress.cjs
-      - name: Captura de desempenho (software; só para comparar revisões)
-        run: node qa/test_performance_scene.cjs
+      - name: Estados, combate e saves
+        if: matrix.grupo == 'estado'
+        run: |
+          node qa/test_cp02_browser.cjs
+          node qa/test_cp01_browser.cjs
+          node qa/test_registry_27.cjs
+          node qa/test_save_migration.cjs
+          node qa/test_frame_pacing.cjs
+          node qa/test_state_transitions.cjs
+      - name: Recursos, perfis, áudio e IA
+        if: matrix.grupo == 'recursos'
+        run: |
+          node qa/test_reloads_memory.cjs
+          node qa/test_hardware_profiles.cjs
+          node qa/test_audio_states.cjs
+          node qa/test_ai_budget.cjs
+          node qa/browser_pastor_diagnostico.cjs
+      - name: Campanha e desempenho
+        if: matrix.grupo == 'campanha'
+        run: |
+          node qa/test_operation_progress.cjs
+          node qa/test_performance_scene.cjs
         env:
           QA_PERF_SECONDS: "10"
       - name: Guardar relatórios e capturas
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: qa-campanha
+          name: qa-campanha-${{ matrix.grupo }}
           path: |
             qa-report/
             qa-shots/
