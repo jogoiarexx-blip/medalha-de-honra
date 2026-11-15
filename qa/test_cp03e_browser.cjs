@@ -11,7 +11,7 @@ withGame(async({page,logs,boot})=>{
   try{build();beforeSig=sig();before=views.map(frame);}finally{improveDepotScenery=upgrade;}
   build();camera.position.set(-10.4,2,19.3);camera.lookAt(-10.4,.84,20);const pc=photoCandidate(),photo=!!pc?.ok&&pc.t.id==='cipher';const afterSig=sig(),after=views.map(frame),passage=segClear2D(-34.4,14,-28.6,14,.34,true);
   // Corpo central cabe na abertura sem acertar tampa ou teto da malha.
-  const eyeRay=new T.Raycaster(V3(-33,1.6,14),V3(1,0,0),0,4);const culvertClear=!eyeRay.intersectObjects(scene.children,true).some(h=>h.distance<3&&h.object.geometry?.type==='CylinderGeometry');
+  const eyeRay=new T.Raycaster(V3(-33,1.6,14),V3(1,0,0),0,4);const culvertClear=(()=>{const shells=scene.children.filter(o=>o.isMesh&&o.geometry?.type==='CylinderGeometry'&&Math.abs(o.position.x+30)<.01&&Math.abs(o.position.z-14)<.01);return shells.length===1&&eyeRay.intersectObjects(shells,false).length===0;})();
   const initial=JSON.stringify(W.nav.edges);drumsExplode07(G.refs.drums.find(d=>d.id==='C'));cp07();const cp=readStoredCheckpoint().cp;startPlaying(cp);
   const restored=JSON.stringify(W.nav.edges);buildNav();const fresh=JSON.stringify(W.nav.edges),navCurrent=restored===fresh,navChanged=initial!==fresh;
   const trucks=G.refs.trucks.map(t=>[t.x,t.z,t.state,t.charge]);settings.quality='alto';saveSettings();
