@@ -8,11 +8,11 @@ Atualizado em **14/11/2026 (Brasil)**. Documento de continuidade: ler antes de c
 |---|---|
 | Repositório correto | https://github.com/jogoiarexx-blip/medalha-de-honra |
 | Base analisada | `edca70c8f74a736921939ca149e9e83e9decea50` (`main`) |
-| Build atual | `cp01-2026-11-14` |
-| Entrega atual | Controles/pausa, dicas por dispositivo e tarefas isoladas por sessão |
+| Build atual | `cp02a-2026-11-14` |
+| Entrega atual | CP-02A: alturas de aliados e feedback de armadura/capacete; CP-01 preservado |
 | Mudança de gameplay nesta revisão | MH-01/02/03 implementados e aprovados em testes isolados e Chromium |
-| Etapa atual | CP-01 — EM ANDAMENTO |
-| Próximo trabalho | Validar navegador; depois percurso normal da operação 01 e Android físico |
+| Etapa atual | CP-02A — EM VALIDAÇÃO AUTOMÁTICA; CP-01 com percurso/aparelho pendentes |
+| Próximo trabalho | Validar CP-02A no navegador; depois seguir CP-02B e manter percurso/Android pendentes |
 | Campanha | 24 operações principais + 3 secretas registradas |
 | Fases com percurso humano comprovado | Nenhuma |
 | Integração da operação 01 | Objetivos, save/load e extração aprovados no Chromium com posições controladas; percurso normal pendente |
@@ -265,3 +265,25 @@ Foco de revisão: toque cancelado/perda de foco, controle mantido ao retomar, do
 | Percurso completo sem posicionamento controlado / Android físico | PENDENTE | Nenhuma alegação de campanha zerada ou desempenho real |
 
 **Checkpoint de retomada:** CP-01 — validação de percurso/aparelho pendente; código de MH-01/02/03 entregue. Evitar reiniciar esta auditoria ou refazer os handlers. Se o teste real apontar falha, registrar reprodução e corrigir antes de CP-02.
+
+### Plano CP-02A — combate e IA em diferentes alturas — 14/11/2026
+
+Escopo desta entrega: corrigir alturas de percepção/colisão dos aliados; distinguir acerto em armadura de corpo; indicar quando o dano transferido pelo capacete neutraliza o alvo. Preservar dano, dificuldade, hitboxes anatômicas, saves e três estilos de personagem. CP-01 continua com percurso/aparelho pendentes; avançar nesta parte isolada de CP-02 não certifica essas validações.
+
+- [ ] Reproduzir em testes: aliado elevado atingido no ar errado; feedback de armadura sobrescrito; neutralização via capacete sem marcador de neutralização.
+- [ ] Corrigir coordenadas verticais em `06-actors.js` e feedback em `07-player-combat.js` sem mudar balanceamento.
+- [ ] Verificar cenários de parede/vidro, regiões sobrepostas, capacete, armadura, arma/desarme e alturas; usar Three.js real nos testes isolados e inimigos reais no Chromium.
+- [ ] Rodar regressões de CP-01 e suíte pertinente, revisar, publicar e registrar resultado/próximo passo neste arquivo.
+
+Critérios: uma aplicação de dano por projétil/ator, parede antes do alvo bloqueia tiro, armadura mantém marcador metálico, alvo neutralizado não aparece como simples absorção, tiros não atingem aliado em uma altura onde ele não está. `qa/test_combat.cjs` será isolado e `qa/test_cp02_browser.cjs` fará integração. Não declarar percurso de campanha nem FPS Android a partir desses testes.
+
+### CP-02A — implementação e evidências locais
+
+- Base: `ddf35ee1c9fa1b6c6761e52f46e5519300a75e40`.
+- Bugs reproduzidos antes da correção: cabeça/peito do aliado informados sem altura do piso; colisão de tiro inimigo contra aliado fixada no intervalo vertical do chão; marcador de armadura sobrescrito por corpo; morte por dano transferido no capacete mostrada só como absorção.
+- Correção: percepção e cilindro do aliado usam posição Y absoluta; marcador metálico é preservado e não conta headshot em placa; impacto de armadura não toca áudio de carne por cima do metal; capacete retorna o resultado real da neutralização. Cores/anel de equipamento distinguem neutralização metálica.
+- Valores de dano, cadência, precisão, dificuldade, formato/chaves de save e desenho das fases preservados.
+- Testes locais: 9 cenários novos de combate com Three.js/raycast real + 9 regressões anteriores = 18 testes isolados aprovados; seis verificações estruturais e sintaxe aprovadas. Quatro regressões dos cenários novos foram vistas falhando antes da correção.
+- Integração nova: `qa/test_cp02_browser.cjs`, com Enemy/Ally e hitboxes reais nos estilos Modelo 3D/Detalhados/Clássicos; cobertura, dano único, armadura, capacete, rendição e alturas. Usa posições controladas e não comprova trajetória de missão.
+- Estado: IMPLEMENTADO; execução Chromium e suíte geral em validação antes de publicar.
+- Próximo passo de desenvolvimento após a aprovação: CP-02B — revisar clareza de recarga/bloqueio de arma e reações de IA por cobertura/supressão, partindo dos sistemas existentes; manter testes humanos e Android como pendentes.

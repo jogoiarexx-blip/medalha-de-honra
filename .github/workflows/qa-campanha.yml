@@ -31,7 +31,7 @@ jobs:
         run: |
           for f in js/*.js; do node --check "$f"; done
       - name: Entradas e tarefas por sessão (regressões isoladas)
-        run: node --test qa/test_input_session.cjs qa/test_request_failure.cjs
+        run: node --test qa/test_input_session.cjs qa/test_request_failure.cjs qa/test_combat.cjs
       - name: Testes estruturais
         run: |
           node qa/test_three_local.js
@@ -54,6 +54,8 @@ jobs:
         run: |
           npm install --no-save playwright@1.56.1
           npx playwright install --with-deps chromium
+      - name: CP-02A — combate e alturas nos três estilos
+        run: node qa/test_cp02_browser.cjs
       - name: CP-01 — entradas, sessão e objetivos da operação 01
         run: node qa/test_cp01_browser.cjs
       - name: Contrato das 27 operações

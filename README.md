@@ -56,6 +56,12 @@ Os testes de navegador usam o Chromium do Playwright (`npm install --no-save pla
 
 **Status honesto:** nenhum teste automático declara uma fase "zerada". Jogar os objetivos até a extração, FPS em Android/PC reais e memória por 60 minutos continuam `NÃO TESTADO` até haver registro humano.
 
+## Melhorias CP-02A (14/11/2026)
+
+- A IA considera o piso onde o aliado está ao enxergá-lo e resolver tiros em diferentes alturas.
+- Acertos em armadura mantêm feedback metálico; neutralização pelo dano transferido do capacete exibe o marcador correto.
+- `qa/test_combat.cjs` e `qa/test_cp02_browser.cjs` cobrem dano único, cobertura, armadura, capacete, desarme/rendição e alturas. O teste de navegador usa os três estilos de personagem em posições controladas.
+
 ## Melhorias CP-01 (14/11/2026)
 
 - Pausa, documentos e perda de foco limpam comandos mantidos; no celular a câmera respeita telas abertas e a troca de aplicativo pausa a missão.

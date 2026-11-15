@@ -86,6 +86,8 @@ button{font:inherit;color:inherit}
 #hitmarker.equip i{background:var(--steel)}
 #hitmarker.equip::after{content:"";position:absolute;width:20px;height:20px;left:-10px;top:-10px;border:1px solid var(--steel);border-radius:50%}
 #hitmarker.kill i{height:10px}
+#hitmarker.kill.equip i{background:var(--amber)}
+#hitmarker.kill.equip::after{border-color:var(--amber)}
 #hitmarker.kill.head i{height:12px;background:var(--alert)}
 #hsTag{position:absolute;left:50%;top:calc(50% + 26px);transform:translateX(-50%);font-size:13px;letter-spacing:.2em;text-transform:uppercase;color:var(--alert);text-shadow:0 1px 2px #000}
 #hsTag.show{animation:hst .9s ease-out forwards}
