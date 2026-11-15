@@ -1,6 +1,6 @@
 # Medalha de Honra — análise, melhorias e checkpoint
 
-Atualizado em **14/11/2026 (Brasil)**. Documento de continuidade: ler antes de cada nova alteração e atualizar ao encerrar o trabalho.
+Atualizado em **15/11/2026 (Brasil)**. Documento de continuidade: ler antes de cada nova alteração e atualizar ao encerrar o trabalho.
 
 ## 1. Onde paramos
 
@@ -8,16 +8,16 @@ Atualizado em **14/11/2026 (Brasil)**. Documento de continuidade: ler antes de c
 |---|---|
 | Repositório correto | https://github.com/jogoiarexx-blip/medalha-de-honra |
 | Base analisada | `edca70c8f74a736921939ca149e9e83e9decea50` (`main`) |
-| Build atual | `cp03a-2026-11-14` |
-| Entrega atual | CP-03A: acabamento das ruas/fachadas e correção da fonte na operação 01 |
-| Mudança de gameplay nesta revisão | Colisão da fonte acompanha melhor a base circular; demais peças novas são decorativas |
-| Etapa atual | CP-03A entregue; CP-02C pendente por prioridade do usuário; percurso humano/Android pendentes |
-| Próximo trabalho | CP-03B: analisar e corrigir os demais cenários de Paris, começando pelas operações 02–04 |
+| Build atual | `cp03b-2026-11-15` |
+| Entrega atual | CP-03B: acabamento dos cenários 02–04; operação 01 mantém CP-03A |
+| Mudança de gameplay nesta revisão | Nenhuma: kit estático; corrigida textura/emissão visual das fachadas da 04 |
+| Etapa atual | CP-03B ENTREGUE; CP-02C, percurso humano/Android pendentes |
+| Próximo trabalho | CP-03C: analisar cenário da operação 05 — O Hotel da Medina (Túnis) |
 | Campanha | 24 operações principais + 3 secretas registradas |
 | Fases com percurso humano comprovado | Nenhuma |
 | Integração da operação 01 | Objetivos, save/load e extração aprovados no Chromium com posições controladas; percurso normal pendente |
 
-**Ponto de retomada:** CP-03A conclui o primeiro lote de cenários, somente na operação 01. Prioridade atual: CP-03B, revisar operações 02–04 e registrar seus problemas antes de expandir o kit visual. CP-02C (recarga/arma) permanece pendente. Não refazer CP-01/02A/02B; percurso humano e Android físico seguem pendentes.
+**Ponto de retomada:** CP-03B entregue e publicado; evidências ao fim deste documento. Lote 02–04: materiais diurnos próprios do cais corrigidos, mausoléus/hotel/cais com acabamento estático. Próximo cenário previsto: operação 05 — O Hotel da Medina, em Túnis (CP-03C). CP-02C (recarga/arma) continua pendente pela prioridade em cenários; percurso humano e Android físico seguem pendentes.
 
 ## 2. O que já existe e deve ser preservado
 
@@ -397,9 +397,42 @@ Decisão: ampliar o kit estático existente, com materiais compartilhados e atla
 
 Problema identificado: `mats04()` usa `TEX.facade` noturna e emissão .1 para suas três fachadas; `polishLevel()` só corrige `MAT.facadeA/B/C`, portanto não alcança os materiais próprios da 04. As demais mudanças são acabamento visual, não bugs comprovados.
 
-- [ ] Teste RED/GREEN para fachadas próprias da 04 nos perfis Lambert/Phong; aplicar textura diurna e emissão zero.
-- [ ] Testes RED/GREEN para kit 02–04 isolado/idempotente, sem novos obstáculos/alvos/luzes; implementar cornijas/molduras de mausoléus, acabamento/placas do hotel e detalhes de cais/barcaça.
-- [ ] Integração Chromium: capturas antes/depois, contratos da missão preservados, passagens locais, save/reentrada, isolamento por fase; acréscimo máximo de 16 draw calls e 5.000 triângulos por câmera fixa.
-- [ ] Revisão independente, regressões gerais, publicação e resultado final neste documento.
+- [x] Teste RED/GREEN para fachadas próprias da 04 nos perfis Lambert/Phong; textura diurna e emissão zero implementadas.
+- [x] Testes RED/GREEN para kit 02–04 isolado/idempotente, sem novos obstáculos/alvos/luzes; cornijas/molduras de mausoléus, acabamento/placas do hotel e detalhes de cais/barcaça implementados. Teste adicional de vãos detectou moldura inicial estreita no café; ajustada à abertura original de 4 m e conferida com bounding boxes.
+- [x] Integração Chromium: capturas antes/depois conferidas, contratos da missão preservados, passagens locais, save/reentrada, isolamento por fase; acréscimo abaixo de 16 draw calls e 5.000 triângulos por câmera fixa.
+- [x] Revisão independente, regressões gerais, publicação e resultado final neste documento.
 
 Foco da revisão: molduras não atravessarem portas móveis; detalhes do cais não cobrirem acesso de extração; materiais persistirem após recarregar/trocar qualidade; faces/textos orientados corretamente; operação 01 manter seu kit anterior. Testar esses contratos e conferir imagens antes de publicar. Limites herdados: percurso humano completo e Android físico pendentes; descida à barcaça da 04 continua sendo interação de extração, sem criar escada navegável neste lote.
+
+Validação local CP-03B: sete testes novos falharam antes de suas implementações/correções e passaram depois. Total de 47 testes isolados aprovado; sintaxe de scripts e seis verificações estruturais aprovadas. Candidato inicial `19fbea2959ec7f0b92be5b47c7feee7aec01e7e3`, PR https://github.com/jogoiarexx-blip/medalha-de-honra/pull/5. CI https://github.com/jogoiarexx-blip/medalha-de-honra/actions/runs/43722262788 em andamento; não considerar publicação encerrada até o resultado final abaixo.
+
+Primeira rodada CP-03B: cenário 02/03, assinaturas físicas/objetivos/luzes e materiais diurnos da 04 aprovados; a fixture de passagem da 04 terminava em (-13,-32), dentro da expansão de 30 cm do balcão antigo (-14.4..-13.2, -33..-32.2, altura .9). As listas de sólidos antes/depois são idênticas. Corrigida a referência para atravessar o vão em Z=-31 e acrescentada asserção de passagem também na versão anterior; não foi alterado nenhum obstáculo para fazer o teste passar.
+
+Capturas do candidato inicial conferidas: cornijas/molduras dos mausoléus, placa legível e moldura do hotel, rodapés/cornijas do corredor; fachadas diurnas no cais, bordas/tábuas e amarração da barcaça. Código visual inalterado no segundo candidato. Acréscimo medido por câmera: cemitério +2 chamadas/+1.308 triângulos; hotel +3/+356; cais +6/+696. Todas abaixo do orçamento +16/+5.000.
+
+Revisão independente: nenhum defeito importante. Limitações menores: a checagem de perfil Alto confirma reconstrução por metadado, não verifica pixels/descarte de cada material; reentrada via save na mesma página não é recarga do navegador. Testes gerais de memória/perfis são complementares, não equivalentes a essa medição específica. Percurso humano, recarga visual específica deste kit e Android físico seguem pendentes. Mantida a escolha de decoração estática já usada no projeto; se algum trecho exigir navegação em múltiplas alturas, planejar separadamente.
+
+### Evidências medidas — CP-03B
+
+Candidato atualizado `b8628e26c58d151a51712341e4c2369f4a67e4ed`: grupo de estado aprovado no CI https://github.com/jogoiarexx-blip/medalha-de-honra/actions/runs/43722536751. Código visual idêntico ao primeiro candidato conferido; mudou apenas a fixture de passagem e seu diagnóstico. Contratos de sólidos/navegação/portas/objetivos/alvos/luzes iguais antes/depois; passagem em Z=-31 aprovada nas duas versões; reentrada via save na mesma página aprovada nas três fases. Operação 01 mantém CP-03A e operação 05 não recebe este kit.
+
+| Ambiente / câmera | Chamadas antes → depois | Triângulos antes → depois |
+|---|---:|---:|
+| 02 — mausoléu | 990 → 992 | 69.634 → 70.942 |
+| 02 — cemitério | 320 → 322 | 54.630 → 55.938 |
+| 03 — hotel | 682 → 685 | 117.292 → 117.648 |
+| 03 — corredor | 267 → 270 | 22.520 → 22.876 |
+| 04 — cais | 316 → 322 | 79.986 → 80.682 |
+| 04 — barcaça | 126 → 132 | 15.978 → 16.674 |
+
+Perfil Baixo, câmeras fixas, Chromium/SwiftShader: contagens de geometria/desenho não equivalem a FPS em celular. As fachadas diurnas da 04 têm zero materiais com mapa/emissão antigos na asserção de navegador.
+
+### Resultado final — CP-03B — 15/11/2026
+
+- Código/testes validados: `b8628e26c58d151a51712341e4c2369f4a67e4ed`.
+- CI https://github.com/jogoiarexx-blip/medalha-de-honra/actions/runs/43722536751: estrutural, estado, recursos e campanha APROVADOS. Verificação separada do pastor também aprovada. Inclui 47 testes isolados, sintaxe/seis verificações estruturais, fixtures dos cenários e regressões CP-01/02/03A, saves, menus, memória, perfis, áudio/IA, matriz técnica das 27 operações e captura de cinco cenas.
+- Integração: PR https://github.com/jogoiarexx-blip/medalha-de-honra/pull/5 — commit `0dc44cb903c8914289cda18fe2d27cef25c9c565`. Esta atualização final modifica somente documentação.
+- Capturas comparadas e orçamento aprovado. Nenhum novo colisor, alvo ou luz registrado pelo kit. Emissão das fachadas próprias da 04 corrigida visualmente; percepção/iluminação da furtividade não foi alterada.
+- Limitações: matriz da campanha usa conclusão forçada e não comprova objetivos/extração jogados. O teste específico do kit valida reentrada na mesma página, não recarga real do navegador; perfil Alto só verifica reconstrução por metadado. Aparência em movimento, percurso completo, Android físico e memória de 60 minutos continuam pendentes.
+
+**Retomar em CP-03C:** analisar o cenário da operação 05 — O Hotel da Medina, Túnis — e definir seu lote de correções/acabamento a partir de evidências. CP-02C (feedback de recarga/arma) permanece pendente pela prioridade em cenários.
