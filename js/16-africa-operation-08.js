@@ -71,6 +71,15 @@ function light08(x,z){
   if(x>6&&x<12&&z>6&&z<12) return .4; if(x>-8&&x<0&&z>6&&z<12.4) return .5;
   return .88;
 }
+function cellGate08(door){
+  // Mesma porta/colisor e um único alvo; a grade inteira acompanha o deslizamento.
+  const B=vehB(),M=MAT.darkMetal;
+  for(const z of [-.61,.61]) B.box(.1,2.3,.08,M,0,0,z);
+  for(const y of [-1.1,0,1.1]) B.box(.1,.08,1.3,M,0,y,0);
+  for(let k=-2;k<=2;k++) B.box(.06,2.2,.04,M,0,0,k*.24);
+  const merged=B.bake(new T.Group())[0];
+  door.mesh.geometry.dispose();door.mesh.geometry=merged.geometry;door.mesh.userData.mat='metal';
+}
 function buildLevel08(){
   M5=mats05(); M6=mats06(); const M=M6;
   scene.background=new T.Color(0xc8d0d8); scene.fog=new T.FogExp2(0xd8ccb4,.0042);
@@ -119,8 +128,8 @@ function buildLevel08(){
   // cisterna (cela de Yasmina)
   wallOpen('x',6,6.2,6,12,3,[],M.adobeD,{inner:{}}); wallOpen('x',11.8,12,6,12,3,[],M.adobeD,{inner:{}}); wallOpen('z',11.8,12,6.2,11.8,3,[{c:9,w:.8,sill:1.6,top:2.2}],M.adobeD,{inner:{}}); wallOpen('z',6,6.2,6.2,11.8,3,[{c:9,w:1.3}],M.adobeD,{inner:{}});
   addBlock(5.8,12.2,5.8,12.2,.3,{y0:3,mat:M.adobe,bottom:MAT.ceil,surf:'stone',seg:2});
-  makeDoor('cell',{x:6.1,z:9,w:.1,d:1.3,h:2.3,mat:MAT.darkMetal,offset:V3(0,0,1.3),locked:true,npc:false,nav:true,snd:'door'});
-  for(let k=0;k<5;k++) addMesh(BOX(.04,2.2,.04),MAT.darkMetal,5.98,1.1,8.5+k*.25,null);
+  const cell=makeDoor('cell',{x:6.1,z:9,w:.1,d:1.3,h:2.3,mat:MAT.darkMetal,offset:V3(0,0,1.3),locked:true,npc:false,nav:true,snd:'door'});
+  cellGate08(cell);
   addBlock(10.8,11.8,10.4,11.8,.45,{mat:M.cot,surf:'cloth',seg:1}); addMesh(BOX(.5,.4,.4),hm(0x6a5a40),7,.2,11.3,'wood');
   // barraca do oficial
   tent(-8,0,6,12.4,3,new T.MeshLambertMaterial({color:0xb8a882,side:T.DoubleSide})); addBlock(-6.6,-4.4,10.6,11.6,.78,{mat:M.wood,surf:'wood',cover:true,seg:1}); const radio8=addMesh(BOX(.6,.45,.4),hm(0x3a3e34),-4,1.0,11.2,'metal');
@@ -181,9 +190,9 @@ function interact08(R){
     use:()=>{ const A=G.ally; if(A.downed){ A.revive(); return; } A.joined=true; A.mode='FOLLOW'; A.hidden=false; complete('yasmina'); activate('smoke'); if(!G.alarm&&obj('quietRescue').state==='active') complete('quietRescue');
       G.radioMsg('YASMINA','Élise! Achei que você estava no fundo do uádi. Me dá um fuzil — tirei um Carcano do guarda. Para onde?'); missionAfter(4800,()=>{ G.radioMsg('ÉLISE','Pista velha de Henchir Souar, a leste. O LRDG vem nos buscar. (G: Yasmina segue / espera)'); }); cp08(); }});
   R.pots.forEach((p,i)=>I.push({id:'pot'+i,pt:()=>V3(p.x,.5,p.z),r:2.3,hold:()=>1.2,label:()=>obj('smoke').state==='active'&&!F()['pot'+i]?'Acender a lata de fumaça (segure)':null,
-    use:()=>{ F()['pot'+i]=true; F().potN=(F().potN||0)+1; AudioSys.play('flare',V3(p.x,.5,p.z)); pickupMsg('Fumaça '+F().potN+'/2'); const o=obj('smoke'); o.text='Com Yasmina, acenda as duas latas de fumaça na pista de Henchir Souar ('+F().potN+'/2)';
-      if(F().potN>=2){ complete('smoke'); activate('hold'); F().holdT=0; G.radioMsg('Y2 (LRDG)','“Vemos as duas fumaças. Aguentem firme — estamos chegando pelo leste.”','warn'); missionAfter(3000,()=>{ G.radioMsg('YASMINA','Caminhões na estrada do norte! Eles também viram a fumaça.','warn'); }); cp08(); }
-      else { const nx=R.pots.find((q,j)=>!F()['pot'+j]); if(nx){ o.marker={x:nx.x,z:nx.z}; } refreshObjectiveUI(); } }}));
+    use:()=>{ F()['pot'+i]=true; F().potN=(F().potN||0)+1; AudioSys.play('flare',V3(p.x,.5,p.z)); pickupMsg('Fumaça '+F().potN+'/2'); syncSmoke08();
+      if(F().potN>=2){ complete('smoke'); activate('hold'); F().holdT=0; G.radioMsg('Y2 (LRDG)','“Vemos as duas fumaças. Aguentem firme — estamos chegando pelo leste.”','warn'); missionAfter(3000,()=>{ G.radioMsg('YASMINA','Caminhões na estrada do norte! Eles também viram a fumaça.','warn'); }); }
+      cp08(); }}));
   I.push({id:'board',pt:()=>{ const v=R.lrdg[1]; return V3(v.x,1.6,v.z); },r:4,skip:true,
     label:()=>{ if(obj('board').state!=='active') return null; const A=G.ally; if(A.downed) return 'Yasmina está caída — reanime-a primeiro'; if(Math.hypot(A.pos.x-G.player.pos.x,A.pos.z-G.player.pos.z)>25) return 'Espere Yasmina (G: chamar)'; return 'Embarcar no caminhão do LRDG'; },
     locked:()=>{ const A=G.ally; return A.downed||Math.hypot(A.pos.x-G.player.pos.x,A.pos.z-G.player.pos.z)>25; },
@@ -244,6 +253,13 @@ function update08(dt){
 }
 function spawnKey08(){ const k=G.flags.keySpot; if(!k||G.flags.cellKey) return; const m=new T.Mesh(BOX(.1,.03,.24),hm(0xc8a040)); m.position.set(k[0],.05,k[1]); scene.add(m); G.keyMesh8=m; const l=new T.PointLight(0xffd080,.5,2.5,2); l.position.set(k[0],.5,k[1]); }
 function cp08(){ checkpoint(); }
+function syncSmoke08(){
+  const F=G.flags,o=obj('smoke'),pots=G.refs.pots;
+  F.potN=Number(!!F.pot0)+Number(!!F.pot1);
+  o.text='Com Yasmina, acenda as duas latas de fumaça na pista de Henchir Souar ('+F.potN+'/2)';
+  const next=pots.find((p,i)=>!F['pot'+i]);o.marker=next?{x:next.x,z:next.z}:null;
+  refreshObjectiveUI();
+}
 function restore08(s){
   const F=G.flags, R=G.refs, A=G.ally;
   if(F.gotRifle) R.rifleM.visible=false; if(F.keySpot) spawnKey08();
@@ -251,6 +267,8 @@ function restore08(s){
   F.mgSet=false;
   if(F.boardOn){ for(const v of R.lrdg){ v.g.visible=true; v.solid.active=true; v.x=v.path[v.path.length-1][0]; v.z=v.path[v.path.length-1][1]; setTruckPose07(v); v.state='DONE'; } }
   else if(obj('hold').state==='active'){ F.lrdgGo=false; }
+  syncSmoke08();
+  buildNav();
 }
 function drawMap08(g,w,h){
   g.fillStyle='#e8dcc0'; g.fillRect(0,0,w,h); const S=w/260, X=x=>(x+120)*S, Z=z=>(z+100)*S;

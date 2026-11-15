@@ -5,6 +5,8 @@
 const {spawnSync}=require('node:child_process'),fs=require('node:fs'),path=require('node:path');
 const ROOT=path.resolve(__dirname,'..'), quick=process.argv.includes('--rapido');
 const SUITE=[
+  ['test_bir_zitoun.cjs','Isolado','CP03F cisterna e fumaças'],
+  ['test_cp03f_browser.cjs','Navegador','CP03F resgate e retomada'],
   ['test_depot_scenery.cjs','Isolado','CP03E depósito'],
   ['test_cp03e_browser.cjs','Navegador','CP03E depósito'],
   ['test_bordj_scenery.cjs','Isolado','CP-03D: barracas, arame e cenários do Bordj'],

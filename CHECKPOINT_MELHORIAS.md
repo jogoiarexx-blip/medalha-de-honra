@@ -573,3 +573,19 @@ Acréscimo de 2 chamadas/80 triângulos por vista, dentro do orçamento +16/+5.0
 - Limites: caminhos locais/posições controladas não equivalem à missão inteira. Caminhões movidos, cargas plantadas/danos variados, percurso dos NPCs junto aos apoios novos da 07, percurso humano, Android físico e memória de 60 minutos permanecem pendentes. Nenhuma fase foi declarada zerada; a matriz técnica usa conclusão forçada.
 
 **Retomar em CP-03F:** analisar operação 08 — Uma Aliada no Deserto, Bir Zitoun. Consultar código/objetivos e escolher problemas de cenário com evidências, preservando CP-03A/B/C/D/E, sistemas de comboio/cargas e fotografia. CP-02C (recarga/arma) continua pendente enquanto cenários forem prioridade.
+
+
+### CP-03F — plano em execução — 15/11/2026
+
+Base `b4193340a8829d6d0aad5aef7d8f4fa2240961d7`. Operação 08 — Uma Aliada no Deserto, Bir Zitoun.
+
+Diagnóstico: a porta da cisterna e o vão estão alinhados, mas cinco barras são objetos fixos fora da porta e permanecem atravessando visualmente o acesso aberto. A restauração aplica os caminhões do embarque depois do grafo sem recalcular rotas. O texto/marcador da fumaça nasce em 0/2 e na primeira lata mesmo ao carregar uma lata já acesa; a primeira lata também não chama checkpoint automático.
+
+Decisão: manter Three.js r128 e os sistemas existentes de portas, aliados, fumaça e LRDG. Trocar apenas a geometria da porta por grade unificada que acompanha a animação e o save; remover barras fixas. Sincronizar texto/marcador das fumaças com flags existentes, salvar ambas as latas e recalcular navegação após restore08. Acrescentar identificação discreta da cisterna e pista, sem colisores, luzes ou alvos novos. Não reescrever ondas/veículos nesta etapa.
+
+- [x] Regressões RED/GREEN: cinco testes de defeitos falharam antes e passaram depois. Mais regressões para 0/2, 2/2 e kit; total de 71 isolados, sintaxe e seis estruturais aprovados.
+- [x] Grade fundida pelo construtor existente, restauração, orientação e integração/cache CP-03F implementadas. IDs preservados; integração Chromium aguarda CI.
+- [ ] Chromium: fechado bloqueia/aberto libera, resgate e percurso local real de Yasmina sem recuperação/teleporte, fumaças/save, embarque/grafo e recarga Alto; capturas e orçamento.
+- [ ] Regressões gerais, revisão independente, publicação e resultado final neste MD.
+
+Critérios de revisão: chave e arrombamento; porta no meio da animação e aberta após load; aliada sai pela grade sem atravessar paredes; fumaça 0/1/2 e indicador correto; caminhões restaurados e nós/arestas coerentes. Percurso completo, Android físico e defesa com veículos de ondas salvos em movimento permanecem fora da comprovação desta etapa.

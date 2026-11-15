@@ -56,6 +56,10 @@ Os testes de navegador usam o Chromium do Playwright (`npm install --no-save pla
 
 **Status honesto:** nenhum teste automático declara uma fase "zerada". Jogar os objetivos até a extração, FPS em Android/PC reais e memória por 60 minutos continuam `NÃO TESTADO` até haver registro humano.
 
+## Cenários CP-03F — Bir Zitoun
+
+Grade da cisterna acompanha a porta; primeiro acendimento de fumaça salva o avanço e o carregamento restaura texto/marcador. Navegação recalculada após posicionar caminhões do embarque. Cisterna e pista identificadas, sem novos obstáculos/luzes.
+
 ## Cenários CP-03E — depósito de Oued el-Kebir
 
 Bueiro alinhado ao vão e objetivo, com boca aberta e altura útil; navegação recalculada após restaurar tambores/caminhões. Galpões A/B e acesso recebem identificação. Sem alteração das regras de comboio/cargas/fotografia.
