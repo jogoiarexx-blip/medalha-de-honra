@@ -8,16 +8,16 @@ Atualizado em **15/11/2026 (Brasil)**. Documento de continuidade: ler antes de c
 |---|---|
 | Repositório correto | https://github.com/jogoiarexx-blip/medalha-de-honra |
 | Base analisada | `edca70c8f74a736921939ca149e9e83e9decea50` (`main`) |
-| Build atual | `cp03d-2026-11-15` |
-| Entrega atual | CP-03D: correções das barracas 06/07, vão/nav do arame e acabamento do forte 06 |
-| Mudança de gameplay nesta revisão | Colisores dos postes acompanham a malha; carregar arame cortado atualiza o grafo |
-| Etapa atual | CP-03D ENTREGUE; CP-02C, percurso humano/Android pendentes |
-| Próximo trabalho | CP-03E: analisar cenário da operação 07 — Areias em Chamas, Oued el-Kebir |
+| Build atual | `cp03e-2026-11-15` |
+| Entrega atual | CP-03E: bueiro alinhado, arestas restauradas e identificação dos galpões da 07 |
+| Mudança de gameplay nesta revisão | Grafo recalculado após restaurar obstáculos/caminhões; bueiro visual alinhado ao vão físico existente |
+| Etapa atual | CP-03E ENTREGUE; CP-02C, percurso humano/Android pendentes |
+| Próximo trabalho | CP-03F: analisar cenário da operação 08 — Uma Aliada no Deserto, Bir Zitoun |
 | Campanha | 24 operações principais + 3 secretas registradas |
 | Fases com percurso humano comprovado | Nenhuma |
 | Integração da operação 01 | Objetivos, save/load e extração aprovados no Chromium com posições controladas; percurso normal pendente |
 
-**Ponto de retomada:** CP-03D entregue e publicado; evidências ao fim deste documento. Barracas compartilhadas 06/07 corrigidas, postes fora do vão cortável, grafo restaurado após o corte e forte 06 sinalizado. Próximo cenário: operação 07 — Areias em Chamas (CP-03E); não refazer a correção das barracas. CP-02C (recarga/arma), percurso humano e Android físico continuam pendentes.
+**Ponto de retomada:** CP-03E entregue e integrado; evidências ao fim deste documento. Bueiro da 07 alinhado e aberto; navegação recalculada depois dos obstáculos salvos; setores identificados. Próximo cenário: operação 08 — Uma Aliada no Deserto (CP-03F). Preservar CP-03A/B/C/D/E e sistemas de comboio/cargas/fotografia. CP-02C (recarga/arma), percurso humano, NPCs junto aos apoios da 07 e Android físico continuam pendentes.
 
 ## 2. O que já existe e deve ser preservado
 
@@ -533,9 +533,43 @@ Base `c4e00452fcb52ee8e0ae34a5d01d2bf429a2d48b`. Cenário 07 — Areias em Chama
 
 Problemas: bueiro desenhado em Z=11,5 apesar do vão/objetivo em Z=14; abertura de 1 m por 0,5 m com disco opaco na entrada. `restore07()` modifica tambores e posições/colisores dos caminhões depois do buildNav do carregamento e não recalcula arestas. Corrigir alinhamento/abertura do bueiro e reconstruir navegação ao fim da restauração, sem reescrever comboio/cargas nem adicionar nós de navegação.
 
-- [ ] RED/GREEN: geometria alinhada, entrada sem tampa e reconstrução após obstáculos/caminhões.
-- [ ] Identificar galpões A/B e entrada com sinalização estática agrupada, sem bloquear portas, foto ou caminhões.
-- [ ] Chromium: passagem do bueiro, foto, save/rotas coerentes, NPCs nas barracas da 07, perfil Alto/recarga e orçamento; capturas antes/depois.
-- [ ] Revisar, executar regressões, publicar e atualizar resultado final.
+- [x] RED/GREEN: três testes novos falharam antes da implementação e passaram; 63 testes isolados, sintaxe e seis estruturais aprovados.
+- [x] Identificar galpões A/B, entrada e gerador com sinalização estática agrupada, sem novos obstáculos, luzes ou alvos.
+- [x] Chromium: passagem do bueiro, foto, save/rotas coerentes, perfil Alto/recarga e orçamento; capturas antes/depois conferidas. Travessia específica dos NPCs nas barracas da 07 continua pendente.
+- [x] Revisar, executar regressões, publicar e atualizar resultado final.
 
 As capturas do acabamento usam as correções físicas em ambas as montagens. O bueiro é uma malha aberta de acabamento, sem criar novo piso/colisores; a travessia física continua limitada pelo vão existente da cerca. Percurso humano/Android seguem pendentes.
+
+Primeiro candidato `98eb073f3e4384bd8f7ab00d013552ffe2ce5e25`: a fixture de raio percorreu sprites/efeitos da cena e falhou em Sprite.raycast por não fornecer camera. Restringida ao cilindro real do bueiro, com exigência de exatamente uma malha e raio livre. Produção inalterada; candidato corrigido `507fe856cab9da9ff457047454f3dd9a4465437a`.
+
+Revisão independente sem defeitos importantes. Limitação menor: comparação do comboio confere consistência entre carregamentos, sem fixar caminhões movidos, cargas plantadas e danos diversos antes de salvar. Esses cenários de restauração e a travessia específica de NPCs nas barracas continuam pendentes. Não confundir reconstrução de arestas existentes com adicionar nós removidos da grade inicial, nem a malha de acabamento do bueiro com novos colisores.
+
+
+### Evidências CP-03E — grupo de estado
+
+CI https://github.com/jogoiarexx-blip/medalha-de-honra/actions/runs/43771623044: grupo de estado APROVADO. Capturas de bueiro, arsenal, transmissões e bueiro Alto após recarga conferidas. As comparações antes/depois já usam o bueiro corrigido e medem somente o acabamento.
+
+- Assinaturas físicas, nós da navegação, portas, objetivos, fotografias, número de caminhões e luzes idênticos antes/depois do kit. Passagem física central e raio livre na casca do bueiro aprovados; regressão isolada confere também os arcos, dimensões e centralização.
+- Foto `cipher` continua válida na posição controlada. Explosão real do tambor C, checkpoint e carregamento deixam o tambor GONE e o grafo equivalente a um novo `buildNav()`, diferente do estado inicial com o tambor intacto.
+- Recarga real da página preserva operação 07, tambor C destruído, grafo coerente, kit CP-03E e perfil Alto. Os quatro caminhões estacionados/sem cargas mantêm as tuplas x/z/estado/carga entre carregamentos; caminhões movidos, cargas plantadas e danos variados não foram exercitados nesta fixture.
+
+| Câmera / Baixo | Chamadas antes → depois | Triângulos antes → depois |
+|---|---:|---:|
+| Bueiro | 752 → 754 | 189.718 → 189.798 |
+| Arsenal | 303 → 305 | 49.630 → 49.710 |
+| Transmissões | 266 → 268 | 41.374 → 41.454 |
+
+Acréscimo de 2 chamadas/80 triângulos por vista, dentro do orçamento +16/+5.000. Valores em câmeras fixas com SwiftShader, sem equivalência a FPS em Android. O bueiro continua sendo acabamento sobre o vão físico existente, sem novo piso/colisores. Reconstruir arestas não repõe nós omitidos na grade inicial.
+
+
+### Resultado final — CP-03E — 15/11/2026
+
+- Código e testes validados: `507fe856cab9da9ff457047454f3dd9a4465437a`.
+- CI completo aprovado: https://github.com/jogoiarexx-blip/medalha-de-honra/actions/runs/43771623044 — estrutural, estado, recursos e campanha. QA separado do pastor também aprovado.
+- 63 testes isolados, sintaxe/seis verificações estruturais, cenários CP-03A/B/C/D/E, entradas/combate/alturas, saves/migração, menus, memória, perfis, áudio/IA e captura geral de cinco cenas aprovados. Matriz técnica das 27 operações passou início, simulação, movimento, checkpoint/load, morte, transição forçada e menu.
+- Revisão independente sem defeitos críticos/importantes. Capturas antes/depois e recarga Alto conferidas. Primeiro CI falhou somente na fixture de Sprite.raycast; a correção restringiu o raio ao cilindro, sem alteração em produção.
+- PR https://github.com/jogoiarexx-blip/medalha-de-honra/pull/8 integrado em `667762d923044156e123d7f24c2ae797de77127e`. Esta atualização final altera somente documentação.
+- Arquivos modificados: `js/15-africa-operations-06-07-fixes.js`, `js/23e-depot-scenery.js`, `js/06-actors.js`, `js/00a-diagnostics.js`, `index.html`, `qa/test_depot_scenery.cjs`, `qa/test_cp03e_browser.cjs`, `qa/run_all.cjs`, `.github/workflows/qa-campanha.yml`, `README.md` e este checkpoint.
+- Limites: caminhos locais/posições controladas não equivalem à missão inteira. Caminhões movidos, cargas plantadas/danos variados, percurso dos NPCs junto aos apoios novos da 07, percurso humano, Android físico e memória de 60 minutos permanecem pendentes. Nenhuma fase foi declarada zerada; a matriz técnica usa conclusão forçada.
+
+**Retomar em CP-03F:** analisar operação 08 — Uma Aliada no Deserto, Bir Zitoun. Consultar código/objetivos e escolher problemas de cenário com evidências, preservando CP-03A/B/C/D/E, sistemas de comboio/cargas e fotografia. CP-02C (recarga/arma) continua pendente enquanto cenários forem prioridade.
