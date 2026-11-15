@@ -56,6 +56,10 @@ Os testes de navegador usam o Chromium do Playwright (`npm install --no-save pla
 
 **Status honesto:** nenhum teste automático declara uma fase "zerada". Jogar os objetivos até a extração, FPS em Android/PC reais e memória por 60 minutos continuam `NÃO TESTADO` até haver registro humano.
 
+## Cenários CP-03E — depósito de Oued el-Kebir
+
+Bueiro alinhado ao vão e objetivo, com boca aberta e altura útil; navegação recalculada após restaurar tambores/caminhões. Galpões A/B e acesso recebem identificação. Sem alteração das regras de comboio/cargas/fotografia.
+
 ## Cenários CP-03D — Bordj el-Hamra
 
 Corrige apoios e colisores das barracas compartilhadas por 06/07, remove o poste do vão cortável do depósito e reconstrói a navegação ao carregar o arame cortado da 06. O forte recebe placas dos setores, capeamentos e sinalização na cancela móvel, sem novas luzes ou alvos. Fotos e objetivos mantidos; comparação visual isola o acabamento das correções físicas.
