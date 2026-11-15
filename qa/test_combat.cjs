@@ -6,12 +6,12 @@ const fs=require('node:fs'),vm=require('node:vm'),path=require('node:path');
 const root=path.resolve(__dirname,'..'),T=require('../js/vendor/three-r128.min.js');
 const read=p=>fs.readFileSync(path.join(root,p),'utf8');
 function fixture(){
-  const sounds=[],markers=[],tags=[], scene=new T.Scene();
+  const sounds=[],markers=[],tags=[],shotLogs=[], scene=new T.Scene();
   const ctx=vm.createContext({T,Math,Set,console,scene,settings:{helmetSave:true,hitmarkers:true},CHEATS:{oneshot:false},
     UP:new T.Vector3(0,1,0),V3:(...v)=>new T.Vector3(...v),clamp:(v,a,b)=>Math.max(a,Math.min(b,v)),lerp:T.MathUtils.lerp,
-    W:{shootables:[],solids:[],glass:[]},G:{player:{pos:new T.Vector3(100,0,100),dead:false,vx:0,vz:0},enemies:[],stats:{hits:0,heads:0,helmets:0}},
+    W:{shootables:[],solids:[],glass:[]},G:{player:{pos:new T.Vector3(100,0,100),dead:false,vx:0,vz:0},enemies:[],flags:{},stats:{hits:0,heads:0,helmets:0}},
     AudioSys:{play:id=>sounds.push(id)},FX:{burst(){},puff(){},tracer(){},flash(){}},
-    hitMarker:k=>markers.push(k),headTag:()=>tags.push('head'),limbTag:t=>tags.push(t),logShot(){},lastShotLog(){},
+    hitMarker:k=>markers.push(k),headTag:()=>tags.push('head'),limbTag:t=>tags.push(t),logShot:(...args)=>shotLogs.push(args),lastShotLog(){},
     worldImpact(){},lightAt:()=>1,angDiff:()=>0,DEG:Math.PI/180,D:()=>({spread:0,dmg:1}),pStance:a=>a,
     hurtPlayer(){},emitNoise(){},glassAlongSeg(){},removeShootables(){},addProp(){},rnd:(a,b)=>(a+b)/2,
   });
@@ -25,7 +25,7 @@ function fixture(){
     takeDamage(o){this.calls.push(o);this.hp-=o.dmg;return this.hp<=0;},...extra});
   const mesh=(char,z=-5,region='chest',extra={})=>{const m=new T.Mesh(new T.BoxGeometry(1,1,.2),new T.MeshBasicMaterial());m.position.set(0,1,z);m.userData={char,region,...extra};scene.add(m);ctx.W.shootables.push(m);return m;};
   const shot=()=>run("matricesFresh=false;resolveShot({shooter:'player',origin:V3(0,1,0),dir:V3(0,0,-1),weapon:{dmg:20,falloff:[20,45,.7]},shotId:1})");
-  return {ctx,run,target,mesh,shot,sounds,markers,tags};
+  return {ctx,run,target,mesh,shot,sounds,markers,tags,shotLogs};
 }
 test('armadura mantém feedback metálico, sem som de carne nem acerto na cabeça',()=>{
   const f=fixture(),c=f.target();f.mesh(c,-5,'head',{armor:true});f.shot();
@@ -39,7 +39,7 @@ test('dano de capacete que neutraliza alvo mostra neutralização uma vez',()=>{
   f.mesh(c,-5,'equipment',{equip:'helmet'});
   f.run("CFG.helmet.detachThreshold=1000;");f.shot();
   assert.equal(c.calls.length,1);assert.ok(c.hp<=0);
-  assert.equal(f.markers.at(-1),'kill equip');assert.equal(f.ctx.G.stats.hits,1);
+  assert.equal(f.markers.at(-1),'kill equip');assert.equal(f.ctx.G.stats.hits,1);assert.match(f.shotLogs.at(-1).at(-1),/neutralizado/);
 });
 test('peito e proxies sobrepostos recebem um único dano; cobertura bloqueia',()=>{
   const f=fixture(),c=f.target();f.mesh(c);f.mesh(c,-5.1,'abdomen');f.shot();
@@ -80,4 +80,20 @@ test('capacete sem proteção preserva regra de neutralização e desprende uma 
   const group=new T.Group();f.ctx.scene.add(group);group.attach(m);c.h={helmet:group,helmetMeshes:[m],scalp:{visible:false}};
   f.ctx.settings.helmetSave=false;f.shot();
   assert.equal(c.helmetState,'DETACHED');assert.equal(f.ctx.G.stats.helmets,1);assert.equal(c.calls.length,1);assert.equal(f.markers.at(-1),'kill head');
+});
+
+test('vidro quebra uma vez e permite atingir alvo sem duplicar o dano',()=>{
+  const f=fixture(),src=read('js/12-combat-extensions.js');
+  vm.runInContext(src.slice(src.indexOf('function breakGlass('),src.indexOf('function segAABB(')),f.ctx);
+  const c=f.target();f.mesh(c);const pane=f.mesh(null,-2),g={id:'window',mesh:pane,broken:false,small:true,loud:10,solid:{active:true}};pane.userData={glass:g};
+  f.shot();assert.equal(g.broken,true);assert.equal(g.solid.active,false);assert.equal(c.calls.length,1);assert.equal(c.hp,80);
+  f.shot();assert.equal(c.calls.length,2);assert.equal(f.sounds.filter(x=>x==='glass').length,1);assert.equal(f.ctx.G.flags.glass.length,1);
+});
+test('cilindro do aliado acompanha agachamento e pisos abaixo do zero',()=>{
+  for(const [floor,crouch,y,want] of [[5,1,5.8,8],[5,1,6.5,0],[-3,0,-2,8]]){
+    const f=fixture();f.ctx.G.ally={pos:new T.Vector3(0,floor,-5),crouch,dead:false,downed:false,damage:0,takeDamage(o){this.damage+=o.dmg;}};
+    f.ctx.shooter={pos:new T.Vector3(0,y,0),muzzleWorld:()=>new T.Vector3(0,y,0),ew:{spread:0,dmg:10,noise:0},aimPenalty:0,suppression:0,reactionT:-2,tgtKind:'ally'};
+    f.run(`Enemy.prototype.fireAt.call(shooter,{x:0,z:-5,chest:${y},head:${y+.1}})`);
+    assert.equal(f.ctx.G.ally.damage,want,JSON.stringify({floor,crouch,y}));
+  }
 });
