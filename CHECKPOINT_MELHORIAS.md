@@ -8,16 +8,16 @@ Atualizado em **15/11/2026 (Brasil)**. Documento de continuidade: ler antes de c
 |---|---|
 | Repositório correto | https://github.com/jogoiarexx-blip/medalha-de-honra |
 | Base analisada | `edca70c8f74a736921939ca149e9e83e9decea50` (`main`) |
-| Build atual | `cp03e-2026-11-15` |
-| Entrega atual | CP-03E: bueiro alinhado, arestas restauradas e identificação dos galpões da 07 |
-| Mudança de gameplay nesta revisão | Grafo recalculado após restaurar obstáculos/caminhões; bueiro visual alinhado ao vão físico existente |
-| Etapa atual | CP-03E ENTREGUE; CP-02C, percurso humano/Android pendentes |
-| Próximo trabalho | CP-03F: analisar cenário da operação 08 — Uma Aliada no Deserto, Bir Zitoun |
+| Build atual | `cp03f-2026-11-15` |
+| Entrega atual | CP-03F: grade da cisterna, fumaças/save, rotas do embarque e identificação da 08 |
+| Mudança de gameplay nesta revisão | Primeira fumaça salva; carregar restaura orientação e recalcula grafo após caminhões do embarque |
+| Etapa atual | CP-03F ENTREGUE; CP-02C, percurso humano/Android pendentes |
+| Próximo trabalho | CP-03G: analisar cenário da operação 09 — A Matéria do Porto, Chania |
 | Campanha | 24 operações principais + 3 secretas registradas |
 | Fases com percurso humano comprovado | Nenhuma |
 | Integração da operação 01 | Objetivos, save/load e extração aprovados no Chromium com posições controladas; percurso normal pendente |
 
-**Ponto de retomada:** CP-03E entregue e integrado; evidências ao fim deste documento. Bueiro da 07 alinhado e aberto; navegação recalculada depois dos obstáculos salvos; setores identificados. Próximo cenário: operação 08 — Uma Aliada no Deserto (CP-03F). Preservar CP-03A/B/C/D/E e sistemas de comboio/cargas/fotografia. CP-02C (recarga/arma), percurso humano, NPCs junto aos apoios da 07 e Android físico continuam pendentes.
+**Ponto de retomada:** CP-03F entregue e integrado; evidências ao fim deste documento. Grade da cisterna acompanha abertura/load; primeira fumaça salva; texto/marcador e navegação do embarque restaurados; cisterna/pista identificadas. Próximo cenário: operação 09 — A Matéria do Porto, Chania (CP-03G). Preservar CP-03A/B/C/D/E/F e os sistemas existentes. CP-02C (recarga/arma), teste de save durante OPENING, NPCs nos apoios da 07, percurso humano e Android físico continuam pendentes.
 
 ## 2. O que já existe e deve ser preservado
 
@@ -585,7 +585,47 @@ Decisão: manter Three.js r128 e os sistemas existentes de portas, aliados, fuma
 
 - [x] Regressões RED/GREEN: cinco testes de defeitos falharam antes e passaram depois. Mais regressões para 0/2, 2/2 e kit; total de 71 isolados, sintaxe e seis estruturais aprovados.
 - [x] Grade fundida pelo construtor existente, restauração, orientação e integração/cache CP-03F implementadas. IDs preservados; integração Chromium aguarda CI.
-- [ ] Chromium: fechado bloqueia/aberto libera, resgate e percurso local real de Yasmina sem recuperação/teleporte, fumaças/save, embarque/grafo e recarga Alto; capturas e orçamento.
-- [ ] Regressões gerais, revisão independente, publicação e resultado final neste MD.
+- [x] Chromium: fechado bloqueia/aberto libera, chave/arrombamento, percurso local real de Yasmina sem recuperação, fumaças/save, embarque/grafo e recarga Alto aprovados. Capturas de cenário e recarga conferidas; orçamento respeitado.
+- [x] Regressões gerais, revisão independente, publicação e resultado final neste MD.
 
 Critérios de revisão: chave e arrombamento; porta no meio da animação e aberta após load; aliada sai pela grade sem atravessar paredes; fumaça 0/1/2 e indicador correto; caminhões restaurados e nós/arestas coerentes. Percurso completo, Android físico e defesa com veículos de ondas salvos em movimento permanecem fora da comprovação desta etapa.
+
+
+CP-03F: candidato inicial `972545c0f125f69a42911468dcd6791d60592604` teve parte de `index.html` truncada na transferência. Detectado ao comparar árvores local/remota, antes de integrar. Arquivo reenviado integralmente no candidato `3269daf0acbae898c0c46019c2275e759d576915`; `git diff HEAD origin/melhorias/cp03f-cisterna` confirmou igualdade de todos os arquivos. Validar este candidato corrigido; a primeira execução não constitui validação.
+
+Revisão independente: nenhum defeito crítico/importante. Menor pendente: fixture salva porta depois da animação completa; o contrato comum que serializa OPENING como OPEN foi revisado, mas falta asserção específica de salvamento no meio da abertura. Interações usam callbacks reais em posição controlada, sem comprovar alcance/tempo de segurar pelo jogador. Leitura visual, percurso local e navegação restaurada aguardam execução Chromium. Defesa completa, ondas em movimento salvas, Android físico e sessão de 60 minutos seguem pendentes.
+
+Revisão própria adicional: a primeira posição da placa da pista interceptava visualmente o segmento (40,26)→(52,20) do caminhão da onda oeste. Nova asserção geométrica falhou antes do reposicionamento e passou depois; placa deslocada de Z=21 para Z=15, fora da faixa de chegada testada. Sem alterar caminho/colisão do veículo.
+
+Candidato final do cenário: `51ca90f28687e6b44792dd3e51fa3424b702017f`, com árvores local/remota iguais após o reposicionamento. CI aprovado: https://github.com/jogoiarexx-blip/medalha-de-honra/actions/runs/43774818264.
+
+
+### Evidências CP-03F — cenário 08
+
+CI https://github.com/jogoiarexx-blip/medalha-de-honra/actions/runs/43774818264: grupo de estado APROVADO no candidato final. As duas montagens antes/depois já usam a grade e a restauração corrigidas; comparação mede somente sinalização/acabamento.
+
+- Assinaturas físicas, nós da navegação, IDs de portas/objetivos e luzes idênticos antes/depois do kit. Vão fechado bloqueia e aberto libera. Callbacks reais de chave e arrombamento, animação `updateDoors()` e raio livre na grade aprovados; teste isolado confere a cena da cisterna sem as barras fixas remanescentes.
+- Resgate por callback real; combate neutralizado na fixture. `Ally.update()` move Yasmina de (10,2; 9,6) a (4,224; 10,003), passando pela colisão normal. Zero chamadas de `recover()`; sem teleporte. Isto comprova o trecho local, não a fuga da missão toda, alcance da interação ou tempo de segurar.
+- Primeira fumaça cria checkpoint automaticamente. Carregar preserva porta OPEN, posição lógica da aliada, texto 1/2 e marcador na segunda lata X=108. Acender a segunda e carregar preserva 2/2, remove marcador de lata e ativa defesa.
+- Fase de embarque montada de forma controlada: carregar ativa os caminhões nas posições (118,-6)/(112,7), estado DONE, colisores ativos e grafo diferente do estado sem caminhões, equivalente a uma reconstrução nova. Não representa jogar a defesa até o embarque.
+- Nova navegação da página preserva operação 08, grade OPEN, texto 2/2, embarque ativo, kit CP-03F e perfil Alto. Captura Alto mostra vão livre e placa legível. A captura adicional imediatamente após o movimento local foi parcialmente encoberta pelo soldado parado na câmera; não é usada como prova visual única. Modelos de atores em render imediato após load podem ainda refletir a pose anterior até a atualização seguinte; a posição lógica foi verificada separadamente.
+
+| Câmera / Baixo | Chamadas antes → depois | Triângulos antes → depois |
+|---|---:|---:|
+| Cisterna | 334 → 337 | 58.948 → 59.012 |
+| Pista | 171 → 173 | 22.286 → 22.348 |
+
+Acréscimos máximos de 3 chamadas/64 triângulos, dentro de +16/+5.000. SwiftShader/câmeras fixas não comprovam FPS de Android. A placa da pista fica fora da faixa de chegada testada do caminhão oeste. Saves durante OPENING ainda não têm asserção específica, embora o contrato comum OPENING→OPEN tenha sido revisado. Defesa completa e veículos de ondas salvos em movimento continuam pendentes.
+
+
+### Resultado final — CP-03F — 15/11/2026
+
+- Código/testes validados: `51ca90f28687e6b44792dd3e51fa3424b702017f`.
+- CI completo aprovado: https://github.com/jogoiarexx-blip/medalha-de-honra/actions/runs/43774818264 — estrutural, estado, recursos e campanha. QA separado do pastor também aprovado.
+- 71 testes isolados (8 novos), sintaxe/seis verificações estruturais, cenários CP-03A/B/C/D/E/F, entradas/combate/alturas, saves/migração, menus, memória, perfis, áudio/IA e captura geral de cinco cenas aprovados. Matriz técnica das 27 operações passou início, simulação, movimento, checkpoint/load, morte, transição forçada e menu; não comprova objetivos/extracão jogados.
+- Revisão independente sem defeitos críticos/importantes. Menor pendente: asserção específica de save durante OPENING. Correção da posição da placa após revisão própria teve regressão RED→GREEN e os 71 testes novamente aprovados, antes do CI final.
+- PR https://github.com/jogoiarexx-blip/medalha-de-honra/pull/9 integrado em `ce25e806ae7da9233ce713336721f3cbd342d55f`. Esta atualização final altera somente documentação.
+- Arquivos modificados: `js/16-africa-operation-08.js`, `js/23f-bir-zitoun-scenery.js`, `js/06-actors.js`, `js/00a-diagnostics.js`, `index.html`, `qa/test_bir_zitoun.cjs`, `qa/test_cp03f_browser.cjs`, `qa/run_all.cjs`, `.github/workflows/qa-campanha.yml`, `README.md` e este checkpoint.
+- Limites: interações por callbacks e posições/estados controlados; combate neutralizado no percurso local da aliada. Não foram comprovados alcance/segurar interação pelo jogador, defesa completa, embarque obtido jogando, ondas/veículos em movimento restaurados, Android físico, memória de 60 minutos ou missão inteira. A captura Alto confirma a grade aberta; a imagem adicional parcialmente encoberta não é prova única. Nenhuma fase declarada zerada.
+
+**Retomar em CP-03G:** analisar a operação 09 — A Matéria do Porto, Chania, Creta ocupada. Consultar cenário/objetivos/veículos existentes, preservar a lancha refinada, barcos/cais e CP-03A/B/C/D/E/F; escolher problemas a partir de evidências. CP-02C (recarga/arma) continua pendente enquanto cenários forem prioridade.
