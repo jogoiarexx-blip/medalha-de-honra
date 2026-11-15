@@ -2,6 +2,10 @@
 
 FPS histórico de espionagem em Three.js/WebGL, distribuído pelo GitHub Pages.
 
+## Plano de melhorias e continuidade
+
+Consulte [CHECKPOINT_MELHORIAS.md](CHECKPOINT_MELHORIAS.md) para a análise atual, prioridades, evidências de teste e o ponto exato de retomada. Atualize esse arquivo ao encerrar cada etapa.
+
 ## Estrutura
 
 - `index.html`: documento HTML, telas, menus e referências a arquivos externos.
