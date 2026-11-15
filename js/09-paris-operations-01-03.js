@@ -37,7 +37,7 @@ function interact01(refs){
   I.push({id:'garage',pt:()=>V3(-4.88,1.3,-34.2),r:2.3,
     label:()=>{ const d=W.doors.garage; if(d.state!=='LOCKED') return null; return G.player.key?'Destrancar e abrir a garagem':'Portão trancado — falta a chave'; },
     locked:()=>!G.player.key, hold:()=>G.player.key?.8:0,
-    use:()=>{ if(!G.player.key){ G.radioMsg('ÉLISE','Trancado. A chave está no posto da guarda.','tip'); return; } const d=W.doors.garage; d.state='CLOSED'; openDoor(d,null); complete('garage'); activate('escape'); G.radioMsg('LUCIEN','O caminhão está lá dentro. Vamos!'); setTimeout(()=>{ if(G) checkpoint(); },2300); }});
+    use:()=>{ if(!G.player.key){ G.radioMsg('ÉLISE','Trancado. A chave está no posto da guarda.','tip'); return; } const d=W.doors.garage; d.state='CLOSED'; openDoor(d,null); complete('garage'); activate('escape'); G.radioMsg('LUCIEN','O caminhão está lá dentro. Vamos!'); missionAfter(2300,()=>checkpoint()); }});
   I.push({id:'stencrate',pt:()=>V3(-24.6,.75,-23.6),r:2.2,
     label:()=>G.flags.sten?null:'Pegar a Sten e os carregadores',
     use:()=>{ G.flags.sten=true; const P=G.player; if(!P.weapons.includes('smg')) P.weapons.push('smg'); P.ammo.smg.mag=32; P.ammo.smg.reserve=Math.max(P.ammo.smg.reserve,Math.round(64*D().pickups)); pickupMsg('Sten Mk II + '+P.ammo.smg.reserve+' cartuchos'); AudioSys.play('pickup'); switchWeapon('smg'); if(!G.docs.includes('note')) G.docs.push('note'); G.radioMsg('ÉLISE','Há um bilhete junto. Está no diário (Tab).','tip'); }});
@@ -61,18 +61,18 @@ function takeKey(mesh){
   else G.radioMsg('LUCIEN','Tem a chave? Ótimo. Vou atrás de você. A garagem fica no fim da rua, lado oeste.');
   complete('key'); activate('garage');
   const A=G.ally; A.mode='FOLLOW'; A.joined=true; A.hidden=false;
-  G.radioMsg('DICA','G alterna Lucien entre seguir e aguardar.','tip');
+  G.radioMsg('DICA',controlLabel('ally')+' alterna Lucien entre seguir e aguardar.','tip');
   checkpoint();
 }
 function update01(dt){
   if(!G.flags.intro1 && G.introT>1){ G.flags.intro1=true; G.radioMsg('LUCIEN','Élise, estou na praça da fonte, junto ao quiosque. Venha pela rua e fique longe das lâmpadas.'); }
-  if(!G.flags.intro2 && G.introT>9){ G.flags.intro2=true; G.radioMsg('DICA','C agacha. A sombra e o silêncio reduzem a chance de ser vista. Lâmpadas podem ser apagadas a tiro, mas o disparo é ouvido.','tip'); }
+  if(!G.flags.intro2 && G.introT>9){ G.flags.intro2=true; G.radioMsg('DICA',controlLabel('crouch')+' agacha. A sombra e o silêncio reduzem a chance de ser vista. Lâmpadas podem ser apagadas a tiro, mas o disparo é ouvido.','tip'); }
   if(obj('escape').state==='active' && !G.ending){
     const P=G.player.pos, A=G.ally, z={x:-12,z:-34};
     if(Math.hypot(P.x-z.x,P.z-z.z)<2.6){
       const ad=Math.hypot(A.pos.x-z.x,A.pos.z-z.z);
       if(!A.downed && ad<6.5) missionComplete();
-      else if(!G.flags.waitHint){ G.flags.waitHint=true; G.radioMsg('DICA',A.downed?'Lucien está caído. Volte e segure E perto dele.':A.mode==='WAIT'?'Lucien está aguardando. Pressione G para chamá-lo.':'Espere Lucien chegar ao caminhão.','tip'); setTimeout(()=>{ if(G) G.flags.waitHint=false; },8000); }
+      else if(!G.flags.waitHint){ G.flags.waitHint=true; G.radioMsg('DICA',A.downed?'Lucien está caído. Volte e segure '+controlLabel('use')+' perto dele.':A.mode==='WAIT'?'Lucien está aguardando. Use '+controlLabel('ally')+' para chamá-lo.':'Espere Lucien chegar ao caminhão.','tip'); missionAfter(8000,()=>{ G.flags.waitHint=false; }); }
     }
   }
 }

@@ -8,15 +8,15 @@ Atualizado em **14/11/2026 (Brasil)**. Documento de continuidade: ler antes de c
 |---|---|
 | Repositório correto | https://github.com/jogoiarexx-blip/medalha-de-honra |
 | Base analisada | `edca70c8f74a736921939ca149e9e83e9decea50` (`main`) |
-| Build declarado pelo projeto | `rev-abc-2026-11-11` |
-| Entrega desta revisão | Análise do código, GDD, relatórios existentes e plano de melhorias |
-| Mudança de gameplay nesta revisão | Nenhuma; melhorias abaixo ainda são propostas |
-| Etapa atual | CP-00 — análise registrada |
-| Próximo trabalho | CP-01 — revisar controles/estados e validar operação 01 até a extração |
+| Build atual | `cp01-2026-11-14` |
+| Entrega atual | Controles/pausa, dicas por dispositivo e tarefas isoladas por sessão |
+| Mudança de gameplay nesta revisão | MH-01/02/03 implementados; testes isolados aprovados, integração em validação |
+| Etapa atual | CP-01 — EM ANDAMENTO |
+| Próximo trabalho | Validar navegador; depois percurso normal da operação 01 e Android físico |
 | Campanha | 24 operações principais + 3 secretas registradas |
 | Fases comprovadamente terminadas nesta revisão | Nenhuma |
 
-**Ponto de retomada:** começar pelos itens MH-01 a MH-04. Reproduzir os riscos antes de corrigir, depois jogar a operação 01 pelo caminho normal. Não iniciar todas as campanhas ao mesmo tempo.
+**Ponto de retomada:** MH-01/02/03 já foram tratados no código e têm oito testes isolados aprovados. Conferir o registro de validação ao final antes de repetir trabalho; MH-04 ainda exige percurso da operação 01 pelo caminho normal. Não iniciar todas as campanhas ao mesmo tempo.
 
 ## 2. O que já existe e deve ser preservado
 
@@ -93,7 +93,7 @@ As prioridades e soluções são recomendações desta análise. O GDD continua 
 | Checkpoint | Escopo | Arquivos principais | Condição para fechar | Estado |
 |---|---|---|---|---|
 | CP-00 | Análise e continuidade | Este arquivo, README | Evidências, prioridades e retomada registradas | CONCLUÍDO — documentação |
-| CP-01 | Entradas/estados e operação 01 | `17-input-ui.js`, `09-paris-operations-01-03.js`, `08-mission-framework.js`, QA | MH-01/02/03 tratados conforme reprodução + percurso real da 01 | PENDENTE |
+| CP-01 | Entradas/estados e operação 01 | `17-input-ui.js`, `09-paris-operations-01-03.js`, `08-mission-framework.js`, QA | MH-01/02/03 tratados conforme reprodução + percurso real da 01 | EM ANDAMENTO |
 | CP-02 | Combate e IA legíveis | `06-actors.js`, `07-player-combat.js`, `12-combat-extensions.js`, `05-effects.js` | Acerto/parede/capacete/desarme/rendição testados sem dano duplicado | PROPOSTO |
 | CP-03 | Paris com acabamento | `03-world.js`, `09-paris-operations-01-03.js`, `11-paris-operation-04.js`, CSS | Operações 01–04 jogadas; iluminação, navegação e props revisados | PROPOSTO |
 | CP-04 | Desempenho e opções | `02-renderer.js`, `02a-resource-scope.js`, cenários, QA | Medição comparável; otimização sem regressão de colisão/interação | PROPOSTO |
@@ -204,3 +204,30 @@ No fim: atualizar estado, arquivos, teste e próximo passo. Registrar commit ver
 ### Histórico
 
 - **14/11/2026 — CP-00:** repositório identificado, GDD/código/relatórios analisados, seis testes estruturais e sintaxe aprovados; navegador bloqueado por Chromium ausente. Plano CP-01 a CP-06 criado. Nenhuma melhoria de gameplay implementada nesta entrega. Próximo passo: CP-01, começando por entradas/estados e ciclo real da operação 01.
+
+### Plano de execução CP-01 (autorizado em 14/11/2026)
+
+- [ ] Reproduzir entradas presas, câmera em pausa e callback de missão antiga com testes de navegador.
+- [ ] Limpar entradas nas transições, aguardar soltar controle na retomada e impedir ações de toque fora do jogo.
+- [ ] Dicas por último dispositivo, botão ALIADO e orientações da operação 01.
+- [ ] Vincular timers de gameplay à sessão e ao tempo de simulação; inventariar demais callbacks.
+- [ ] Validar interações/objetivos da operação 01 sem chamar conclusão diretamente; distinguir fixture automatizada de partida humana.
+- [ ] Executar suíte, revisar diff, atualizar checkpoint e publicar.
+
+Arquitetura: manter scripts clássicos e saves; centralizar limpeza em `17-input-ui.js`, filas de tarefas por missão em `08-mission-framework.js` e executar tarefas no passo de simulação. Testes em `qa/`, sem dependências de produção novas.
+
+Foco de revisão: toque cancelado/perda de foco, controle mantido ao retomar, documento sobre pausa, reinício da mesma fase e callbacks agendados antes da conclusão.
+
+### CP-01 — controles, foco e tarefas de missão — 14/11/2026
+
+- Estado: IMPLEMENTADO; integração no navegador em validação. CP-01 permanece aberto até o percurso normal e teste em aparelho.
+- MH-01: limpeza central ao abrir telas, iniciar/reiniciar missão, ir ao menu e perder foco/visibilidade; toque não altera câmera nem ativa ações em pausa/documento. Teclas e controle mantidos precisam ser liberados antes da retomada.
+- MH-02: interação mostra E, A / ✕ ou USAR conforme último dispositivo; tutoriais da 01 adaptados; botão de aliado no toque passou de G para ALIADO. Toque inativo não anula mais disparo do controle.
+- Revisão adicional: desconectar controle com gatilho pressionado deixava tiro/mira ativos; regressão reproduzida e corrigida, reconexão aguarda neutro.
+- MH-03: fila de tarefas em cada sessão (`missionAfter`/`tickMissionTasks`), executada no tempo simulado. Garagem/dicas da 01 e mensagens/conclusões atrasadas das operações 07/08/09/23 migradas. Reiniciar a mesma fase também descarta tarefas anteriores; pausa/documento suspendem contagem.
+- Timers de UI permanecem em tempo real; falha por morte já captura identidade da sessão. Tarefas não entram no formato de save.
+- Arquivos: módulos de entrada/estados, estrutura de missão, operações citadas, index, diagnóstico, QA e workflow. Saves mantêm as mesmas chaves e versão.
+- Evidência local: oito regressões em Node VM aprovadas (handlers de produção com DOM/gamepad mínimos); seis testes estruturais e sintaxe aprovados. Novas regressões foram observadas falhando antes das correções.
+- Limite local: Chromium instalado no sistema, mas execução bloqueada por `socket() failed: Operation not permitted`. Integração de navegador será executada no GitHub Actions.
+- Teste novo `qa/test_cp01_browser.cjs`: telas/entrada/sessão e objetivos da 01 por interações reais com posicionamento controlado. Não representa percurso humano, navegação sem teleporte, avaliação visual ou Android físico.
+- Próximo passo exato: obter resultado de CI; manter pendentes testes humanos da 01 (incluindo alarme, aliado caído, carregamento e extração) e desempenho Android.

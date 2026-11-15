@@ -56,6 +56,14 @@ Os testes de navegador usam o Chromium do Playwright (`npm install --no-save pla
 
 **Status honesto:** nenhum teste automático declara uma fase "zerada". Jogar os objetivos até a extração, FPS em Android/PC reais e memória por 60 minutos continuam `NÃO TESTADO` até haver registro humano.
 
+## Melhorias CP-01 (14/11/2026)
+
+- Pausa, documentos e perda de foco limpam comandos mantidos; no celular a câmera respeita telas abertas e a troca de aplicativo pausa a missão.
+- Controle desconectado não deixa tiro/mira presos; retomada exige soltar os comandos anteriores.
+- Dicas de interação acompanham teclado, controle e toque; botão **ALIADO** identifica seguir/aguardar no celular.
+- Ações atrasadas de gameplay pertencem à sessão e usam tempo simulado; não vazam para outra missão nem avançam durante a pausa.
+- `node --test qa/test_input_session.cjs` testa regressões isoladas sem navegador. `node qa/test_cp01_browser.cjs` confere integração e objetivos da 01 com posicionamento controlado; não comprova percurso humano completo.
+
 ## Robustez, diagnóstico e desempenho (REV-A a REV-G, 11/11/2026)
 
 - **Saves validados** (`js/08a-save-guard.js`): todo checkpoint passa por `validateCheckpoint()` antes de entrar no jogo. Campos opcionais ausentes (v1/v2) são migrados; campos essenciais inválidos reprovam o save com motivo legível. O checkpoint anterior íntegro fica em `sdp_checkpoint_bak`. Se o principal estiver ilegível, o menu avisa e oferece a cópia; se nenhum servir, avisa e oferece "Descartar checkpoint" — a campanha concluída nunca é apagada. Ajustes e registro de campanha também são consertados ao iniciar.

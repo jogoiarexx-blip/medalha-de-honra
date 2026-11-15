@@ -168,7 +168,7 @@ function interact08(R){
   I.push({id:'radio8w',pt:()=>V3(-92.6,4.5,-8.2),r:2.4,hold:()=>2.6,label:()=>obj('radio').state==='active'?'Chamar a patrulha Y2 no rádio (segure)':null,
     use:()=>{ complete('radio'); activate('yasmina'); AudioSys.play('morse'); F().called=true;
       G.radioMsg('Y2 (LRDG)','“Tocha, aqui Y2. Pegamos vocês na pista velha de Henchir Souar, a leste das ruínas. Marquem com duas fumaças quando estiverem lá.”');
-      setTimeout(()=>{ if(G&&G.levelId==='08'&&!G.ending) G.radioMsg('ÉLISE','Não sem a Yasmina. Ela está na cisterna de Bir Zitoun.'); },5200); cp08(); }});
+      missionAfter(5200,()=>{ G.radioMsg('ÉLISE','Não sem a Yasmina. Ela está na cisterna de Bir Zitoun.'); }); cp08(); }});
   I.push({id:'cellkey',pt:()=>{ const k=F().keySpot; return k?V3(k[0],.3,k[1]):V3(0,-99,0); },r:2.2,label:()=>F().keySpot&&!F().cellKey?'Pegar a chave da cisterna':null,
     use:()=>{ F().cellKey=true; if(G.keyMesh8) G.keyMesh8.visible=false; AudioSys.play('pickup'); pickupMsg('Chave da cisterna'); }});
   I.push({id:'celldoor',pt:()=>V3(5.9,1.2,9),r:2.4,skipSolid:()=>W.doors.cell.solid,
@@ -179,10 +179,10 @@ function interact08(R){
     label:()=>{ const A=G.ally; if(!A) return null; if(A.downed) return 'Reanimar Yasmina'; if(!A.joined&&W.doors.cell.state!=='LOCKED') return 'Soltar Yasmina'; return null; },
     hold:()=>G.ally.downed?1.6:0,
     use:()=>{ const A=G.ally; if(A.downed){ A.revive(); return; } A.joined=true; A.mode='FOLLOW'; A.hidden=false; complete('yasmina'); activate('smoke'); if(!G.alarm&&obj('quietRescue').state==='active') complete('quietRescue');
-      G.radioMsg('YASMINA','Élise! Achei que você estava no fundo do uádi. Me dá um fuzil — tirei um Carcano do guarda. Para onde?'); setTimeout(()=>{ if(G&&G.levelId==='08'&&!G.ending) G.radioMsg('ÉLISE','Pista velha de Henchir Souar, a leste. O LRDG vem nos buscar. (G: Yasmina segue / espera)'); },4800); cp08(); }});
+      G.radioMsg('YASMINA','Élise! Achei que você estava no fundo do uádi. Me dá um fuzil — tirei um Carcano do guarda. Para onde?'); missionAfter(4800,()=>{ G.radioMsg('ÉLISE','Pista velha de Henchir Souar, a leste. O LRDG vem nos buscar. (G: Yasmina segue / espera)'); }); cp08(); }});
   R.pots.forEach((p,i)=>I.push({id:'pot'+i,pt:()=>V3(p.x,.5,p.z),r:2.3,hold:()=>1.2,label:()=>obj('smoke').state==='active'&&!F()['pot'+i]?'Acender a lata de fumaça (segure)':null,
     use:()=>{ F()['pot'+i]=true; F().potN=(F().potN||0)+1; AudioSys.play('flare',V3(p.x,.5,p.z)); pickupMsg('Fumaça '+F().potN+'/2'); const o=obj('smoke'); o.text='Com Yasmina, acenda as duas latas de fumaça na pista de Henchir Souar ('+F().potN+'/2)';
-      if(F().potN>=2){ complete('smoke'); activate('hold'); F().holdT=0; G.radioMsg('Y2 (LRDG)','“Vemos as duas fumaças. Aguentem firme — estamos chegando pelo leste.”','warn'); setTimeout(()=>{ if(G&&G.levelId==='08'&&!G.ending) G.radioMsg('YASMINA','Caminhões na estrada do norte! Eles também viram a fumaça.','warn'); },3000); cp08(); }
+      if(F().potN>=2){ complete('smoke'); activate('hold'); F().holdT=0; G.radioMsg('Y2 (LRDG)','“Vemos as duas fumaças. Aguentem firme — estamos chegando pelo leste.”','warn'); missionAfter(3000,()=>{ G.radioMsg('YASMINA','Caminhões na estrada do norte! Eles também viram a fumaça.','warn'); }); cp08(); }
       else { const nx=R.pots.find((q,j)=>!F()['pot'+j]); if(nx){ o.marker={x:nx.x,z:nx.z}; } refreshObjectiveUI(); } }}));
   I.push({id:'board',pt:()=>{ const v=R.lrdg[1]; return V3(v.x,1.6,v.z); },r:4,skip:true,
     label:()=>{ if(obj('board').state!=='active') return null; const A=G.ally; if(A.downed) return 'Yasmina está caída — reanime-a primeiro'; if(Math.hypot(A.pos.x-G.player.pos.x,A.pos.z-G.player.pos.z)>25) return 'Espere Yasmina (G: chamar)'; return 'Embarcar no caminhão do LRDG'; },

@@ -5,6 +5,17 @@
    MISSÃO: objetivos, interação, portas, coletáveis
    ========================================================= */
 let G=null; let simTime=0;
+// Cada sessão possui sua fila: reiniciar a mesma operação também descarta tarefas antigas.
+// Tempo simulado: pausas/documentos não consomem os atrasos de gameplay.
+function missionAfter(ms,run){ if(G) G.tasks.push({left:ms/1000,run}); }
+function tickMissionTasks(dt){
+  const session=G;
+  if(!session||APP.state!=='PLAYING'||session.ending||session.player.dead) return;
+  const due=[];
+  session.tasks=session.tasks.filter(task=>{ task.left-=dt; if(task.left<=0){ due.push(task); return false; } return true; });
+  for(const task of due){ if(G!==session||session.ending||session.player.dead||APP.state!=='PLAYING') break; task.run(); }
+}
+
 /* =========================================================
    DOCUMENTOS
    ========================================================= */
@@ -48,7 +59,7 @@ Não volte pelo portão.
    ESTRUTURA COMUM DE MISSÃO
    ========================================================= */
 function newGameState(levelId,diff){
-  return {levelId,level:LEVELS[levelId],diff,player:newPlayer(),enemies:[],actors:[],ally:null,objectives:[],flags:{},stats:{shots:0,hits:0,heads:0,helmets:0,disarms:0,kills:0,alerts:0,dmgTaken:0,takedowns:0,photos:0},
+  return {tasks:[],levelId,level:LEVELS[levelId],diff,player:newPlayer(),enemies:[],actors:[],ally:null,objectives:[],flags:{},stats:{shots:0,hits:0,heads:0,helmets:0,disarms:0,kills:0,alerts:0,dmgTaken:0,takedowns:0,photos:0},
     shotId:0,seed:(Math.random()*1e9)|0,time:0,dmgMarks:[],radioQ:[],hud:{healthT:4,ammoT:4},combatT:0,playerShotT:0,flashLightT:0,pebbleCD:0,discovered:new Set(),taken:new Set(),docs:[],
     alarm:false,radioDead:false,ending:false,introT:0,hintT:0,lastShot:null,refs:{},
     radioMsg(who,text,cls){ this.radioQ.push({who,text,cls}); }};

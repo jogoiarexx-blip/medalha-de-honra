@@ -5,6 +5,8 @@
 const {spawnSync}=require('node:child_process'),fs=require('node:fs'),path=require('node:path');
 const ROOT=path.resolve(__dirname,'..'), quick=process.argv.includes('--rapido');
 const SUITE=[
+  ['test_input_session.cjs','Isolado','Entradas em pausa/foco e tarefas por sessão (Node VM)'],
+  ['test_cp01_browser.cjs','Navegador','CP-01: entradas, sessão e objetivos da 01 com posicionamento controlado'],
   ['test_three_local.js','Estrutural','Three.js r128 local e ordem dos scripts'],
   ['test_menu_principal.js','Estrutural','Música do menu (arquivo e integração)'],
   ['test_material_paris.js','Estrutural','Materiais das fachadas de Paris'],
