@@ -10,11 +10,12 @@ Atualizado em **14/11/2026 (Brasil)**. Documento de continuidade: ler antes de c
 | Base analisada | `edca70c8f74a736921939ca149e9e83e9decea50` (`main`) |
 | Build atual | `cp01-2026-11-14` |
 | Entrega atual | Controles/pausa, dicas por dispositivo e tarefas isoladas por sessão |
-| Mudança de gameplay nesta revisão | MH-01/02/03 implementados; testes isolados aprovados, integração em validação |
+| Mudança de gameplay nesta revisão | MH-01/02/03 implementados e aprovados em testes isolados e Chromium |
 | Etapa atual | CP-01 — EM ANDAMENTO |
 | Próximo trabalho | Validar navegador; depois percurso normal da operação 01 e Android físico |
 | Campanha | 24 operações principais + 3 secretas registradas |
-| Fases comprovadamente terminadas nesta revisão | Nenhuma |
+| Fases com percurso humano comprovado | Nenhuma |
+| Integração da operação 01 | Objetivos, save/load e extração aprovados no Chromium com posições controladas; percurso normal pendente |
 
 **Ponto de retomada:** MH-01/02/03 já foram tratados no código e têm oito testes isolados aprovados. Conferir o registro de validação ao final antes de repetir trabalho; MH-04 ainda exige percurso da operação 01 pelo caminho normal. Não iniciar todas as campanhas ao mesmo tempo.
 
@@ -35,6 +36,8 @@ Preservar:
 - Estilo histórico de espionagem e desempenho no celular.
 
 ## 3. Diagnóstico com evidências
+
+Esta seção descreve a base original analisada. Para o estado após as correções, consultar o registro CP-01 ao final; não repetir tarefas já implementadas.
 
 ### MH-01 — estado de entrada no celular (P0, risco identificado por leitura)
 
@@ -102,10 +105,10 @@ As prioridades e soluções são recomendações desta análise. O GDD continua 
 
 ### CP-01 — roteiro concreto da próxima sessão
 
-- [ ] Confirmar HEAD atual e reler este checkpoint e os arquivos afetados.
-- [ ] Disponibilizar Chromium para executar a infraestrutura de navegador existente.
-- [ ] Reproduzir MH-01 e MH-03 antes de implementar correção; registrar passos e resultados.
-- [ ] Ajustar dicas de controle/toque de MH-02 e conferir ação de aliado.
+- [x] Confirmar HEAD atual e reler este checkpoint e os arquivos afetados.
+- [x] Disponibilizar Chromium no GitHub Actions para executar a infraestrutura de navegador existente.
+- [x] Reproduzir MH-01 e MH-03 antes de implementar correção; registrar passos e resultados.
+- [x] Ajustar dicas de controle/toque de MH-02 e conferir ação de aliado (fixture automatizada).
 - [ ] Iniciar operação 01 e encontrar Lucien na praça da fonte.
 - [ ] Obter a chave no posto; repetir variante em que a chave é pega antes da conversa.
 - [ ] Sabotar rádio antes do alarme e repetir com alarme acionado, sem exigir o opcional para terminar.
@@ -127,11 +130,11 @@ As prioridades e soluções são recomendações desta análise. O GDD continua 
 
 ## 5. Matriz de campanha para atualizar
 
-Todos os objetivos/extrações abaixo continuam **NÃO TESTADOS nesta revisão**. Os relatórios históricos são evidência separada de infraestrutura, não de partida concluída.
+A operação 01 tem integração automatizada aprovada com posicionamento controlado; seu percurso normal ainda está pendente. As demais operações continuam sem comprovação de objetivos/extração nesta revisão. Relatórios de transição forçada não comprovam partida concluída.
 
 | Operação | Nome | Objetivos reais | Extração/final | Evidência nova |
 |---|---|---|---|---|
-| 01 | Encontro à Meia-Noite | NÃO TESTADO | NÃO TESTADO | — |
+| 01 | Encontro à Meia-Noite | PASSOU — fixture | PASSOU — fixture | `qa/test_cp01_browser.cjs`; percurso normal pendente |
 | 02 | Entre os Mortos | NÃO TESTADO | NÃO TESTADO | — |
 | 03 | Sem Deixar Rastro | NÃO TESTADO | NÃO TESTADO | — |
 | 04 | Pise com Cuidado | NÃO TESTADO | NÃO TESTADO | — |
@@ -207,12 +210,12 @@ No fim: atualizar estado, arquivos, teste e próximo passo. Registrar commit ver
 
 ### Plano de execução CP-01 (autorizado em 14/11/2026)
 
-- [ ] Reproduzir entradas presas, câmera em pausa e callback de missão antiga com testes de navegador.
-- [ ] Limpar entradas nas transições, aguardar soltar controle na retomada e impedir ações de toque fora do jogo.
-- [ ] Dicas por último dispositivo, botão ALIADO e orientações da operação 01.
-- [ ] Vincular timers de gameplay à sessão e ao tempo de simulação; inventariar demais callbacks.
-- [ ] Validar interações/objetivos da operação 01 sem chamar conclusão diretamente; distinguir fixture automatizada de partida humana.
-- [ ] Executar suíte, revisar diff, atualizar checkpoint e publicar.
+- [x] Reproduzir entradas presas, câmera em pausa e callback de missão antiga; regressões isoladas antes das correções e integração Chromium depois.
+- [x] Limpar entradas nas transições, aguardar soltar controle na retomada e impedir ações de toque fora do jogo.
+- [x] Dicas por último dispositivo, botão ALIADO e orientações da operação 01.
+- [x] Vincular timers de gameplay à sessão e ao tempo de simulação; inventariar demais callbacks.
+- [x] Validar interações/objetivos da operação 01 sem chamar conclusão diretamente; distinguir fixture automatizada de partida humana.
+- [x] Executar suíte, revisar diff e atualizar checkpoint; integrar pela PR #1 após aprovação dos testes.
 
 Arquitetura: manter scripts clássicos e saves; centralizar limpeza em `17-input-ui.js`, filas de tarefas por missão em `08-mission-framework.js` e executar tarefas no passo de simulação. Testes em `qa/`, sem dependências de produção novas.
 
@@ -220,7 +223,7 @@ Foco de revisão: toque cancelado/perda de foco, controle mantido ao retomar, do
 
 ### CP-01 — controles, foco e tarefas de missão — 14/11/2026
 
-- Estado: IMPLEMENTADO; integração no navegador em validação. CP-01 permanece aberto até o percurso normal e teste em aparelho.
+- Estado: CORREÇÕES VALIDADAS AUTOMATICAMENTE. CP-01 permanece aberto para percurso normal e teste em aparelho.
 - MH-01: limpeza central ao abrir telas, iniciar/reiniciar missão, ir ao menu e perder foco/visibilidade; toque não altera câmera nem ativa ações em pausa/documento. Teclas e controle mantidos precisam ser liberados antes da retomada.
 - MH-02: interação mostra E, A / ✕ ou USAR conforme último dispositivo; tutoriais da 01 adaptados; botão de aliado no toque passou de G para ALIADO. Toque inativo não anula mais disparo do controle.
 - Revisão adicional: desconectar controle com gatilho pressionado deixava tiro/mira ativos; regressão reproduzida e corrigida, reconexão aguarda neutro.
@@ -228,6 +231,37 @@ Foco de revisão: toque cancelado/perda de foco, controle mantido ao retomar, do
 - Timers de UI permanecem em tempo real; falha por morte já captura identidade da sessão. Tarefas não entram no formato de save.
 - Arquivos: módulos de entrada/estados, estrutura de missão, operações citadas, index, diagnóstico, QA e workflow. Saves mantêm as mesmas chaves e versão.
 - Evidência local: oito regressões em Node VM aprovadas (handlers de produção com DOM/gamepad mínimos); seis testes estruturais e sintaxe aprovados. Novas regressões foram observadas falhando antes das correções.
-- Limite local: Chromium instalado no sistema, mas execução bloqueada por `socket() failed: Operation not permitted`. Integração de navegador será executada no GitHub Actions.
+- Limite local: Chromium instalado no sistema, mas execução bloqueada por `socket() failed: Operation not permitted`. Integração de navegador executada e aprovada no GitHub Actions.
 - Teste novo `qa/test_cp01_browser.cjs`: telas/entrada/sessão e objetivos da 01 por interações reais com posicionamento controlado. Não representa percurso humano, navegação sem teleporte, avaliação visual ou Android físico.
-- Próximo passo exato: obter resultado de CI; manter pendentes testes humanos da 01 (incluindo alarme, aliado caído, carregamento e extração) e desempenho Android.
+- Próximo passo exato: testar o percurso normal da 01 (incluindo alarme, aliado caído, carregamento e extração) e desempenho Android. Correções de entrada e sessão não devem ser refeitas. Depois, iniciar CP-02 (combate e IA legíveis).
+
+### Registro de revisão e diagnóstico de QA
+
+- Revisão independente do diff: nenhum defeito importante novo identificado; foi encontrado um defeito herdado no escopo de entrada (controle desconectado deixava gatilhos ativos). Teste adicional reproduziu a falha e passou após a correção.
+- Limitação menor mantida: dispositivos híbridos com atividade contínua no controle podem priorizá-lo sobre o toque; verificar ergonomia em aparelho real.
+- Tentativa local da suíte rápida: sete entradas de teste passaram, dez entradas de navegador não iniciaram por Chromium do Playwright ausente. Tentativa com Chromium do sistema também bloqueada por restrição de socket. Resultados locais não substituem a execução de CI.
+- Primeira execução de CI `43659271922`: CP-01 e contrato das 27 operações passaram; migração de saves parou por cancelamento do stream MP3 durante recarga. O harness foi corrigido para registrar a causa e aceitar apenas `net::ERR_ABORTED` do MP3 do menu enquanto a navegação está em andamento. Outras URLs, causas e cancelamentos fora da navegação continuam como erro; regressão isolada adicional aprovada (9 testes Node no total).
+- Segunda execução de CI `43659575335`: CP-01, registro de operações, saves/migração/backup e passo fixo aprovados; demais resultados serão registrados ao concluir.
+- Segunda execução: também encontrou um limite de tempo frágil no teste de retomada (400 ms, menor que um quadro em renderização por software). `test_state_transitions.cjs` passou a aguardar avanço real da simulação, com timeout de 10 s e estado/stack no diagnóstico; a terceira execução aprovou a transição.
+- Terceira execução `43659803130`, commit de código `7c1acd4b9ac46619a7e39e6c6f1c4e5a639f462c`: CP-01, contrato, saves, passo fixo, telas, memória, perfis gráficos, áudio e IA aprovados. Matriz das 27 operações e captura comparativa de desempenho também APROVADAS. Jobs estrutural e navegador concluídos com sucesso.
+
+### Resultado final automatizado — CP-01
+
+- Código testado: `7c1acd4b9ac46619a7e39e6c6f1c4e5a639f462c`; a atualização posterior deste checkpoint altera somente documentação.
+- CI aprovado: https://github.com/jogoiarexx-blip/medalha-de-honra/actions/runs/43659803130
+- Integração/publicação: PR https://github.com/jogoiarexx-blip/medalha-de-honra/pull/1
+
+| Verificação nova | Resultado | Escopo comprovado |
+|---|---|---|
+| 9 regressões Node + sintaxe + 6 testes estruturais | PASSOU | Entradas/tarefas, diagnóstico de requisições e estrutura de assets |
+| CP-01 Chromium | PASSOU | Toque/documentos/foco, controle híbrido, reinício e objetivos/save/extração da 01 em fixture |
+| Contrato das 27 operações | PASSOU | Registro e consistência estrutural |
+| Saves/migração/backup | PASSOU | 14 payloads rejeitados, 14 reparados/carregados, 7 menus com dados corrompidos |
+| Passo fixo e telas | PASSOU | Contabilização do tempo; menu/documento/pausa/retomada/checkpoint/relatório |
+| Memória e perfis gráficos | PASSOU | Recarregamentos/trocas, 3 perfis × 3 estilos, 5 formatos e primeiro uso em toque simulado |
+| Áudio e orçamento da IA | PASSOU | Estados de áudio e cenários de IA da suíte existente |
+| Matriz de 27 operações | PASSOU | Início, simulação, movimento, save/load, morte/reinício, transição forçada e menu |
+| Captura de desempenho | PASSOU | Comparação por software; não certifica FPS de aparelhos reais |
+| Percurso completo sem posicionamento controlado / Android físico | PENDENTE | Nenhuma alegação de campanha zerada ou desempenho real |
+
+**Checkpoint de retomada:** CP-01 — validação de percurso/aparelho pendente; código de MH-01/02/03 entregue. Evitar reiniciar esta auditoria ou refazer os handlers. Se o teste real apontar falha, registrar reprodução e corrigir antes de CP-02.
