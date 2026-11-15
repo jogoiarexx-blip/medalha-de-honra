@@ -731,7 +731,7 @@ function update07(dt){
   if(obj('enter').state==='active'&&P.pos.x>-29.2&&P.pos.x<33.8&&P.pos.z>-29.8&&P.pos.z<25.8){ complete('enter'); G.radioMsg('ÉLISE','Dentro.'); cp07(); }
   // partida do comboio
   if(!F.depart&&!F.allWrecked&&(dawn>=1||G.alarm)){ F.depart=true; F.departT=G.alarm?14:6; activate('trucks'); onWreck07();
-    G.radioMsg('RÁDIO','“Motoristas aos caminhões! Kolonne 7, partida imediata!”','warn'); setTimeout(()=>{ if(G&&G.levelId==='07'&&!G.ending) G.radioMsg('DICA','Caminhão em movimento: motor, dois pneus ou o motorista o param. Tanque furado + fogo o destrói.','tip'); },3500); }
+    G.radioMsg('RÁDIO','“Motoristas aos caminhões! Kolonne 7, partida imediata!”','warn'); missionAfter(3500,()=>{ G.radioMsg('DICA','Caminhão em movimento: motor, dois pneus ou o motorista o param. Tanque furado + fogo o destrói.','tip'); }); }
   if(F.depart&&!F.allWrecked){ F.departT-=dt; if(F.departT<=0){ const nx=R.trucks.find(t=>t.state==='PARKED'&&!t.engDead&&!t.tiresOut&&!t.driverDead); if(nx){ startTruck07(nx); G.radioMsg('ALERTA','O caminhão '+(nx.i+1)+' ligou o motor!','warn'); } F.departT=G.diff==='veterano'?12:G.diff==='recruta'?20:16; } }
   // descoberta de cargas
   for(const t of R.trucks){ if(!t.charge||(t.state!=='PARKED'&&t.state!=='STOPPED')) { if(t.discE){ susMark(t.discE,null); t.discE=null; } t.disc=0; continue; }

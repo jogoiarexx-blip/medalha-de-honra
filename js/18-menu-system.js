@@ -330,6 +330,7 @@ function refreshContinue(){
   if(note){ note.hidden=!msg; $('#cpNoteText').textContent=msg; $('#bCpDiscard').hidden=!(st.present&&!cp); }
 }
 function goMenu(){
+  resetGameplayInput();
   APP.state='MENU'; releaseLock(); AudioSys.ambient(null); UI.closeAll(); $('#hud').hidden=true; $('#touch').hidden=true; applyCheatsVisual();
   if(!G||G.ending) newMission(G&&G.ending?G.levelId:'01',settings.difficulty);
   refreshContinue();

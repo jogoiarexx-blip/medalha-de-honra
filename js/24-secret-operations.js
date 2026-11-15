@@ -175,7 +175,7 @@ function startPlaying(save,levelId){
   catch(err){ if(!cp) throw err; DIAG.report('SAVE_APPLY','checkpoint não pôde ser aplicado; missão reiniciada',err); DIAG.notice('O checkpoint não pôde ser restaurado. A missão recomeça do início.'); newMission(id,diff,null); }
   AudioSys.ambient(G.level.ambient); AudioSys.setRoom(G.level.ambient==='crypt'||['02','13','16','19','S1'].includes(G.level.id)?(G.level.id==='02'?'crypt':'indoor'):['05'].includes(G.level.id)?'indoor':['06','07','08','12','14','18','20','24'].includes(G.level.id)?'open':'street');
   APP.state='PLAYING'; UI.closeAll(); $('#hud').hidden=false; $('#hud').className='hud preset-'+settings.hud; $('#touch').hidden=!APP.touch;
-  for(const k in keys) keys[k]=false; input.fire=false; input.firePressed=false; input.ads=false; input.adsToggled=false; acc=0; _prevP.ok=false; SIM.alpha=1; hudAcc=1;
+  resetGameplayInput(); acc=0; _prevP.ok=false; SIM.alpha=1; hudAcc=1;
   applyCheatsVisual();
   { const t=$('#nadeTag'); if(t&&t.firstChild) t.firstChild.nodeValue=(G.level.nadeKind==='molotov'?'Coquetéis ':'Granadas '); }
   if(!APP.noLock) requestLock();
