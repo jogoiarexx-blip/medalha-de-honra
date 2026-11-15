@@ -308,7 +308,7 @@ function buildLevel01(){
   addMesh(new T.CylinderGeometry(1.85,1.85,.05,14),MAT.water,0,.58,0,'stone');
   addMesh(new T.CylinderGeometry(.3,.38,2.2,8),MAT.stone,0,1.1,0,'stone');
   addMesh(new T.CylinderGeometry(.75,.3,.3,10),MAT.stone,0,2.05,0,'stone');
-  addSolidOnly(-1.7,1.7,-1.7,1.7,.6,0,true); addSolidOnly(-.4,.4,-.4,.4,2.3);
+  fountainCollision01();
   addBlock(-12.3,-10.7,5.2,6.8,2.4,{mat:MAT.kiosk,surf:'wood',cover:true,seg:1});
   addMesh(new T.ConeGeometry(1.35,.7,8),MAT.kiosk,-11.5,2.75,6,'wood');
   addBlock(5,7,6.3,6.9,.5,{mat:MAT.crate,surf:'wood',seg:1,cover:false});

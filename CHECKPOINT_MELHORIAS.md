@@ -343,3 +343,17 @@ Estado: VALIDADO AUTOMATICAMENTE E PUBLICADO — CP-02B. Manter CP-01 (percurso 
 - Pendentes: percurso humano da campanha, avaliação visual/áudio humana e desempenho em Android físico. Matriz com conclusão forçada não certifica fases zeradas. O cenário continua usando uma altura de piso por X/Z.
 
 **Retomar em CP-02C:** melhorar feedback de recarga e arma bloqueada por parede sem mudar cadência/dano nem refazer a base; registrar uma falha reproduzível ou um critério visual antes de implementar. Depois seguir para acabamento visual de Paris (CP-03).
+
+### CP-03A — cenários antecipados por prioridade do usuário — 14/11/2026
+
+O usuário priorizou explicitamente os cenários após CP-02B. CP-02C (recarga/arma) fica pendente; esta entrega trata a operação 01, sem declarar todas as campanhas reformadas.
+
+- [x] Implementar kit visual da Rue des Lanternes em `23a-paris-scenery.js`: oito vitrines de época em atlas local, molduras/pilastras, calçadas e sarjetas, tampas e detalhes da fonte. Peças estáticas usam o mesclador já existente.
+- [x] Halos de chão ligados aos oito lampiões existentes; não acrescentar PointLights nem mudar percepção/alcance da iluminação. Apagar halo ao quebrar lampião e ao restaurar save com lampião quebrado.
+- [x] Corrigir colisão da fonte: sete faixas inscritas na base circular e pilar, substituindo o quadrado antigo menor que a borda visível. Preservar cantos externos e passagens.
+- [x] Criar regressões isoladas: colisão, isolamento por fase, compartilhamento de materiais, idempotência e lampião. Quatro testes novos aprovados após falhas observadas antes da implementação.
+- [ ] Conferir imagens antes/depois no Chromium, incremento de chamadas/triângulos, rotas e regressões gerais antes de publicar.
+
+Orçamento desta entrega: até +24 draw calls e +4.000 triângulos nas câmeras fixas; comparar mesma cena/perfil/resolução, sem usar FPS por software como FPS de celular. Cache de materiais/texturas/geometrias registrado em RES.pin.
+
+Arquivos: `03-world.js`, `06-actors.js`, `07-player-combat.js`, novo `23a-paris-scenery.js`, index/diagnóstico e QA. A maior parte é decorativa; somente a fonte altera colisores. Portas, objetivos, pontos de navegação e ações da missão devem permanecer iguais. Próximo cenário: revisar os demais ambientes de Paris e seus próprios problemas visuais, mantendo a validação real de percurso/Android pendente.

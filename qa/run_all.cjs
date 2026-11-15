@@ -5,6 +5,8 @@
 const {spawnSync}=require('node:child_process'),fs=require('node:fs'),path=require('node:path');
 const ROOT=path.resolve(__dirname,'..'), quick=process.argv.includes('--rapido');
 const SUITE=[
+  ['test_paris_scenery.cjs','Isolado','CP-03A: decoração, materiais e colisores da fonte'],
+  ['test_cp03_browser.cjs','Navegador','CP-03A: cenários antes/depois e orçamento'],
   ['test_vertical.cjs','Isolado','CP-02B: cilindro fechado, restauração e recuperação do aliado'],
   ['test_cp02b_browser.cjs','Navegador','CP-02B: tiros verticais e saves em piso elevado'],
   ['test_combat.cjs','Isolado','Combate: dano único, armadura, capacete e alturas'],

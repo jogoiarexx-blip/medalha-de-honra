@@ -56,6 +56,10 @@ Os testes de navegador usam o Chromium do Playwright (`npm install --no-save pla
 
 **Status honesto:** nenhum teste automático declara uma fase "zerada". Jogar os objetivos até a extração, FPS em Android/PC reais e memória por 60 minutos continuam `NÃO TESTADO` até haver registro humano.
 
+## Cenários CP-03A — operação 01
+
+A Rue des Lanternes recebe vitrines de época, molduras, calçadas, sarjetas e detalhes da fonte. Halos de chão acompanham os lampiões destrutíveis, sem novas luzes pontuais. A colisão da fonte acompanha melhor a base circular. O kit usa atlas e peças estáticas fundidas; as outras operações continuam no plano de cenários do checkpoint.
+
 ## Melhorias CP-02B (14/11/2026)
 
 - Tiros verticais e oblíquos consideram o topo/base do volume de acerto, com alcance e cobertura preservados.

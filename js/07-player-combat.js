@@ -310,7 +310,7 @@ function knockCap(ch,dir){
   if(ch.isEnemy && ch.state!=='COMBAT'){ ch.awareness+=.7; ch.enterCombat(G.player.pos.x,G.player.pos.z); }
 }
 function breakLamp(L,loud){
-  L.broken=true; L.lantern.visible=false; L.light.intensity=0; if(L.cone) L.cone.visible=false;
+  L.broken=true; if(L.spill) L.spill.visible=false; L.lantern.visible=false; L.light.intensity=0; if(L.cone) L.cone.visible=false;
   if(loud){ FX.burst(L.lantern.position,12,0xffe9b0,2.2,.6); AudioSys.play('glass',L.lantern.position); emitNoise(V3(L.x,0,L.z),9,'glass',null); }
 }
 function emitNoise(pos,radius,kind,src){
