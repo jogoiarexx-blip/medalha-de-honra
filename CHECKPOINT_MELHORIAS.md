@@ -436,3 +436,18 @@ Perfil Baixo, câmeras fixas, Chromium/SwiftShader: contagens de geometria/desen
 - Limitações: matriz da campanha usa conclusão forçada e não comprova objetivos/extração jogados. O teste específico do kit valida reentrada na mesma página, não recarga real do navegador; perfil Alto só verifica reconstrução por metadado. Aparência em movimento, percurso completo, Android físico e memória de 60 minutos continuam pendentes.
 
 **Retomar em CP-03C:** analisar o cenário da operação 05 — O Hotel da Medina, Túnis — e definir seu lote de correções/acabamento a partir de evidências. CP-02C (feedback de recarga/arma) permanece pendente pela prioridade em cenários.
+
+### CP-03C — plano em execução — 15/11/2026
+
+Base `fc5109ba31cbccd0b7ce0847ce09e31743e1aca9`. Continuação autorizada pelo usuário no cenário 05 — Hotel da Medina, Túnis.
+
+Problema observado no código: a rotina frontal usa uma composição de janelas de 6,6 m em alas de apenas 6 m. Produz trecho invertido (-9,4 → -10 e 16,6 → 16), vidro que ultrapassa X=16 e parede adicional que cobre parte da janela oeste. Corrigir a distribuição para as alas completas [-16,-8] e [8,16], com paredes/vidros gerados pela mesma rotina.
+
+Decisão: manter a arquitetura Three.js r128, iluminação e passagens existentes. Ampliar o acabamento com kit estático compartilhado/mesclado: molduras e soleiras da fachada, azulejos/rodapés do pátio, borda e água da fonte, placas de quartos/rouparia. A correção frontal altera somente seus trechos físicos; escadas, portas móveis, objetivos e saves preservados. Não criar novo modelo de andares nem obstáculos decorativos.
+
+- [ ] Reproduzir fachadas invertidas/vidros obstruídos com teste; corrigir e conferir limites/aberturas.
+- [ ] Testes do kit: isolamento, idempotência, recursos compartilhados e vãos livres; implementar acabamento.
+- [ ] Chromium: antes/depois, limites da fachada, passagens/escadas, save/reentrada, troca de perfil e recarga do navegador; orçamento de +16 chamadas/+5.000 triângulos por câmera.
+- [ ] Revisão independente, regressões gerais, publicação e registro final.
+
+Foco: vidro alinhado à abertura real; placas fora da porta deslizante; ausência de peças sobre degraus; recursos preservados após troca de fase/perfil e recarga; nada do kit em outras fases. Comparar decoração isoladamente do conserto físico para não confundir ganho visual com prova de colisão. Android físico e percurso humano completo seguem pendentes.

@@ -5,6 +5,8 @@
 const {spawnSync}=require('node:child_process'),fs=require('node:fs'),path=require('node:path');
 const ROOT=path.resolve(__dirname,'..'), quick=process.argv.includes('--rapido');
 const SUITE=[
+  ['test_medina_scenery.cjs','Isolado','CP-03C: fachada, vidros e kit da Medina'],
+  ['test_cp03c_browser.cjs','Navegador','CP-03C: cenários, passagens, recursos e recarga'],
   ['test_paris_extension.cjs','Isolado','CP-03B: cenários 02–04 e fachada diurna'],
   ['test_cp03b_browser.cjs','Navegador','CP-03B: capturas, materiais e passagens'],
   ['test_paris_scenery.cjs','Isolado','CP-03A: decoração, materiais e colisores da fonte'],

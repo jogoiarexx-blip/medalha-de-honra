@@ -230,6 +230,7 @@ function polishLevel(L){
   if(['07','10','11','12','14'].includes(L.id)){ scene.add(new T.HemisphereLight(0x7088c0,0x30281c,.38)); const mn=new T.DirectionalLight(0x9aaee0,.22); mn.position.set(-30,60,-20); scene.add(mn); }
   improveParisScenery(L);
   extendParisScenery(L);
+  improveMedinaScenery(L);
   mergeDress();
   // poeira no ar em interiores
   G.motes=null; if(L.motes||['crypt'].includes(L.ambient)||['13','16','19','S1','S2','S3','05','06'].includes(L.id)) G.motes=makeMotes(500);

@@ -56,6 +56,10 @@ Os testes de navegador usam o Chromium do Playwright (`npm install --no-save pla
 
 **Status honesto:** nenhum teste automático declara uma fase "zerada". Jogar os objetivos até a extração, FPS em Android/PC reais e memória por 60 minutos continuam `NÃO TESTADO` até haver registro humano.
 
+## Cenários CP-03C — Hotel da Medina
+
+Corrige limites invertidos e sobreposição de paredes/vidros nas alas frontais da operação 05, preservando os IDs de save das janelas. Entrada, pátio e fonte recebem acabamento; quartos e rouparia ganham placas. Decoração estática agrupada, sem novos obstáculos ou luzes. A rotina de fachada mantém paredes e vidros alinhados.
+
 ## Cenários CP-03B — operações 02–04
 
 O cemitério recebe cornijas e molduras de mausoléus; o hotel ganha acabamento nos vãos, rodapés e placas; o cais recebe detalhes de pedra, amarração e bordas/tábuas da barcaça. As fachadas próprias da operação 04 usam vidro diurno e emissão zero. Decoração estática agrupada, sem novos obstáculos nem luzes. A extração pela escada da 04 mantém a interação existente.

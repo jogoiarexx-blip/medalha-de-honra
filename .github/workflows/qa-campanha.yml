@@ -31,7 +31,7 @@ jobs:
         run: |
           for f in js/*.js; do node --check "$f"; done
       - name: Entradas e tarefas por sessão (regressões isoladas)
-        run: node --test qa/test_input_session.cjs qa/test_request_failure.cjs qa/test_combat.cjs qa/test_vertical.cjs qa/test_paris_scenery.cjs qa/test_paris_extension.cjs
+        run: node --test qa/test_input_session.cjs qa/test_request_failure.cjs qa/test_combat.cjs qa/test_vertical.cjs qa/test_paris_scenery.cjs qa/test_paris_extension.cjs qa/test_medina_scenery.cjs
       - name: Testes estruturais
         run: |
           node qa/test_three_local.js
@@ -62,6 +62,7 @@ jobs:
       - name: Estados, combate e saves
         if: matrix.grupo == 'estado'
         run: |
+          node qa/test_cp03c_browser.cjs
           node qa/test_cp03b_browser.cjs
           node qa/test_cp03_browser.cjs
           node qa/test_cp02b_browser.cjs

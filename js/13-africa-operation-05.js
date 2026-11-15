@@ -109,6 +109,20 @@ const ENEMY_DEFS_05=[
   {id:'st1',x:10.4,z:16.4,yaw:0,weapon:'rifle',helmet:true},
   {id:'st2',x:-3.4,z:16.2,yaw:Math.PI/2,weapon:'smg'},
 ];
+function hotelFront05(x0,x1){
+  // As duas janelas e seus intervalos de parede pertencem à mesma ala de 8 m.
+  const windows=[[x0+1.4,x0+3.4],[x0+4.6,x0+6.6]];
+  let edge=x0;
+  for(let i=0;i<windows.length;i++){
+    const [a,b]=windows[i];
+    wallT(edge,a,13.8,14,M5.lime,YT,7,{inner:{'+z':M5.fac}});
+    wallT(a,b,13.8,14,M5.lime,YT,YT+1,{inner:{'+z':M5.fac}});
+    wallT(a,b,13.8,14,M5.lime,YT+2.6,7,{inner:{'+z':M5.fac}});
+    // IDs legados: restore05 usa flags.glass de checkpoints anteriores.
+    addGlass('fw'+(x0<0?-16:10)+(i?'b':'a'),a,b,YT+1,YT+2.6,13.86,13.94);edge=b;
+  }
+  wallT(edge,x1,13.8,14,M5.lime,YT,7,{inner:{'+z':M5.fac}});
+}
 function buildLevel05(){
   M5=mats05(); const M=M5;
   scene.background=new T.Color(0xc8d6e4); scene.fog=new T.FogExp2(0xd8ccb2,.0085);
@@ -186,9 +200,7 @@ function buildLevel05(){
   wallT(-16,-15.6,-14.2,-14); wallT(-13.8,16,-14.2,-14);
   // parede frontal (rua) das alas, com janelas
   // (fachada frontal)
-  const front=(x0,x1)=>{ wallT(x0,x0+1.4,13.8,14,M.lime,YT,7,{inner:{'+z':M.fac}}); wallT(x0+1.4,x0+3.4,13.8,14,M.lime,YT,YT+1,{inner:{'+z':M.fac}}); wallT(x0+1.4,x0+3.4,13.8,14,M.lime,YT+2.6,7,{inner:{'+z':M.fac}}); wallT(x0+3.4,x0+4.6,13.8,14,M.lime,YT,7,{inner:{'+z':M.fac}}); wallT(x0+4.6,x0+6.6,13.8,14,M.lime,YT,YT+1,{inner:{'+z':M.fac}}); wallT(x0+4.6,x0+6.6,13.8,14,M.lime,YT+2.6,7,{inner:{'+z':M.fac}}); wallT(x0+6.6,x1,13.8,14,M.lime,YT,7,{inner:{'+z':M.fac}}); };
-  front(-16,-10); front(10,16); wallT(-10,-8,13.8,14,M.lime,YT,7,{inner:{'+z':M.fac}}); wallT(8,10,13.8,14,M.lime,YT,7,{inner:{'+z':M.fac}});
-  for(const x0 of [-16,10]){ addGlass('fw'+x0+'a',x0+1.4,x0+3.4,YT+1,YT+2.6,13.86,13.94); addGlass('fw'+x0+'b',x0+4.6,x0+6.6,YT+1,YT+2.6,13.86,13.94); }
+  hotelFront05(-16,-8); hotelFront05(8,16);
   // parede leste externa (varanda e souk)
   wallT(16,16.2,-14,-6); wallT(16,16.2,-4.8,.2); wallT(16,16.2,1.4,14); wallT(16,16.2,-6,-4.8,M.lime,YT+2.4,7); wallT(16,16.2,.2,1.4,M.lime,YT+2.4,7);
   addBlock(17.25,17.4,-7,3,.95,{y0:YT,mat:M.dark,surf:'wood',cover:true,seg:1}); addBlock(16,17.4,-7.15,-7,.95,{y0:YT,mat:M.dark,surf:'wood',seg:1}); addBlock(16,17.4,3,3.15,.95,{y0:YT,mat:M.dark,surf:'wood',seg:1});
