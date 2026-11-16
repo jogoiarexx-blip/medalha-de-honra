@@ -718,6 +718,9 @@ Solicitação: cachorro maior que o procedural e com quebras visíveis. CP-03H f
 
 Alterados: `assets/models/pastor-alemao-animado.glb`, `js/24a-dog-meshy.js`, `index.html`, `js/00a-diagnostics.js`, suíte/fixture do pastor, workflows QA e este checkpoint. O patch UV antigo continua no histórico/arquivo, mas não é carregado pelo HTML.
 
-Regressões novas: porte idle, porte repouso/chão, independência UV, precisão/contraste da pelagem, morphs sem recálculo por quadro, superfície fechada e capacete. Sete testes locais passaram. A regressão de escala/pelagem falhou antes do reparo; a do capacete também foi observada falhando e depois passou.
+Regressões novas: porte idle, porte repouso/chão, independência UV, precisão/contraste da pelagem, morphs sem recálculo por quadro, superfície fechada e capacete. Oito testes locais passaram. A regressão de escala/pelagem falhou antes do reparo; a do capacete também foi observada falhando e depois passou.
 
 Renderizações offline: fraturas reproduzidas antes e ausentes depois. Chromium/WebGL, matriz de campanha e publicação: **pendentes**; atualizar após evidência real. Android físico e percurso humano continuam não testados.
+
+
+Revisão independente encontrou as patas dianteiras suspensas na primeira pose reconstruída. A regressão específica por osso falhou com 19–21 cm de afastamento; corrigidos os ângulos dianteiros/tornozelos, agora os quatro pontos medidos ficam entre 1,3 e 2,4 cm do piso (tolerância 3,5 cm; a medição considera vértices dominados pelo último osso da pata). O teste usa o GLB real, não somente o mínimo da caixa inteira. Corrigidas também amostras diagnósticas fora da faixa após a redução de vértices e descrição do teste de arestas para não alegar detecção de auto-interseção. Total local: **90 isolados**, sintaxe e seis estruturais aprovados.

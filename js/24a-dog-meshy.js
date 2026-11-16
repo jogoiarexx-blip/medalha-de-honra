@@ -109,10 +109,10 @@
     const hips=bones.Hips;
     if(kind==='rest'){
       if(hips)hips.position.z+=.20;
-      adjust('frontleg',XAXIS,-1.45);adjust('R_frontleg',XAXIS,-1.45);
+      adjust('frontleg',XAXIS,-1.10);adjust('R_frontleg',XAXIS,-1.10);
       adjust('backleg',XAXIS,-1.4);adjust('R_backleg',XAXIS,-1.4);
       for(const side of ['', 'R_']){
-        adjust(side+'frontleg0',XAXIS,.1);adjust(side+'frontleg1',XAXIS,0);
+        adjust(side+'frontleg0',XAXIS,.1);adjust(side+'frontleg1',XAXIS,0);adjust(side+'frontleg2',XAXIS,.6);
         adjust(side+'backleg0',XAXIS,1.8);adjust(side+'backleg1',XAXIS,-.27);
       }
       adjust('head',XAXIS,.13);adjust('chest',XAXIS,.14);

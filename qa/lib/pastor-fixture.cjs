@@ -20,7 +20,7 @@ async function fixture(options={}){
  const c=vm.createContext({T:T2,Math,Uint8Array,Uint16Array,Int16Array,Float32Array,window:{},settings:{chars:'modelo'},scene:new T.Scene(),MENU3D:{scene:new T.Scene()},console,atob:s=>Buffer.from(s,'base64').toString('binary'),document:{createElement:()=>({getContext:()=>({drawImage(){},getImageData:()=>({data:rgba})})})}});
  const proc=fs.readFileSync(path.join(ROOT,'js/18-menu-system.js'),'utf8');vm.runInContext(proc.slice(proc.indexOf('let DOG_MATS='),proc.indexOf('/* REV-C')),c);
  const makeOriginal=c.makeDogRig,poseOriginal=c.poseDogRig;
- vm.runInContext(fs.readFileSync(path.join(ROOT,'js/24a-dog-meshy.js'),'utf8'),c);
+ vm.runInContext(options.adapterSource||fs.readFileSync(path.join(ROOT,'js/24a-dog-meshy.js'),'utf8'),c);
  const dog=c.makeDogRig(false);c.scene.add(dog.root);
  return {c,dog,skin,gltf,T,makeOriginal,poseOriginal,data:c.window.__PASTOR_MESHY};
 }
