@@ -33,7 +33,6 @@
   const useMeshy=()=>settings.chars==='modelo';
   DATA.useMeshy=useMeshy;
   const point=new T.Vector3();
-  const XAXIS=new T.Vector3(1,0,0),YAXIS=new T.Vector3(0,1,0);
   const HEAD_COUNT=8;
   // Pelagem contínua no espaço neutro do corpo. O atlas otimizado perdeu
   // ilhas UV; remendar vértices isolados não recupera essa informação.
@@ -100,32 +99,6 @@
     return {vertices,min,max};
   }
 
-  function localPose(scene,restore,bones,kind){
-    restore();
-    const adjust=(name,axis,angle)=>{
-      const b=bones[name];
-      if(b)b.quaternion.multiply(new T.Quaternion().setFromAxisAngle(axis,angle));
-    };
-    const hips=bones.Hips;
-    if(kind==='rest'){
-      if(hips)hips.position.z+=.20;
-      adjust('frontleg',XAXIS,-1.10);adjust('R_frontleg',XAXIS,-1.10);
-      adjust('backleg',XAXIS,-1.4);adjust('R_backleg',XAXIS,-1.4);
-      for(const side of ['', 'R_']){
-        adjust(side+'frontleg0',XAXIS,.1);adjust(side+'frontleg1',XAXIS,0);adjust(side+'frontleg2',XAXIS,.6);
-        adjust(side+'backleg0',XAXIS,1.8);adjust(side+'backleg1',XAXIS,-.27);
-      }
-      adjust('head',XAXIS,.13);adjust('chest',XAXIS,.14);
-    }else if(kind==='bite'){
-      adjust('head',XAXIS,-.43);adjust('chest',XAXIS,-.12);
-      adjust('frontleg',XAXIS,-.13);adjust('R_frontleg',XAXIS,-.13);
-    }else if(kind==='alert'){
-      adjust('head',XAXIS,-.15);adjust('head',YAXIS,.12);
-      adjust('tail',YAXIS,.26);adjust('chest',XAXIS,-.05);
-    }
-    scene.updateMatrixWorld(true);
-  }
-
   function buildMorphs(gltf){
     const scene=gltf.scene;let skin=null;
     scene.traverse(o=>{if(o.isSkinnedMesh&&!skin)skin=o;});
@@ -155,13 +128,11 @@
       skin.geometry.setAttribute('skinWeight',new T.BufferAttribute(decoded,4));
     }
     const restore=snapshot(scene);
-    const bones={};scene.traverse(o=>{if(o.isBone)bones[o.name]=o;});
     const mixer=new T.AnimationMixer(scene),action=mixer.clipAction(clip);action.play();
     const samples=[];
     for(let i=0;i<4;i++){mixer.setTime(clip.duration*i/4);samples.push(sourceSample(scene,skin));}
     action.stop();restore();const neutral=sourceSample(scene,skin);
-    localPose(scene,restore,bones,'rest');const resting=sourceSample(scene,skin);restore();
-    samples.push(neutral,resting,neutral,neutral);
+    samples.push(neutral,neutral,neutral,neutral);
     const restReference=oldMake(false);restReference.restT=1;
     oldPose(restReference,0,.016,{resting:true});
     const restBox=new T.Box3().setFromObject(restReference.spine);
@@ -169,15 +140,21 @@
     DATA.scaleReference='procedural-per-pose';
     const normalized=samples.map((s,frame)=>{
       // Repouso tem referência própria: nunca recebe o fator de uma pose de marcha.
-      const anchor=frame<4?samples[0]:frame===5?resting:neutral;
+      const anchor=frame<4?samples[0]:neutral;
       const ref=frame===5?restBox:expected,refSize=ref.getSize(new T.Vector3()),refCenter=ref.getCenter(new T.Vector3());
       const sz=anchor.max.clone().sub(anchor.min),center=anchor.min.clone().add(anchor.max).multiplyScalar(.5);
-      const factor=new T.Vector3(refSize.x/sz.x,ref.max.y/sz.y,refSize.z/sz.z);
+      const factor=new T.Vector3(refSize.x/sz.x,expected.max.y/sz.y,refSize.z/sz.z);
       const out=new Float32Array(s.vertices.length);
       for(let i=0;i<out.length;i+=3){
         out[i]=(s.vertices[i]-center.x)*factor.x+refCenter.x;
         out[i+1]=(s.vertices[i+1]-s.min.y)*factor.y;
         out[i+2]=(s.vertices[i+2]-center.z)*factor.z+refCenter.z;
+        if(frame===5){
+          // Repouso estável: desloca tronco/cabeça juntos e absorve a queda
+          // nas pernas. Campo monótono evita triângulos esticados pelo rig.
+          const t=Math.max(0,Math.min(1,out[i+1]/.8));
+          out[i+1]-=(expected.max.y-restBox.max.y)*t*t*(3-2*t);
+        }
         if(frame===6||frame===7){
           const head=Math.max(0,Math.min(1,(out[i+2]-.33)*2.6))*Math.max(0,Math.min(1,(out[i+1]-.53)*2));
           if(frame===6){out[i+2]+=head*.12;out[i+1]-=head*.04;}else out[i+1]+=head*.06;

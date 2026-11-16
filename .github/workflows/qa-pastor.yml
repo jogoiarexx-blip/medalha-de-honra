@@ -43,3 +43,26 @@ jobs:
         run: |
           node qa/test_pastor_visibilidade.js
           node --test qa/test_pastor_scale_fur.cjs
+
+  webgl-pastor:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Instalar Chromium
+        run: |
+          npm install --no-save playwright@1.56.1
+          npx playwright install --with-deps chromium
+      - name: Conferir pastor no menu, animações e variantes
+        run: node qa/browser_pastor_diagnostico.cjs
+      - name: Guardar capturas do pastor
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: qa-pastor-webgl
+          path: qa-shots/

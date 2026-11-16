@@ -35,3 +35,8 @@ test('cada pata mantém contato próximo do chão no repouso do menu',async()=>{
   assert.ok(count>4,'pata não identificada '+name);assert.ok(min>=-.01&&min<.035,name+' suspensa em '+min);
  }
 });
+test('repouso não cria triângulos esticados entre barriga e patas',async()=>{
+ const f=await fixture(),g=f.dog._meshy.mesh.geometry,a=g.morphAttributes.position[4],b=g.morphAttributes.position[5],ix=g.index.array;let max=0;
+ for(let i=0;i<ix.length;i+=3)for(let k=0;k<3;k++){const u=ix[i+k],v=ix[i+(k+1)%3],len=p=>Math.hypot(p.getX(u)-p.getX(v),p.getY(u)-p.getY(v),p.getZ(u)-p.getZ(v));max=Math.max(max,len(b)/Math.max(1e-8,len(a)));}
+ assert.ok(max<1.05,'repouso esticou arestas por fator '+max);
+});
