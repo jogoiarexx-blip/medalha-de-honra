@@ -748,3 +748,17 @@ Relato: “virou um borrão o cachorro, cadê os detalhes”. A correção anter
 - `qa/run_all.cjs` executado: 19 grupos passaram, 21 testes de navegador não iniciaram porque o Chromium do Playwright não está instalado no ambiente. Tentativa com Chromium do sistema também falhou por restrição de socket. Não declarar CI/campanha/WebGL aprovados para este candidato. O relatório agregado anterior foi preservado; logs desta tentativa estão em `/tmp/pastor-qa-completo.log` durante a sessão.
 - Commit local inicial: `1bbd971`. Publicação bloqueada pela revisão automática, que considerou ausente autorização suficiente para enviar esta correção ao repositório público. Nenhum envio bem-sucedido ou PR criado. Aguardar autorização explícita de publicação e então executar o CI e conferir capturas WebGL antes de integrar.
 - Cnossos/CP-03H continua preservado na branch de checkpoint; esta correção não o integra nem modifica os cenários.
+
+
+### Publicação autorizada — detalhes do pastor — 16/11/2026
+
+O usuário autorizou explicitamente: “sim publicar”. PR #12: https://github.com/jogoiarexx-blip/medalha-de-honra/pull/12. Candidato remoto `84b8baf7ace45c0f7b771a33783ef31bf7090f79`, árvore `f025e05edca615cb1314148553c507a59b8ca01a`, idêntica à árvore local revisada `4e564dc`.
+
+- QA dedicado aprovado: https://github.com/jogoiarexx-blip/medalha-de-honra/actions/runs/43860232539. Artefato `qa-pastor-webgl` inspecionado: menu, frente, duas laterais, traseira, repouso e caminhada. Olhos/focinho/pelagem recuperados, sem fraturas/espículas visíveis. `ready`, atlas 2048, oito morphs, escala menu .85 e S1 1, variantes e respostas a marcha/mordida corretas; logs vazios.
+- Revisão independente de código e capturas aprovada, sem bloqueios críticos/importantes. Verificação adicional das 2.589 posições duplicadas em costuras nos oito morphs encontrou afastamento máximo zero.
+- Melhorias menores de testes registradas para depois: decodificar dimensões/identidade do atlas também no isolado (dimensões já conferidas no Chromium); incorporar a verificação de grupos de costuras em todos os morphs à regressão permanente. Essas verificações extras foram feitas nesta revisão, sem mudança no código de produção.
+- Limites: atlas compartilhado ocupa aproximadamente 21,3 MiB de GPU com mipmaps; tamanho do download não comprova desempenho em Android. Aparência facetada do asset original permanece, assim como o repouso baixo estável. Android físico, memória de 60 minutos e ajuste do capacete durante todo o ciclo não validados.
+
+
+- CI completo aprovado: https://github.com/jogoiarexx-blip/medalha-de-honra/actions/runs/43860232585 — estrutural, estado, recursos e campanha. 91 isolados e seis estruturais; testes de saves/menus/combate/alturas/cenários/recargas/perfis/áudio/IA aprovados. Matriz técnica das 27 operações passou início, simulação, movimento, checkpoint/load, morte, transição forçada e menu. Cinco cenas de desempenho capturadas. Isso não comprova objetivos/extração jogados ou FPS de Android real.
+- PR #12 integrado em `cb46b74ff38e32f6c393910311ab88994b58dfb2` após aprovação dos dois CIs e da revisão visual. Nenhuma alteração adicional no código de produção após o candidato validado. Esta atualização final altera somente o checkpoint.
