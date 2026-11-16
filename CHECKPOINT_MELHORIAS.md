@@ -686,3 +686,21 @@ Acréscimo de 2 chamadas/110 triângulos por vista, dentro de +16/+5.000. Câmer
 - Limites: cadeia de investigação/embarque executada por callbacks reais e posições controladas, patrulha com demais atores estáticos/jogador fora de vista, câmeras fixas/SwiftShader. Alcance/tempo de segurar pela interface, missão humana contínua, patrulha sob combate, Android físico e memória de 60 minutos continuam pendentes. Nenhuma fase declarada zerada.
 
 **Retomar em CP-03H:** analisar a operação 10 — O Que Há em Cnossos, Palácio de Cnossos, Creta. Consultar cenário, objetivos/evidências, plataformas/escadas e sistemas existentes antes de escolher correções. Preservar CP-03A/B/C/D/E/F/G e a lancha/barcos do porto. CP-02C (recarga/arma) continua pendente enquanto cenários forem prioridade.
+
+
+### CP-03H — plano em execução — 16/11/2026
+
+Base `8d5ee5a7f05426fcf9d8b6c730ca312669e77c27`. Operação 10 — O Que Há em Cnossos. GDD campanha 3 exige investigação, sabotagem e saída após a explosão.
+
+Diagnóstico: Manolis só verifica `boomed` e pode concluir provas/furgão pendentes pelo encerramento comum. `restore10()` não reaplica texto/marcador da contagem nem alvos fotográficos já registrados. Colunas têm corpo com raio .42 e capitel .55, mas um único colisor de raio .42 até o topo, deixando a borda visível sem colisão.
+
+Decisão: guarda de requisitos específica da 10 na fuga, com motivo legível; sincronizar contagem/marcador com as quatro flags de prova e restaurar fotos. Separar corpo/capitel com volumes correspondentes, sem transformar colunas em versões simplificadas. Conferir deslocamento real nas três escadas; acrescentar acabamento leve/identificação de sala do trono, armazéns e escadaria sem novas luzes/alvos/obstáculos. Preservar segurança existente de load do temporizador (mínimo 25 s) e política existente de não repetir a cadeia após load.
+
+- [ ] RED/GREEN: fuga recusa requisitos/espera explosão e aceita investigação+sabotagem completas; evidências/fotos restauradas e marcador útil; capitéis com colisão na altura correta.
+- [ ] Implementar correções e kit isolado da 10, sem alterar 09/11, fotos/IDs ou geometria dos barcos.
+- [ ] Chromium: provas por callbacks/fotos reais, fuga bloqueada/aceita, timer/explosão/save, holofote, três escadas ida/volta, capitéis e recursos/Alto; capturas e orçamento +16/+5.000.
+- [ ] Regressões gerais, revisão independente, publicação e resultado final neste MD.
+
+Foco de revisão: coleta em ordens diferentes/0–4 provas, provas mínimas versus opcional, fotos não duplicam após load; fuga oculta/sem explosão/incompleta; capitel alto permite passar por baixo se a altura permitir; escadas mantêm acesso; timer/cadeia não ganham novas regras. Percurso humano contínuo, Android físico e memória de 60 minutos permanecem pendentes.
+
+16/11/2026 — prioridade alterada pelo usuário durante CP-03H: corrigir cachorro Meshy, que está maior/largo que o procedural e com pelagem fragmentada (imagem enviada). CP-03H permanece em implementação local: 95 isolados/sintaxe/estruturais passaram; integração Chromium ainda não executada. Fixture ajustada para colocar jogador fora do colisor do furgão e no corredor livre da carga. Não declarar CP-03H entregue/publicado.

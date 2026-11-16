@@ -441,7 +441,7 @@ function buildLevel10(){
   stairSteps('z',22,1,-5,1,Y10-.2,7,M.lime,M.lime); stairSteps('x',30,1,-6,-1,Y10-.2,7,M.lime,M.lime); stairSteps('z',-28,-1,7,12,Y10-.2,7,M.lime,M.lime);
   const pw=(x0,x1,z0,z1,h,mat,cover)=>addBlock(x0,x1,z0,z1,h,{y0:Y10,mat:mat||M.adobe,surf:'stone',top:M.lime,seg:2,cover:!!cover});
   const red=new T.MeshLambertMaterial({color:0x8a2a1a}), blk=new T.MeshLambertMaterial({color:0x1a1614});
-  const column=(x,z,h)=>{ const c=new T.Mesh(new T.CylinderGeometry(.42,.3,h,12),red); c.position.set(x,Y10+h/2,z); c.userData.mat='stone'; scene.add(c); W.shootables.push(c); const cap=new T.Mesh(new T.CylinderGeometry(.55,.55,.3,12),blk); cap.position.set(x,Y10+h+.15,z); scene.add(cap); W.shootables.push(cap); cap.userData.mat='stone'; addSolidOnly(x-.42,x+.42,z-.42,z+.42,h+.3,Y10,true); };
+  const column=(x,z,h)=>{ const c=new T.Mesh(new T.CylinderGeometry(.42,.3,h,12),red); c.position.set(x,Y10+h/2,z); c.userData.mat='stone'; scene.add(c); W.shootables.push(c); const cap=new T.Mesh(new T.CylinderGeometry(.55,.55,.3,12),blk); cap.position.set(x,Y10+h+.15,z); scene.add(cap); W.shootables.push(cap); cap.userData.mat='stone'; addSolidOnly(x-.42,x+.42,z-.42,z+.42,h,Y10,true); addSolidOnly(x-.55,x+.55,z-.55,z+.55,.3,Y10+h,true); };
   // armazéns do oeste (corredores com jarros)
   pw(-36,-35.4,-24,8,3.2); pw(-36,-13,-24.6,-24,3.2);
   const jar=new T.LatheGeometry([[0,0],[.3,.05],[.42,.5],[.46,.9],[.36,1.3],[.22,1.45],[.24,1.55],[0,1.55]].map(p=>new T.Vector2(p[0],p[1])),10);
@@ -510,11 +510,22 @@ function objectives10(){ return [
   {id:'allEvid',text:'Opcional: reúna as quatro provas',state:'active',optional:true},
   {id:'quietVan',text:'Opcional: sabote o furgão sem soar o alarme',state:'active',optional:true},
 ]; }
+function syncEvidence10(){
+  const F=G.flags,items=[['ledger',-6.8,-22.9],['bull',-10.8,-22.6],['crates',14,35.4],['ammo',-21,-9]];
+  F.evN=items.filter(([id])=>F['ev_'+id]).length;
+  const o=obj('evid');o.text='Reúna provas do saque ('+Math.min(3,F.evN)+'/3)';
+  const next=F.evN<3?items.find(([id])=>!F['ev_'+id]):null;o.marker=next?{x:next[1],z:next[2]}:null;
+}
 function evid10(id,txt){
-  const F=G.flags; if(F['ev_'+id]) return; F['ev_'+id]=true; F.evN=(F.evN||0)+1; const o=obj('evid'); o.text='Reúna provas do saque ('+Math.min(3,F.evN)+'/3)';
+  const F=G.flags; if(F['ev_'+id]) return; F['ev_'+id]=true; syncEvidence10(); const o=obj('evid');
   pickupMsg('Prova '+F.evN+'/4 — '+txt);
   if(F.evN>=3&&o.state==='active'){ complete('evid'); G.radioMsg('ÉLISE','Provas suficientes: Berlin está esvaziando Cnossos pelo porto de Chania.'); }
   if(F.evN>=4) complete('allEvid'); refreshObjectiveUI(); cp10();
+}
+function escapeBlock10(){
+  if(obj('escape').state!=='active') return 'Arme a carga-relógio antes de fugir';
+  for(const [id,text]of [['evid','Reúna três provas do saque antes de fugir'],['van','Sabote o furgão goniômetro antes de fugir'],['charge','Arme a carga-relógio antes de fugir']]) if(obj(id).state!=='done')return text;
+  return G.flags.boomed?null:'Manolis: “Espere a explosão, depois descemos.”';
 }
 function interact10(R){
   const I=W.interactables, F=()=>G.flags;
@@ -525,7 +536,7 @@ function interact10(R){
   I.push({id:'charge10',pt:()=>V3(-22,Y10+.9,R.mags[4]),r:2.4,hold:()=>G.diff==='veterano'?4:3,label:()=>F().armed?null:'Armar a carga-relógio nos caixotes de munição (segure)',
     use:()=>{ F().armed=true; F().boomLeft=G.diff==='recruta'?100:G.diff==='veterano'?60:80; complete('charge'); activate('escape'); AudioSys.play('unlock'); pickupMsg('Carga-relógio armada');
       G.radioMsg('ÉLISE','Lápis de tempo quebrado. Tenho pouco mais de um minuto para sair dessa colina.','warn'); cp10(); }});
-  I.push({id:'manolis',pt:()=>V3(62,1.5,-46),r:3,skip:true,label:()=>obj('escape').state==='active'?(F().boomed?'Seguir Manolis pela ravina':'Manolis: “Espere a explosão, depois descemos.”'):null,locked:()=>!F().boomed,use:()=>{ if(F().boomed) missionComplete(); }});
+  I.push({id:'manolis',pt:()=>V3(62,1.5,-46),r:3,skip:true,label:()=>obj('escape').state==='active'?(escapeBlock10()||'Seguir Manolis pela ravina'):null,locked:()=>!!escapeBlock10(),use:()=>{ if(!escapeBlock10()) missionComplete(); }});
 }
 function photos10(){
   W.photo.push({id:'crates10',label:'Caixotes “Kunstschutz — Berlin”',pos:V3(14,1.2,35.4),normal:V3(0,0,-1),max:9,obj:null,size:1.4,msg:'Antiguidades encaixotadas para Berlim, com o carimbo do Kunstschutz.',after:()=>evid10('crates','foto dos caixotes para Berlim')});
@@ -568,7 +579,12 @@ function boom10(){
   if(settings.shake) G.player.shake=Math.min(1.8,G.player.shake+1.4); if(!G.alarm) raiseAlarm(); cp10();
 }
 function cp10(){ checkpoint(); }
-function restore10(s){ const F=G.flags, R=G.refs; if(F.ev_ledger) R.ledger.visible=false; if(F.ev_bull) R.bull.visible=false; if(F.armed&&!F.boomed) F.boomLeft=Math.max(F.boomLeft||0,25); if(F.boomed){ F.chain=null; scorchMark(V3(-24,Y10+.02,-8),5); } }
+function restore10(s){
+  const F=G.flags, R=G.refs; if(F.ev_ledger) R.ledger.visible=false; if(F.ev_bull) R.bull.visible=false;
+  syncEvidence10();for(const t of W.photo) if(F['photo_'+t.id]) t.taken=true;
+  if(F.armed&&!F.boomed) F.boomLeft=Math.max(F.boomLeft||0,25);
+  if(F.boomed){ F.chain=null; scorchMark(V3(-24,Y10+.02,-8),5); }
+}
 LEVELS['10']={id:'10',num:10,op:'Operação 10',name:'O Que Há em Cnossos',place:'Palácio de Cnossos, Creta',prev:'09',
   loadout:{weapons:['silenced','pistol'],ammo:{silenced:{mag:6,reserve:18},pistol:{mag:8,reserve:16}},cur:'silenced',camera:true},baseLight:.24,lightFn:light10,shadows:false,bloomTh:.75,grenades:true,
   build:()=>{ const r=buildLevel10(); photos10(); return r; },enemies:ENEMY_DEFS_10,ally:null,start:{x:1.4,z:44,yaw:-.3},startDocs:['planta10'],drawMap:drawMap10,

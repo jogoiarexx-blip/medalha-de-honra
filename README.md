@@ -56,6 +56,10 @@ Os testes de navegador usam o Chromium do Playwright (`npm install --no-save pla
 
 **Status honesto:** nenhum teste automático declara uma fase "zerada". Jogar os objetivos até a extração, FPS em Android/PC reais e memória por 60 minutos continuam `NÃO TESTADO` até haver registro humano.
 
+## Cenários CP-03H — Cnossos
+
+Fuga exige três provas, sabotagem do furgão e explosão da carga. Provas e fotografias restauram contagem/marcador; capitéis têm colisores na altura e largura correspondentes. Entradas identificadas e degraus destacados, preservando temporizador, holofote e campanha.
+
 ## Cenários CP-03G — porto de Chania
 
 Embarque exige passe, mapa fotografado e programação lida; não conclui automaticamente uma investigação incompleta. Oito apoios existentes do café/feira recebem colisão coerente. Visto recupera orientação ao carregar; entradas da Kommandantur, capitania e arsenal identificadas, preservando a S-Boot e os quatro barcos.
