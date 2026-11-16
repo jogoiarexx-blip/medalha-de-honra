@@ -727,3 +727,24 @@ Nova validação dedicada em `.github/workflows/qa-pastor.yml` executa Chromium/
 - PR https://github.com/jogoiarexx-blip/medalha-de-honra/pull/11 integrado em `67924d03095981bb3e8034f4bbd3f97f3941d329`. Esta atualização final muda somente documentação.
 - Limites: pelagem reconstruída em cores espaciais, sem recuperar detalhes fotográficos perdidos do atlas; repouso estável de espera, sem novo clipe autoral de deitar. Android físico, ajuste do capacete durante toda a marcha, transições quadro a quadro e percurso humano contínuo não validados. Captura de desempenho em SwiftShader não equivale a FPS de aparelho real.
 - Próxima etapa: retomar CP-03H na branch `checkpoint/cp03h-cnossos-pausado` (`04736782a7c793044af476992d2e08f30c6eac44`), trazendo este main antes de executar a validação de Cnossos. Não reintegrar o adaptador/asset antigo do cachorro ao resolver conflitos.
+
+
+## Correção prioritária — detalhes originais do pastor (16/11/2026)
+
+Relato: “virou um borrão o cachorro, cadê os detalhes”. A correção anterior fechou a malha, mas descartou atlas e UVs, substituindo-os por cores espaciais. Os testes verificavam contraste de cor e não detectavam a perda de olhos, focinho e pelos. Não afirmar que a etapa anterior recuperou esses detalhes.
+
+### Implementação local
+
+- Recuperado o original animado `pastor alemao.glb` do repositório `assets-3d-pra-jogos-glb`, blob `15e99c0296967ec9b306943c6376a3abee042099`. Não reutilizado o GLB de 9.008 vértices com UVs danificadas, nem a superfície voxelizada sem atlas.
+- `scripts/restaurar_pastor.py`: redução por colapso do original, UVs por canto preservadas, soldagem geométrica antes de reduzir e pesos interpolados. 9.506 vértices / 11.999 triângulos, 27 ossos e 81 canais originais. Atlas original de 2048×2048 em JPEG qualidade 90, subsampling 2; 1.403.364 bytes no GLB final. O script recebe o original, saída e atlas JPEG; a docstring registra a conversão necessária.
+- Material mantém mapa sRGB e mipmaps, sem substituir a textura por cores nos vértices. Mantidos normalização por pose, oito morphs compartilhados, menu .85, missão S1 1, fallback e variantes. Cache do adaptador/GLB atualizado.
+- Arestas agora são verificadas por posição: vértices diferentes nas ilhas UV não significam rachaduras. Há microbordas herdadas da fonte (maior 8,6 mm e soma 8 cm na referência de 1,6 m), portanto não alegar malha inteiramente manifold. Regressão recusa bordas abertas maiores que 1 cm ou soma de 10 cm.
+
+### Validação e pendências
+
+- Duas regressões novas falharam antes: material descartava a textura e asset não continha atlas. Passaram após a restauração; atualizados testes anteriores que exigiam especificamente a pelagem sem textura.
+- 91 testes isolados, sintaxe de todos os scripts e seis estruturais passaram. Mantidos chão das quatro patas, escala, capacete, morphs e limite de alongamento no repouso.
+- Quatro vistas renderizadas offline (frente, lateral, repouso e marcha) conferidas: olhos, focinho, orelhas e marcações visíveis. Isso não equivale ao teste WebGL do menu.
+- `qa/run_all.cjs` executado: 19 grupos passaram, 21 testes de navegador não iniciaram porque o Chromium do Playwright não está instalado no ambiente. Tentativa com Chromium do sistema também falhou por restrição de socket. Não declarar CI/campanha/WebGL aprovados para este candidato. O relatório agregado anterior foi preservado; logs desta tentativa estão em `/tmp/pastor-qa-completo.log` durante a sessão.
+- Commit local inicial: `1bbd971`. Publicação bloqueada pela revisão automática, que considerou ausente autorização suficiente para enviar esta correção ao repositório público. Nenhum envio bem-sucedido ou PR criado. Aguardar autorização explícita de publicação e então executar o CI e conferir capturas WebGL antes de integrar.
+- Cnossos/CP-03H continua preservado na branch de checkpoint; esta correção não o integra nem modifica os cenários.

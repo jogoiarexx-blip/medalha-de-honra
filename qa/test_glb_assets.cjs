@@ -40,7 +40,7 @@ for(const file of found){
 if(!found.length) f.push('nenhum .glb encontrado');
 // contrato do pastor em produção (valores da auditoria, lidos do arquivo)
 const dog=path.join(ROOT,'assets/models/pastor-alemao-animado.glb');
-if(fs.existsSync(dog)){ const size=fs.statSync(dog).size; if(size>600000) f.push('pastor: GLB de produção passou de 600 KB ('+size+')'); } else f.push('pastor: GLB de produção ausente');
+if(fs.existsSync(dog)){ const size=fs.statSync(dog).size; if(size>1500000) f.push('pastor: GLB de produção passou de 1,5 MB ('+size+')'); } else f.push('pastor: GLB de produção ausente');
 // fallback obrigatório: o código não pode deixar o cão invisível se o GLB falhar
 const src=fs.readFileSync(path.join(ROOT,'js/24a-dog-meshy.js'),'utf8');
 if(!/DATA\.status='fallback'/.test(src)) f.push('pastor: caminho de fallback procedural ausente');

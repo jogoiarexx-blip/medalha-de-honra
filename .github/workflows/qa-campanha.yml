@@ -31,7 +31,7 @@ jobs:
         run: |
           for f in js/*.js; do node --check "$f"; done
       - name: Entradas e tarefas por sessão (regressões isoladas)
-        run: node --test qa/test_pastor_scale_fur.cjs qa/test_input_session.cjs qa/test_request_failure.cjs qa/test_combat.cjs qa/test_vertical.cjs qa/test_paris_scenery.cjs qa/test_paris_extension.cjs qa/test_medina_scenery.cjs qa/test_bordj_scenery.cjs qa/test_depot_scenery.cjs qa/test_bir_zitoun.cjs qa/test_chania.cjs
+        run: node --test qa/test_pastor_scale_fur.cjs qa/test_pastor_texture.cjs qa/test_input_session.cjs qa/test_request_failure.cjs qa/test_combat.cjs qa/test_vertical.cjs qa/test_paris_scenery.cjs qa/test_paris_extension.cjs qa/test_medina_scenery.cjs qa/test_bordj_scenery.cjs qa/test_depot_scenery.cjs qa/test_bir_zitoun.cjs qa/test_chania.cjs
       - name: Testes estruturais
         run: |
           node qa/test_three_local.js

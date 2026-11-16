@@ -10,6 +10,7 @@ on:
       - "assets/models/pastor-alemao-animado.glb"
       - "qa/test_pastor_visibilidade.js"
       - "qa/test_pastor_scale_fur.cjs"
+      - "qa/test_pastor_texture.cjs"
       - "qa/lib/pastor-fixture.cjs"
       - "qa/browser_pastor_diagnostico.cjs"
       - ".github/workflows/qa-pastor.yml"
@@ -22,6 +23,7 @@ on:
       - "assets/models/pastor-alemao-animado.glb"
       - "qa/test_pastor_visibilidade.js"
       - "qa/test_pastor_scale_fur.cjs"
+      - "qa/test_pastor_texture.cjs"
       - "qa/lib/pastor-fixture.cjs"
       - "qa/browser_pastor_diagnostico.cjs"
 jobs:
@@ -42,7 +44,7 @@ jobs:
       - name: Testar estrutura do cachorro e suas animacoes
         run: |
           node qa/test_pastor_visibilidade.js
-          node --test qa/test_pastor_scale_fur.cjs
+          node --test qa/test_pastor_scale_fur.cjs qa/test_pastor_texture.cjs
 
   webgl-pastor:
     runs-on: ubuntu-24.04

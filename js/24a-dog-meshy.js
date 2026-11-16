@@ -7,11 +7,11 @@
  *
  * Solucao: amostrar o GLB uma unica vez, com boneTransform (CPU),
  * construir 8 poses compartilhadas como morph targets e exibir Mesh
- * sem GPU skinning/bindMatrix. 8 poses usam ~0.34 MB de posicoes e
+ * sem GPU skinning/bindMatrix. 8 poses compartilham as posicoes e
  * UMA draw call por cachorro, sem recalcular vertices/frame.
  *
- * A superfície do GLB foi reconstruída offline para fechar as fraturas.
- * Pelagem contínua em cores lineares evita o atlas UV danificado.
+ * Geometria e UVs recuperadas do GLB original antes da otimização destrutiva.
+ * Atlas original 2048 px conserva olhos, focinho e detalhes da pelagem.
  *
  * O rig procedural original continua dirigindo os estados: repouso,
  * alerta, marcha/corrida, mordida e morte. A escala local do
@@ -20,7 +20,7 @@
 (function(){
   const oldMake=makeDogRig,oldPose=poseDogRig;
   const DATA={
-    url:'assets/models/pastor-alemao-animado.glb?v=superficie-20261116',
+    url:'assets/models/pastor-alemao-animado.glb?v=detalhes-20261116',
     status:'idle',error:null,instances:[],mounted:0,
     renderMode:'baked-morph',walkFrames:4,morphFrames:8,
     trianglesPerDog:0,visibleMeshes:0,
@@ -34,43 +34,6 @@
   DATA.useMeshy=useMeshy;
   const point=new T.Vector3();
   const HEAD_COUNT=8;
-  // Pelagem contínua no espaço neutro do corpo. O atlas otimizado perdeu
-  // ilhas UV; remendar vértices isolados não recupera essa informação.
-  // As cores ficam presas aos mesmos vértices em todas as poses, sem custo/frame.
-  function bakeFurColors(geo,map){
-    const p=geo.getAttribute('position'),box=new T.Box3().setFromBufferAttribute(p);
-    const size=box.getSize(new T.Vector3()),color=new Float32Array(p.count*3);
-    const smooth=(a,b,x)=>{const t=Math.max(0,Math.min(1,(x-a)/(b-a)));return t*t*(3-2*t);};
-    const hash=(x,y,z)=>{let n=Math.imul(x,73856093)^Math.imul(y,19349663)^Math.imul(z,83492791);n=Math.imul(n^(n>>>13),1274126177);return (n>>>0)/4294967295;};
-    const noise=(x,y,z)=>{
-      const a=Math.floor(x),b=Math.floor(y),c=Math.floor(z),u=smooth(0,1,x-a),v=smooth(0,1,y-b),w=smooth(0,1,z-c);
-      const mix=(x,y,t)=>x+(y-x)*t;
-      return mix(mix(mix(hash(a,b,c),hash(a+1,b,c),u),mix(hash(a,b+1,c),hash(a+1,b+1,c),u),v),mix(mix(hash(a,b,c+1),hash(a+1,b,c+1),u),mix(hash(a,b+1,c+1),hash(a+1,b+1,c+1),u),v),w);
-    };
-    for(let i=0;i<p.count;i++){
-      const x=(p.getX(i)-(box.min.x+box.max.x)/2)/(size.x*.5),y=(p.getY(i)-box.min.y)/size.y,z=(p.getZ(i)-box.min.z)/size.z;
-      const grain=(noise(x*28,y*40,z*48)-.5)*.035;
-      const edge=.49+.15*Math.abs(x)+.035*Math.cos(z*9);
-      const saddle=smooth(.17,.27,z)*(1-smooth(.68,.79,z))*smooth(edge-.06,edge+.06,y);
-      const tail=(1-smooth(.08,.23,z))*smooth(.10,.30,y)*.85;
-      const head=smooth(.69,.77,z)*smooth(.60,.70,y);
-      const muzzle=head*smooth(.84,.94,z)*(1-smooth(.84,.90,y));
-      const ears=head*smooth(.90,.96,y)*(1-smooth(.82,.87,z));
-      const eye=head*Math.exp(-((Math.abs(x)-.50)**2/.025+(y-.825)**2/.0012+(z-.84)**2/.0018))*.92;
-      const dark=Math.max(saddle,tail,muzzle,ears,eye),shade=.86+.12*y+.02*x;
-      // Paleta do pastor procedural: patas castanhas, sela e máscara escuras.
-      const tan=[.69,.51,.31],black=[.15,.125,.105];
-      for(let k=0;k<3;k++){
-        const srgb=Math.max(0,Math.min(1,(tan[k]*(1-dark)+black[k]*dark+grain)*shade));
-        color[i*3+k]=srgb<=.04045?srgb/12.92:Math.pow((srgb+.055)/1.055,2.4);
-      }
-    }
-    geo.setAttribute('color',new T.Float32BufferAttribute(color,3));
-    DATA.furColorVertices=p.count;DATA.furTextureResolution=map?.image?[map.image.width,map.image.height]:[0,0];
-    DATA.sourceUvRepairs=0;DATA.textureMode='fur-spatial-baked';
-    return true;
-  }
-
   function snapshot(root){
     const a=[];
     root.traverse(o=>a.push({
@@ -175,15 +138,22 @@
     geo.computeVertexNormals();
     geo.computeBoundingSphere();
 
-    // O campo de pelagem não interpola as ilhas UV quebradas do atlas.
+    // O atlas vem do original, com UVs por canto preservadas na redução.
+    // Nunca substituir detalhes dos olhos/pelos por cores interpoladas.
     const sourceTexture=skin.material&&skin.material.map;
-    bakeFurColors(geo,sourceTexture);
+    if(!sourceTexture||!uv)throw new Error('Pastor sem atlas/UV original');
+    sourceTexture.encoding=T.sRGBEncoding;
+    sourceTexture.magFilter=T.LinearFilter;
+    sourceTexture.minFilter=T.LinearMipmapLinearFilter;
+    sourceTexture.anisotropy=4;
     const material=new T.MeshBasicMaterial({
-      vertexColors:true,map:null,color:0xffffff,
+      vertexColors:false,map:sourceTexture,color:0xffffff,
       side:T.DoubleSide,morphTargets:true,
       depthWrite:true,transparent:false
     });
-    DATA.textureMode='fur-spatial-baked';
+    DATA.textureMode='original-atlas';
+    DATA.furTextureResolution=[sourceTexture.image.width,sourceTexture.image.height];
+    DATA.sourceUvRepairs=0;
     DATA.visibleMeshes=1;DATA.trianglesPerDog=geo.index.count/3;
     return {geometry:geo,material,reference:expected};
   }
