@@ -11,13 +11,13 @@ Atualizado em **16/11/2026 (Brasil)**. Documento de continuidade: ler antes de c
 | Build atual | `pastor-2026-11-16` |
 | Entrega atual | Correção prioritária do pastor: porte procedural, superfície fechada e pelagem contínua |
 | Mudança de gameplay nesta revisão | Nenhuma; correção do renderizador do cachorro, poses e capacete |
-| Etapa atual | Pastor: testes locais aprovados; navegador e publicação pendentes |
+| Etapa atual | Pastor ENTREGUE: revisão, WebGL e matriz geral aprovados; integrado ao main |
 | Próximo trabalho | CP-03H: analisar cenário da operação 10 — O Que Há em Cnossos |
 | Campanha | 24 operações principais + 3 secretas registradas |
 | Fases com percurso humano comprovado | Nenhuma |
 | Integração da operação 01 | Objetivos, save/load e extração aprovados no Chromium com posições controladas; percurso normal pendente |
 
-**Ponto de retomada:** correção do pastor é a prioridade atual; consultar evidências ao fim. CP-03G continua entregue. CP-03H (Cnossos) está preservado em `checkpoint/cp03h-cnossos-pausado`, sem integração: retomar essa branch sobre o main com o reparo do pastor e resolver index/QA/checkpoint cuidadosamente. Preservar CP-03A/B/C/D/E/F/G, seleção de personagens, fallback procedural e lancha/barcos do porto. CP-02C, percurso humano e Android físico continuam pendentes.
+**Ponto de retomada:** correção do pastor entregue; consultar evidências ao fim. CP-03G continua entregue. CP-03H (Cnossos) está preservado em `checkpoint/cp03h-cnossos-pausado`, sem integração: retomar essa branch sobre o main com o reparo do pastor e resolver index/QA/checkpoint cuidadosamente. Preservar CP-03A/B/C/D/E/F/G, seleção de personagens, fallback procedural e lancha/barcos do porto. CP-02C, percurso humano e Android físico continuam pendentes.
 
 ## 2. O que já existe e deve ser preservado
 
@@ -707,7 +707,7 @@ Alterados: `assets/models/pastor-alemao-animado.glb`, `js/24a-dog-meshy.js`, `in
 
 Regressões novas: porte idle, porte repouso/chão, independência UV, precisão/contraste da pelagem, morphs sem recálculo por quadro, superfície fechada e capacete. Nove testes locais passaram. A regressão de escala/pelagem falhou antes do reparo; a do capacete também foi observada falhando e depois passou.
 
-Renderizações offline: fraturas reproduzidas antes e ausentes depois. Chromium/WebGL, matriz de campanha e publicação: **pendentes**; atualizar após evidência real. Android físico e percurso humano continuam não testados.
+Renderizações offline: fraturas reproduzidas antes e ausentes depois. Chromium/WebGL, matriz de campanha e integração: **aprovados**; evidências finais abaixo. Android físico e percurso humano continuam não testados.
 
 
 Revisão independente encontrou as patas dianteiras suspensas na primeira pose reconstruída. A regressão específica por osso falhou com 19–21 cm de afastamento; corrigidos os ângulos dianteiros/tornozelos, agora os quatro pontos medidos ficam entre 1,3 e 2,4 cm do piso (tolerância 3,5 cm; a medição considera vértices dominados pelo último osso da pata). O teste usa o GLB real, não somente o mínimo da caixa inteira. Corrigidas também amostras diagnósticas fora da faixa após a redução de vértices e descrição do teste de arestas para não alegar detecção de auto-interseção. Total local: **91 isolados**, sintaxe e seis estruturais aprovados.
@@ -715,4 +715,15 @@ Revisão independente encontrou as patas dianteiras suspensas na primeira pose r
 
 A inspeção lateral no WebGL encontrou espículas sob a barriga na pose feita com rotações extremas dos ossos. A nova regressão de extensão de arestas falhou com fator **32,5** entre neutro e repouso. Essa pose foi descartada antes da publicação. O repouso final parte da malha neutra reparada: mantém tronco/cabeça proporcionais e reduz a altura nas pernas por um campo vertical suave e monótono, com referência do procedural. Nenhuma aresta aumenta mais de 5%; patas continuam próximas do piso. Não é uma nova animação autoral de deitar: prioriza pose estável e sem fraturas. Walk, mordida e alerta permanecem nos demais morphs.
 
-Nova validação dedicada em `.github/workflows/qa-pastor.yml` executa Chromium/WebGL e guarda as seis vistas e o menu independentemente da matriz de campanha. Total final: nove regressões do pastor e **91 isolados**. Conferência visual final ainda pendente.
+Nova validação dedicada em `.github/workflows/qa-pastor.yml` executa Chromium/WebGL e guarda as seis vistas e o menu independentemente da matriz de campanha. Total final: nove regressões do pastor e **91 isolados**. Conferência visual final aprovada: menu e seis vistas do Chromium inspecionados, sem as fraturas/espículas reproduzidas nas versões anteriores.
+
+
+### Evidência final — pastor integrado
+
+- Código validado: `7e69726dab7b47503b6df6caf26647368ef6834d`; árvore idêntica ao commit local `8d2b2ee`.
+- CI completo aprovado: https://github.com/jogoiarexx-blip/medalha-de-honra/actions/runs/43854157925 — estrutural, estado, recursos e campanha; **91 isolados**, sintaxe e seis estruturais. Matriz das 27 operações e captura de cinco cenas aprovadas. A matriz usa conclusão forçada; não significa fases jogadas até a extração.
+- CI dedicado aprovado: https://github.com/jogoiarexx-blip/medalha-de-honra/actions/runs/43854157927 — nove regressões do pastor e Chromium/WebGL. Artefato `qa-pastor-webgl` com menu, frente, duas laterais, traseira, repouso e marcha inspecionado. Modelo carregou com `ready`, sem avisos/erros; seleção Modelo/Detalhado/Clássico correta. S1 conservou raiz `1` e respondeu a marcha/mordida; menu conservou `.85`.
+- Revisão independente: problemas de patas suspensas e amostras fora da faixa corrigidos; descrição do teste de arestas corrigida. Inspeção lateral posterior detectou espículas da pose com ossos, reproduzidas por regressão de alongamento de arestas; pose substituída por campo monótono e revisão direcionada aprovada. Nenhum bloqueio de código restante.
+- PR https://github.com/jogoiarexx-blip/medalha-de-honra/pull/11 integrado em `67924d03095981bb3e8034f4bbd3f97f3941d329`. Esta atualização final muda somente documentação.
+- Limites: pelagem reconstruída em cores espaciais, sem recuperar detalhes fotográficos perdidos do atlas; repouso estável de espera, sem novo clipe autoral de deitar. Android físico, ajuste do capacete durante toda a marcha, transições quadro a quadro e percurso humano contínuo não validados. Captura de desempenho em SwiftShader não equivale a FPS de aparelho real.
+- Próxima etapa: retomar CP-03H na branch `checkpoint/cp03h-cnossos-pausado` (`04736782a7c793044af476992d2e08f30c6eac44`), trazendo este main antes de executar a validação de Cnossos. Não reintegrar o adaptador/asset antigo do cachorro ao resolver conflitos.
