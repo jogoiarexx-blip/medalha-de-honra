@@ -9,6 +9,9 @@ on:
       - "js/24-secret-operations.js"
       - "assets/models/pastor-alemao-animado.glb"
       - "qa/test_pastor_visibilidade.js"
+      - "qa/test_pastor_scale_fur.cjs"
+      - "qa/lib/pastor-fixture.cjs"
+      - "qa/browser_pastor_diagnostico.cjs"
       - ".github/workflows/qa-pastor.yml"
   pull_request:
     paths:
@@ -18,6 +21,9 @@ on:
       - "js/24-secret-operations.js"
       - "assets/models/pastor-alemao-animado.glb"
       - "qa/test_pastor_visibilidade.js"
+      - "qa/test_pastor_scale_fur.cjs"
+      - "qa/lib/pastor-fixture.cjs"
+      - "qa/browser_pastor_diagnostico.cjs"
 jobs:
   structural-smoke:
     runs-on: ubuntu-latest
@@ -34,4 +40,6 @@ jobs:
           node --check js/24a-dog-meshy.js
           node --check js/24-secret-operations.js
       - name: Testar estrutura do cachorro e suas animacoes
-        run: node qa/test_pastor_visibilidade.js
+        run: |
+          node qa/test_pastor_visibilidade.js
+          node --test qa/test_pastor_scale_fur.cjs

@@ -8,10 +8,10 @@ Atualizado em **16/11/2026 (Brasil)**. Documento de continuidade: ler antes de c
 |---|---|
 | Repositório correto | https://github.com/jogoiarexx-blip/medalha-de-honra |
 | Base analisada | `edca70c8f74a736921939ca149e9e83e9decea50` (`main`) |
-| Build atual | `cp03g-2026-11-16` |
-| Entrega atual | CP-03G: investigação/embarque, fotos/save, postes/patrulha e entradas do porto 09 |
-| Mudança de gameplay nesta revisão | Embarque exige passe/mapa/programação; fotos e visto restaurados; apoios físicos e patrulha corrigidos |
-| Etapa atual | CP-03G ENTREGUE; CP-02C, percurso humano/Android pendentes |
+| Build atual | `pastor-2026-11-16` |
+| Entrega atual | Correção prioritária do pastor: porte procedural, superfície fechada e pelagem contínua |
+| Mudança de gameplay nesta revisão | Nenhuma; correção do renderizador do cachorro, poses e capacete |
+| Etapa atual | Pastor: testes locais aprovados; navegador e publicação pendentes |
 | Próximo trabalho | CP-03H: analisar cenário da operação 10 — O Que Há em Cnossos |
 | Campanha | 24 operações principais + 3 secretas registradas |
 | Fases com percurso humano comprovado | Nenhuma |
@@ -686,3 +686,38 @@ Acréscimo de 2 chamadas/110 triângulos por vista, dentro de +16/+5.000. Câmer
 - Limites: cadeia de investigação/embarque executada por callbacks reais e posições controladas, patrulha com demais atores estáticos/jogador fora de vista, câmeras fixas/SwiftShader. Alcance/tempo de segurar pela interface, missão humana contínua, patrulha sob combate, Android físico e memória de 60 minutos continuam pendentes. Nenhuma fase declarada zerada.
 
 **Retomar em CP-03H:** analisar a operação 10 — O Que Há em Cnossos, Palácio de Cnossos, Creta. Consultar cenário, objetivos/evidências, plataformas/escadas e sistemas existentes antes de escolher correções. Preservar CP-03A/B/C/D/E/F/G e a lancha/barcos do porto. CP-02C (recarga/arma) continua pendente enquanto cenários forem prioridade.
+
+
+### Correção prioritária — pastor Meshy — 16/11/2026
+
+Usuário enviou imagem mostrando cachorro desproporcional ao original procedural e pelagem com manchas/quebras. Cnossos CP-03H fica preservado no branch local `melhorias/cp03h-cnossos`, commit `f5181e1`, ainda sem integração Chromium/publicação. Prioridade atual é corrigir o pastor em branch próprio `correcao/pastor-escala-pelagem`, base publicada `8d5ee5a7f05426fcf9d8b6c730ca312669e77c27`.
+
+Diagnóstico: `buildMorphs` ajusta cada eixo às dimensões de um quadro da caminhada, mas aplica os mesmos fatores ao repouso neutro, cujo volume é cerca de 34–38% maior. Também recentraliza cada pose separadamente e achata toda a altura em .64 para descanso, alterando proporções. A pelagem é amostrada de UVs colapsados pelo voxel clustering, com 557 remendos e filtro por vizinhos que não recompõem a continuidade espacial.
+
+Prova: GLTFLoader r128/carregamento sem material em Node mostrou tamanho bruto neutro [1,103;3,519;4,249] versus caminhada inicial aproximadamente [0,839;2,592;3,089]. O skinWeight Uint8 normalizado soma exatamente 255 em todos os 9.008 vértices; boneTransform CPU usa valores brutos, mas isso só multiplica a escala uniformemente e não é a causa das quebras. Hipótese de target não inicializado foi descartada: r128 lê POSITION internamente.
+
+Plano: comparar caixas do rig procedural por estado, usar escala proporcional coerente entre poses e refazer continuidade da pelagem na própria malha preservando modelo, animações, seleção/fallback e desempenho. Validar tamanho/cores com regressões reais e capturas de várias vistas antes de publicar. Não declarar correção só por haver 8 morph targets ou material.vertexColors.
+
+Ambiente: Chromium local existe mas falhou ao abrir socket (Operation not permitted); sem escalar permissão. Blender 4.3.2 disponível para render offline. Modelo original de alta resolução não foi encontrado pelas buscas de título pastor/cachorro/shepherd/dog; não ler resultados alheios. Usar o GLB atual de 438 KB e referência procedural do repositório.
+
+
+## Correção prioritária — porte e pelagem do pastor (16/11/2026)
+
+Solicitação: cachorro maior que o procedural e com quebras visíveis. CP-03H foi interrompido para priorizar este reparo. O trabalho de Cnossos está preservado na branch local `melhorias/cp03h-cnossos`, commit `f5181e1`; não está publicado nem validado no navegador.
+
+### Causa e mudança
+
+- O fator de escala vinha da primeira pose Walk e era reutilizado na pose neutra, que é maior. Idle media `[0.8732, 2.1976, 3.3155]`, enquanto o procedural media `[0.6640, 1.6187, 2.4102]`.
+- A malha importada tinha 5.809 arestas de borda por índices (parte em costuras/duplicatas). As renderizações mostraram fraturas reais na superfície, além do atlas UV inadequado. Remendos de cor não fechavam os buracos.
+- GLB reconstruído offline por voxelização/suavização/decimação e transferência baricêntrica dos pesos. Superfície final: **3.528 vértices, 7.052 triângulos, todas as arestas compartilhadas por exatamente dois triângulos**. Mantidos os 27 ossos e os 81 canais da animação Walk.
+- Pelagem castanha/preta contínua calculada uma vez sobre a pose neutra, com Float32 linear. O atlas UV danificado deixou de carregar. Sem processamento de vértices por quadro e com uma malha/material compartilhados.
+- Escala independente para marcha, neutro e repouso. Idle final `[0.6640, 1.5617, 2.4102]`, com pés no chão. Menu mantém escala `.85`; S1 mantém `1`. Capacete retorna às dimensões/posição do procedural.
+- GLB passou de 448.480 para **162.516 bytes**. O reparo é reproduzível por `scripts/reparar_pastor.py` a partir do asset em `8d5ee5a`.
+
+### Arquivos e verificação
+
+Alterados: `assets/models/pastor-alemao-animado.glb`, `js/24a-dog-meshy.js`, `index.html`, `js/00a-diagnostics.js`, suíte/fixture do pastor, workflows QA e este checkpoint. O patch UV antigo continua no histórico/arquivo, mas não é carregado pelo HTML.
+
+Regressões novas: porte idle, porte repouso/chão, independência UV, precisão/contraste da pelagem, morphs sem recálculo por quadro, superfície fechada e capacete. Sete testes locais passaram. A regressão de escala/pelagem falhou antes do reparo; a do capacete também foi observada falhando e depois passou.
+
+Renderizações offline: fraturas reproduzidas antes e ausentes depois. Chromium/WebGL, matriz de campanha e publicação: **pendentes**; atualizar após evidência real. Android físico e percurso humano continuam não testados.

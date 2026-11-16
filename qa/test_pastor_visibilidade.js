@@ -9,7 +9,6 @@ const load=read('js/24a-dog-meshy.js');
 const menu=read('js/18-menu-system.js');
 const secret=read('js/24-secret-operations.js');
 const html=read('index.html');
-const patch=read('js/modelos/pastor-cores-fonte.js');
 const glb=fs.readFileSync(path.join(root,'assets/models/pastor-alemao-animado.glb'));
 assert.equal(glb.toString('ascii',0,4),'glTF','GLB invalido');
 assert.equal(glb.readUInt32LE(8),glb.length,'GLB truncado');
@@ -30,22 +29,13 @@ assert(load.includes('const expected=new T.Box3().setFromObject(reference.spine)
 assert(load.includes('geo.morphAttributes.position=normalized.map('),
   'Caminhada e poses devem estar em morph targets compartilhados');
 assert(load.includes('bakeFurColors(geo,sourceTexture)'),
-  'Textura corrigida deve ser amostrada uma vez nas cores dos vertices');
-const base64Match=patch.match(/data:'([A-Za-z0-9+/=]+)'/);
-assert(base64Match,'Dados de correção do atlas ausentes');
-const bytes=Buffer.from(base64Match[1],'base64');
-assert.equal(bytes.length,557*5,'Correções do modelo original incompletas');
-const crypto=require('node:crypto');
-assert.equal(crypto.createHash('sha1').update(bytes).digest('hex'),
- '7699aebf30c535607cff411ee20cd928807aed3e','Patch da pelagem corrompido');
-assert(load.includes('DATA.sourceUvRepairs=sourcePatch.recordCount'),
- 'Correções de cor não estão sendo aplicadas na malha');
-assert(html.indexOf('js/modelos/pastor-cores-fonte.js')<html.indexOf('js/24a-dog-meshy.js'),
- 'O patch de textura deve carregar antes do pastor');
+  'Pelagem deve ser calculada uma vez nas cores dos vertices');
+assert(!doc.images&&!doc.textures,'Atlas UV quebrado não pode voltar ao GLB reparado');
+assert(load.includes("DATA.textureMode='fur-spatial-baked'"),'Pelagem contínua ausente');
 assert(load.includes('vertexColors:true,map:null'),
   'Material nao pode voltar a interpolar as UVs danificadas do atlas');
-assert(load.includes("if(frame===5){"),
-  'Repouso precisa de pose valida sem esticar o esqueleto');
+assert(load.includes("DATA.scaleReference='procedural-per-pose'"),
+  'Cada pose deve manter seu porte procedural');
 assert(load.includes('m.mesh.morphTargetInfluences'),
   'Cachorro precisa animar os morph targets por quadro');
 assert(load.includes('const mesh=new T.Mesh(shared.geometry,shared.material)'),'Pose baked deveria ser compartilhada sem clonar skeleton');
