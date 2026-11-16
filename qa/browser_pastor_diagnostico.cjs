@@ -100,13 +100,8 @@ const sleep=ms=>new Promise(r=>setTimeout(r,ms));
   console.log('PASTOR_VARIANTS_PROBE '+JSON.stringify(variants));
   fs.writeFileSync('qa-shots/report.json',JSON.stringify({report,logs,s1,variants},null,2));
   if(report.status!=='ready'||!report.dog?.hasModel||!report.visual)throw new Error('Pastor Meshy nao carregou no menu: '+report.error);
-  if(report.visual.morphs!==8||!report.visual.hasVertexColors||report.visual.colorVertices<3000||
-      report.textureMode!=='fur-spatial-baked')throw new Error('Morph targets ou pelagem corrigida ausentes');
-  const tone=report.visual.colorStats;
-  if(!tone||tone.max[0]-tone.min[0]<.15||tone.max[1]-tone.min[1]<.08||
-     tone.max[2]-tone.min[2]<.03){
-    throw new Error('Textura virou cor uniforme por UVs nao normalizadas: '+JSON.stringify(tone));
-  }
+  if(report.visual.morphs!==8||!report.visual.hasMap||report.visual.hasVertexColors||report.textureMode!=='original-atlas')throw new Error('Atlas original não chegou ao material renderizado');
+  if(report.furTextureResolution?.[0]!==2048||report.furTextureResolution?.[1]!==2048)throw new Error('Atlas detalhado não foi preservado em 2048 px');
   if(report.sourceUvRepairs!==0||report.scaleReference!=='procedural-per-pose')throw new Error('Adaptador antigo em cache');
   for(const frame of [0,4,5])for(let a=0;a<3;a++)if(report.poseSizes[frame][a]>report.originalSize[a]*1.05)throw new Error('Pastor cresceu fora da marcha');
   const p=report.visual.screen;if(Math.abs(p[0])>1||Math.abs(p[1])>1||Math.abs(p[2])>1)throw new Error('Pastor fora da camera: '+p);

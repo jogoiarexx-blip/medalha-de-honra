@@ -28,12 +28,10 @@ assert(load.includes('const expected=new T.Box3().setFromObject(reference.spine)
   'Nova malha deve ser normalizada para tamanho do rig procedural');
 assert(load.includes('geo.morphAttributes.position=normalized.map('),
   'Caminhada e poses devem estar em morph targets compartilhados');
-assert(load.includes('bakeFurColors(geo,sourceTexture)'),
-  'Pelagem deve ser calculada uma vez nas cores dos vertices');
-assert(!doc.images&&!doc.textures,'Atlas UV quebrado não pode voltar ao GLB reparado');
-assert(load.includes("DATA.textureMode='fur-spatial-baked'"),'Pelagem contínua ausente');
-assert(load.includes('vertexColors:true,map:null'),
-  'Material nao pode voltar a interpolar as UVs danificadas do atlas');
+assert(doc.images?.length&&doc.textures?.length,'Atlas original ausente');
+assert(doc.meshes[0].primitives[0].attributes.TEXCOORD_0!==undefined,'UV original ausente');
+assert(load.includes("DATA.textureMode='original-atlas'"),'Pelagem original ausente');
+assert(load.includes('vertexColors:false,map:sourceTexture'),'Detalhes originais foram descartados');
 assert(load.includes("DATA.scaleReference='procedural-per-pose'"),
   'Cada pose deve manter seu porte procedural');
 assert(load.includes('m.mesh.morphTargetInfluences'),
