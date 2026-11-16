@@ -7,8 +7,11 @@
  *
  * Solucao: amostrar o GLB uma unica vez, com boneTransform (CPU),
  * construir 8 poses compartilhadas como morph targets e exibir Mesh
- * sem GPU skinning/bindMatrix. 8 poses usam ~0.9 MB de posicoes e
- * UMA draw call por cachorro, sem calculo de 9 mil vertices/frame.
+ * sem GPU skinning/bindMatrix. 8 poses usam ~0.34 MB de posicoes e
+ * UMA draw call por cachorro, sem recalcular vertices/frame.
+ *
+ * A superfície do GLB foi reconstruída offline para fechar as fraturas.
+ * Pelagem contínua em cores lineares evita o atlas UV danificado.
  *
  * O rig procedural original continua dirigindo os estados: repouso,
  * alerta, marcha/corrida, mordida e morte. A escala local do
@@ -17,10 +20,10 @@
 (function(){
   const oldMake=makeDogRig,oldPose=poseDogRig;
   const DATA={
-    url:'assets/models/pastor-alemao-animado.glb',
+    url:'assets/models/pastor-alemao-animado.glb?v=superficie-20261116',
     status:'idle',error:null,instances:[],mounted:0,
     renderMode:'baked-morph',walkFrames:4,morphFrames:8,
-    trianglesPerDog:12245,visibleMeshes:0,
+    trianglesPerDog:0,visibleMeshes:0,
     originalSize:null,importedSize:null,menuDogVisible:false
   };
   window.__PASTOR_MESHY=DATA;
@@ -30,115 +33,43 @@
   const useMeshy=()=>settings.chars==='modelo';
   DATA.useMeshy=useMeshy;
   const point=new T.Vector3();
-  const XAXIS=new T.Vector3(1,0,0),YAXIS=new T.Vector3(0,1,0);
   const HEAD_COUNT=8;
-  // O GLB otimizado agrupou coordenadas UV de ilhas diferentes.
-  // Interpolar a textura entre essas coordenadas causava riscas claras na pelagem.
-  // Amostramos a textura ORIGINAL uma unica vez e pintamos as cores nos
-  // vertices da malha simplificada. Assim a animacao por morph targets
-  // permanece leve, sem seams de atlas nem carregamento adicional.
+  // Pelagem contínua no espaço neutro do corpo. O atlas otimizado perdeu
+  // ilhas UV; remendar vértices isolados não recupera essa informação.
+  // As cores ficam presas aos mesmos vértices em todas as poses, sem custo/frame.
   function bakeFurColors(geo,map){
-    const uv=geo.getAttribute('uv'),image=map&&map.image;
-    if(!uv||!image||!image.width||!image.height){
-      throw new Error('Textura/UV do pastor ausente para corrigir a pelagem');
-    }
-    const canvas=document.createElement('canvas');
-    canvas.width=image.width;canvas.height=image.height;
-    const context=canvas.getContext('2d',{willReadFrequently:true});
-    if(!context)throw new Error('Canvas 2D nao disponivel para a textura do pastor');
-    context.drawImage(image,0,0);
-    const rgba=context.getImageData(0,0,canvas.width,canvas.height).data;
-    const width=canvas.width,height=canvas.height;
-    const color=new Uint8Array(uv.count*3);
-    const clampByte=v=>Math.max(0,Math.min(255,Math.round(v)));
-    // THREE.BufferAttribute.getX/getY em r128 retornam valores BRUTOS;
-    // normalized=true somente normaliza na GPU. O GLB guarda UVs Uint16.
-    // Sem dividir por 65535, quase todos os vertices leem um unico texel.
-    const normalizedScale=uv.normalized?
-      (uv.array instanceof Uint16Array?1/65535:
-       uv.array instanceof Uint8Array?1/255:
-       uv.array instanceof Int16Array?1/32767:1):1;
-    for(let i=0;i<uv.count;i++){
-      const u=Math.min(1,Math.max(0,uv.getX(i)*normalizedScale));
-      // glTF Loader usa flipY=false (V cresce para baixo no atlas glTF).
-      const vy=Math.min(1,Math.max(0,uv.getY(i)*normalizedScale));
-      const v=map.flipY?1-vy:vy;
-      const x=Math.min(width-1,Math.floor(u*(width-1)));
-      const y=Math.min(height-1,Math.floor(v*(height-1)));
-      // Filtragem de quatro texels elimina pontilhados de compressao JPEG.
-      const x1=Math.min(width-1,x+1),y1=Math.min(height-1,y+1);
-      const c=[0,0,0];
-      for(const [px,py] of [[x,y],[x1,y],[x,y1],[x1,y1]]){
-        const p=(py*width+px)*4;
-        c[0]+=rgba[p];c[1]+=rgba[p+1];c[2]+=rgba[p+2];
-      }
-      for(let ch=0;ch<3;ch++){
-        const srgb=c[ch]/(4*255);
-        // Vertex colors em Three.js r128 sao LINEARES; a imagem JPEG e sRGB.
-        // Sem converter, a curva sRGB e aplicada duas vezes, lavando toda a pelagem.
-        const linear=srgb<=.04045?srgb/12.92:Math.pow((srgb+.055)/1.055,2.4);
-        color[i*3+ch]=clampByte(255*linear);
+    const p=geo.getAttribute('position'),box=new T.Box3().setFromBufferAttribute(p);
+    const size=box.getSize(new T.Vector3()),color=new Float32Array(p.count*3);
+    const smooth=(a,b,x)=>{const t=Math.max(0,Math.min(1,(x-a)/(b-a)));return t*t*(3-2*t);};
+    const hash=(x,y,z)=>{let n=Math.imul(x,73856093)^Math.imul(y,19349663)^Math.imul(z,83492791);n=Math.imul(n^(n>>>13),1274126177);return (n>>>0)/4294967295;};
+    const noise=(x,y,z)=>{
+      const a=Math.floor(x),b=Math.floor(y),c=Math.floor(z),u=smooth(0,1,x-a),v=smooth(0,1,y-b),w=smooth(0,1,z-c);
+      const mix=(x,y,t)=>x+(y-x)*t;
+      return mix(mix(mix(hash(a,b,c),hash(a+1,b,c),u),mix(hash(a,b+1,c),hash(a+1,b+1,c),u),v),mix(mix(hash(a,b,c+1),hash(a+1,b,c+1),u),mix(hash(a,b+1,c+1),hash(a+1,b+1,c+1),u),v),w);
+    };
+    for(let i=0;i<p.count;i++){
+      const x=(p.getX(i)-(box.min.x+box.max.x)/2)/(size.x*.5),y=(p.getY(i)-box.min.y)/size.y,z=(p.getZ(i)-box.min.z)/size.z;
+      const grain=(noise(x*28,y*40,z*48)-.5)*.035;
+      const edge=.49+.15*Math.abs(x)+.035*Math.cos(z*9);
+      const saddle=smooth(.17,.27,z)*(1-smooth(.68,.79,z))*smooth(edge-.06,edge+.06,y);
+      const tail=(1-smooth(.08,.23,z))*smooth(.10,.30,y)*.85;
+      const head=smooth(.69,.77,z)*smooth(.60,.70,y);
+      const muzzle=head*smooth(.84,.94,z)*(1-smooth(.84,.90,y));
+      const ears=head*smooth(.90,.96,y)*(1-smooth(.82,.87,z));
+      const eye=head*Math.exp(-((Math.abs(x)-.50)**2/.025+(y-.825)**2/.0012+(z-.84)**2/.0018))*.92;
+      const dark=Math.max(saddle,tail,muzzle,ears,eye),shade=.86+.12*y+.02*x;
+      // Paleta do pastor procedural: patas castanhas, sela e máscara escuras.
+      const tan=[.69,.51,.31],black=[.15,.125,.105];
+      for(let k=0;k<3;k++){
+        const srgb=Math.max(0,Math.min(1,(tan[k]*(1-dark)+black[k]*dark+grain)*shade));
+        color[i*3+k]=srgb<=.04045?srgb/12.92:Math.pow((srgb+.055)/1.055,2.4);
       }
     }
-    // Restaurar as cores das ilhas UV mais danificadas usando o arquivo
-    // original de alta resolução, sem carregar seus 12 MB no navegador.
-    // Sao 557 correcoes pontuais compactas de 5 bytes, compartilhadas
-    // entre todos os caes e aplicadas somente uma vez ao iniciar o modo GLB.
-    const sourcePatch=window.PASTOR_FUR_SOURCE_PATCH;
-    if(sourcePatch&&sourcePatch.vertexCount===uv.count){
-      const raw=atob(sourcePatch.data);
-      if(raw.length!==sourcePatch.recordCount*5)throw new Error('Patch de pelagem truncado');
-      for(let offset=0;offset<raw.length;offset+=5){
-        const i=raw.charCodeAt(offset)|(raw.charCodeAt(offset+1)<<8);
-        if(i>=uv.count)throw new Error('Indice inválido no patch da pelagem');
-        for(let ch=0;ch<3;ch++){
-          const srgb=raw.charCodeAt(offset+2+ch)/255;
-          const linear=srgb<=.04045?srgb/12.92:Math.pow((srgb+.055)/1.055,2.4);
-          color[i*3+ch]=clampByte(255*linear);
-        }
-      }
-      DATA.sourceUvRepairs=sourcePatch.recordCount;
-    }else{
-      DATA.sourceUvRepairs=0;
-    }
-    // O simplificador agrupou vertices de pequenas ilhas UV de cor oposta.
-    // Essas amostras isoladas apareciam como riscos claros no dorso preto.
-    // Filtro de mediana em apenas uma volta de vizinhos: remove ilhas
-    // aberrantes, sem desfazer o desenho natural do dorso e da barriga.
-    const index=geo.getIndex();
-    if(index){
-      const neighbours=Array.from({length:uv.count},()=>[]);
-      const idx=index.array;
-      for(let k=0;k<idx.length;k+=3){
-        const a=idx[k],b=idx[k+1],c=idx[k+2];
-        neighbours[a].push(b,c);neighbours[b].push(a,c);neighbours[c].push(a,b);
-      }
-      const corrected=new Uint8Array(color);
-      let softened=0;
-      for(let i=0;i<uv.count;i++){
-        const adj=neighbours[i];
-        if(adj.length<3)continue;
-        const list=[i,...adj],m=[0,0,0];
-        for(let ch=0;ch<3;ch++){
-          const samples=list.map(v=>color[v*3+ch]).sort((a,b)=>a-b);
-          m[ch]=samples[samples.length>>1];
-        }
-        const p=i*3;
-        const difference=Math.max(
-          Math.abs(color[p]-m[0]),Math.abs(color[p+1]-m[1]),Math.abs(color[p+2]-m[2]));
-        const blend=difference>28?.80:difference>13?.45:.06;
-        if(blend>.1)softened++;
-        for(let ch=0;ch<3;ch++)corrected[p+ch]=clampByte(color[p+ch]*(1-blend)+m[ch]*blend);
-      }
-      color.set(corrected);
-      DATA.softenedFurVertices=softened;
-    }
-    geo.setAttribute('color',new T.Uint8BufferAttribute(color,3,true));
-    DATA.furColorVertices=uv.count;
-    DATA.furTextureResolution=[width,height];
+    geo.setAttribute('color',new T.Float32BufferAttribute(color,3));
+    DATA.furColorVertices=p.count;DATA.furTextureResolution=map?.image?[map.image.width,map.image.height]:[0,0];
+    DATA.sourceUvRepairs=0;DATA.textureMode='fur-spatial-baked';
     return true;
   }
-
 
   function snapshot(root){
     const a=[];
@@ -168,28 +99,6 @@
     return {vertices,min,max};
   }
 
-  function localPose(scene,restore,bones,kind){
-    restore();
-    const adjust=(name,axis,angle)=>{
-      const b=bones[name];
-      if(b)b.quaternion.multiply(new T.Quaternion().setFromAxisAngle(axis,angle));
-    };
-    const hips=bones.Hips;
-    if(kind==='rest'){
-      if(hips)hips.position.z+=.32;
-      adjust('frontleg',XAXIS,-.92);adjust('R_frontleg',XAXIS,-.92);
-      adjust('backleg',XAXIS,.85);adjust('R_backleg',XAXIS,.85);
-      adjust('head',XAXIS,.13);adjust('chest',XAXIS,.14);
-    }else if(kind==='bite'){
-      adjust('head',XAXIS,-.43);adjust('chest',XAXIS,-.12);
-      adjust('frontleg',XAXIS,-.13);adjust('R_frontleg',XAXIS,-.13);
-    }else if(kind==='alert'){
-      adjust('head',XAXIS,-.15);adjust('head',YAXIS,.12);
-      adjust('tail',YAXIS,.26);adjust('chest',XAXIS,-.05);
-    }
-    scene.updateMatrixWorld(true);
-  }
-
   function buildMorphs(gltf){
     const scene=gltf.scene;let skin=null;
     scene.traverse(o=>{if(o.isSkinnedMesh&&!skin)skin=o;});
@@ -207,59 +116,53 @@
     const target=expected.getSize(new T.Vector3()),center=expected.getCenter(new T.Vector3());
     if(Math.min(target.x,target.y,target.z)<=0)throw new Error('Dimensões do rig original inválidas');
 
-    const restore=snapshot(scene);
-    const bones={};scene.traverse(o=>{if(o.isBone)bones[o.name]=o;});
-    const mixer=new T.AnimationMixer(scene),action=mixer.clipAction(clip);
-    action.play();
-    const samples=[];
-    for(let i=0;i<4;i++){
-      mixer.setTime(clip.duration*i/4);
-      samples.push(sourceSample(scene,skin));
-    }
-    action.stop();restore();
-    // O GLB original nao possui clips Idle/Rest/Bite: os ossos de descanso
-    // criados artificialmente esticavam as patas e explodiam a silhueta.
-    // As quatro poses extras partem do MESMO repouso neutro valido.
-    const neutral=sourceSample(scene,skin);
-    for(let i=0;i<4;i++)samples.push(neutral);
-    restore();
-
-    const b0=samples[0],sz=b0.max.clone().sub(b0.min);
-    if(Math.min(sz.x,sz.y,sz.z)<1e-5)throw new Error('Animação Meshy inválida');
-    const factor=new T.Vector3(target.x/sz.x,target.y/sz.y,target.z/sz.z);
-    DATA.originalSize=target.toArray();DATA.importedSize=sz.toArray();
-    const normalized=samples.map((s,frame)=>{
-      const n=s.vertices.length/3,out=new Float32Array(s.vertices.length);
-      const c=s.min.clone().add(s.max).multiplyScalar(.5);
-      for(let i=0;i<n;i++){
-        out[i*3]=(s.vertices[i*3]-c.x)*factor.x+center.x;
-        out[i*3+1]=(s.vertices[i*3+1]-s.min.y)*factor.y+expected.min.y;
-        out[i*3+2]=(s.vertices[i*3+2]-c.z)*factor.z+center.z;
+    // boneTransform r128 lê atributos normalizados como inteiros na CPU.
+    // Decodificar uma vez mantém a unidade correta antes de amostrar o rig.
+    const weights=skin.geometry.getAttribute('skinWeight');
+    if(weights.normalized){
+      const decoded=new Float32Array(weights.count*4);
+      for(let i=0;i<weights.count;i++){
+        const sum=weights.getX(i)+weights.getY(i)+weights.getZ(i)+weights.getW(i);
+        for(let k=0;k<4;k++)decoded[i*4+k]=sum?weights.array[i*4+k]/sum:(k===0?1:0);
       }
-      // Todas as poses usam coordenadas coerentes com a mesma topologia.
-      // Repouso = agachar, e nao fazer as quatro pernas apontarem para frente.
-      if(frame===5){
-        for(let i=0;i<n;i++){
-          const y=i*3+1;
-          out[y]=expected.min.y+(out[y]-expected.min.y)*.64;
+      skin.geometry.setAttribute('skinWeight',new T.BufferAttribute(decoded,4));
+    }
+    const restore=snapshot(scene);
+    const mixer=new T.AnimationMixer(scene),action=mixer.clipAction(clip);action.play();
+    const samples=[];
+    for(let i=0;i<4;i++){mixer.setTime(clip.duration*i/4);samples.push(sourceSample(scene,skin));}
+    action.stop();restore();const neutral=sourceSample(scene,skin);
+    samples.push(neutral,neutral,neutral,neutral);
+    const restReference=oldMake(false);restReference.restT=1;
+    oldPose(restReference,0,.016,{resting:true});
+    const restBox=new T.Box3().setFromObject(restReference.spine);
+    DATA.originalSize=target.toArray();DATA.importedSize=neutral.max.clone().sub(neutral.min).toArray();
+    DATA.scaleReference='procedural-per-pose';
+    const normalized=samples.map((s,frame)=>{
+      // Repouso tem referência própria: nunca recebe o fator de uma pose de marcha.
+      const anchor=frame<4?samples[0]:neutral;
+      const ref=frame===5?restBox:expected,refSize=ref.getSize(new T.Vector3()),refCenter=ref.getCenter(new T.Vector3());
+      const sz=anchor.max.clone().sub(anchor.min),center=anchor.min.clone().add(anchor.max).multiplyScalar(.5);
+      const factor=new T.Vector3(refSize.x/sz.x,expected.max.y/sz.y,refSize.z/sz.z);
+      const out=new Float32Array(s.vertices.length);
+      for(let i=0;i<out.length;i+=3){
+        out[i]=(s.vertices[i]-center.x)*factor.x+refCenter.x;
+        out[i+1]=(s.vertices[i+1]-s.min.y)*factor.y;
+        out[i+2]=(s.vertices[i+2]-center.z)*factor.z+refCenter.z;
+        if(frame===5){
+          // Repouso estável: desloca tronco/cabeça juntos e absorve a queda
+          // nas pernas. Campo monótono evita triângulos esticados pelo rig.
+          const t=Math.max(0,Math.min(1,out[i+1]/.8));
+          out[i+1]-=(expected.max.y-restBox.max.y)*t*t*(3-2*t);
         }
-      }else if(frame===6){
-        // Mordida: avançar apenas cabeca e focinho, sem afetar o tronco.
-        for(let i=0;i<n;i++){
-          const k=i*3,y=out[k+1],z=out[k+2];
-          const head=Math.max(0,Math.min(1,(z-.35)*2.6))*Math.max(0,Math.min(1,(y-.55)*2.0));
-          out[k+2]+=head*.12;out[k+1]-=head*.04;
-        }
-      }else if(frame===7){
-        // Alerta: cabeca erguida e respiracao, sem deformar membros.
-        for(let i=0;i<n;i++){
-          const k=i*3,y=out[k+1],z=out[k+2];
-          const head=Math.max(0,Math.min(1,(z-.33)*2.6))*Math.max(0,Math.min(1,(y-.53)*2));
-          out[k+1]+=head*.06;
+        if(frame===6||frame===7){
+          const head=Math.max(0,Math.min(1,(out[i+2]-.33)*2.6))*Math.max(0,Math.min(1,(out[i+1]-.53)*2));
+          if(frame===6){out[i+2]+=head*.12;out[i+1]-=head*.04;}else out[i+1]+=head*.06;
         }
       }
       return out;
     });
+    DATA.poseSizes=normalized.map(a=>new T.Box3().setFromBufferAttribute(new T.BufferAttribute(a,3)).getSize(new T.Vector3()).toArray());
 
     const base=skin.geometry;
     const geo=new T.BufferGeometry();
@@ -272,19 +175,16 @@
     geo.computeVertexNormals();
     geo.computeBoundingSphere();
 
-    // Riscos amarelados e pelagem quebrada vinham da interpolacao de
-    // coordenadas UV medias, nao de falha no download do JPG.
-    // O color baking preserva a paleta do atlas original e anula o artefato.
+    // O campo de pelagem não interpola as ilhas UV quebradas do atlas.
     const sourceTexture=skin.material&&skin.material.map;
-    if(!sourceTexture)throw new Error('Textura do pastor indisponível');
     bakeFurColors(geo,sourceTexture);
     const material=new T.MeshBasicMaterial({
       vertexColors:true,map:null,color:0xffffff,
       side:T.DoubleSide,morphTargets:true,
       depthWrite:true,transparent:false
     });
-    DATA.textureMode='fur-vertex-baked';
-    DATA.visibleMeshes=1;
+    DATA.textureMode='fur-spatial-baked';
+    DATA.visibleMeshes=1;DATA.trianglesPerDog=geo.index.count/3;
     return {geometry:geo,material,reference:expected};
   }
 
@@ -299,11 +199,11 @@
     if(d._wantsDogHelmet){
       // Capacete compartilhado entre todos os cães (mesma geometria e material).
       if(!shared.capGeo){
-        shared.capGeo=new T.SphereGeometry(.18,12,7,0,Math.PI*2,0,Math.PI*.54);
+        shared.capGeo=new T.SphereGeometry(1,12,7,0,Math.PI*2,0,Math.PI*.53);
         shared.capMat=new T.MeshLambertMaterial({color:0x596346,side:T.DoubleSide});
       }
       const cap=new T.Mesh(shared.capGeo,shared.capMat);
-      cap.position.set(0,1.025,.38);d.root.add(cap);d._meshy.cap=cap;
+      cap.scale.set(.25,.25,.24);cap.position.set(0,1.285,.61);d.root.add(cap);d._meshy.cap=cap;
     }
     // O cachorro antigo so e ocultado depois que o substituto foi anexado.
     d.spine.visible=false;

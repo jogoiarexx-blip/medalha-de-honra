@@ -9,7 +9,7 @@
            da simulação e tempo de simulação descartado.
    Os números só existem depois de medidos; nada aqui é estimado.
    ========================================================= */
-const BUILD_ID='cp03g-2026-11-16';
+const BUILD_ID='pastor-2026-11-16';
 const DIAG={
   log:[], seen:new Map(), max:40, errors:0,
   report(code,msg,err){

@@ -8,16 +8,16 @@ Atualizado em **16/11/2026 (Brasil)**. Documento de continuidade: ler antes de c
 |---|---|
 | Repositório correto | https://github.com/jogoiarexx-blip/medalha-de-honra |
 | Base analisada | `edca70c8f74a736921939ca149e9e83e9decea50` (`main`) |
-| Build atual | `cp03g-2026-11-16` |
-| Entrega atual | CP-03G: investigação/embarque, fotos/save, postes/patrulha e entradas do porto 09 |
-| Mudança de gameplay nesta revisão | Embarque exige passe/mapa/programação; fotos e visto restaurados; apoios físicos e patrulha corrigidos |
-| Etapa atual | CP-03G ENTREGUE; CP-02C, percurso humano/Android pendentes |
+| Build atual | `pastor-2026-11-16` |
+| Entrega atual | Correção prioritária do pastor: porte procedural, superfície fechada e pelagem contínua |
+| Mudança de gameplay nesta revisão | Nenhuma; correção do renderizador do cachorro, poses e capacete |
+| Etapa atual | Pastor: testes locais aprovados; navegador e publicação pendentes |
 | Próximo trabalho | CP-03H: analisar cenário da operação 10 — O Que Há em Cnossos |
 | Campanha | 24 operações principais + 3 secretas registradas |
 | Fases com percurso humano comprovado | Nenhuma |
 | Integração da operação 01 | Objetivos, save/load e extração aprovados no Chromium com posições controladas; percurso normal pendente |
 
-**Ponto de retomada:** CP-03G entregue e integrado; evidências ao fim deste documento. Porto 09 com embarque condicionado à investigação, fotos/visto restaurados, oito apoios físicos, patrulha por faixa livre e prédios identificados; lancha e quatro barcos preservados. Próximo cenário: operação 10 — O Que Há em Cnossos (CP-03H). Preservar CP-03A/B/C/D/E/F/G. CP-02C (recarga/arma), save na grade específica da 08 durante OPENING, NPCs nos apoios da 07, percurso humano e Android físico continuam pendentes.
+**Ponto de retomada:** correção do pastor é a prioridade atual; consultar evidências ao fim. CP-03G continua entregue. CP-03H (Cnossos) está preservado em `checkpoint/cp03h-cnossos-pausado`, sem integração: retomar essa branch sobre o main com o reparo do pastor e resolver index/QA/checkpoint cuidadosamente. Preservar CP-03A/B/C/D/E/F/G, seleção de personagens, fallback procedural e lancha/barcos do porto. CP-02C, percurso humano e Android físico continuam pendentes.
 
 ## 2. O que já existe e deve ser preservado
 
@@ -686,3 +686,33 @@ Acréscimo de 2 chamadas/110 triângulos por vista, dentro de +16/+5.000. Câmer
 - Limites: cadeia de investigação/embarque executada por callbacks reais e posições controladas, patrulha com demais atores estáticos/jogador fora de vista, câmeras fixas/SwiftShader. Alcance/tempo de segurar pela interface, missão humana contínua, patrulha sob combate, Android físico e memória de 60 minutos continuam pendentes. Nenhuma fase declarada zerada.
 
 **Retomar em CP-03H:** analisar a operação 10 — O Que Há em Cnossos, Palácio de Cnossos, Creta. Consultar cenário, objetivos/evidências, plataformas/escadas e sistemas existentes antes de escolher correções. Preservar CP-03A/B/C/D/E/F/G e a lancha/barcos do porto. CP-02C (recarga/arma) continua pendente enquanto cenários forem prioridade.
+
+
+## Correção prioritária — porte e pelagem do pastor (16/11/2026)
+
+Solicitação: cachorro maior que o procedural e com quebras visíveis. CP-03H foi interrompido para priorizar este reparo. O trabalho de Cnossos está preservado na branch `checkpoint/cp03h-cnossos-pausado`, commit remoto `04736782a7c793044af476992d2e08f30c6eac44` (cópia fiel da árvore local `f5181e1`); não está integrado ao jogo nem validado no navegador.
+
+### Causa e mudança
+
+- O fator de escala vinha da primeira pose Walk e era reutilizado na pose neutra, que é maior. Idle media `[0.8732, 2.1976, 3.3155]`, enquanto o procedural media `[0.6640, 1.6187, 2.4102]`.
+- A malha importada tinha 5.809 arestas de borda por índices (parte em costuras/duplicatas). As renderizações mostraram fraturas reais na superfície, além do atlas UV inadequado. Remendos de cor não fechavam os buracos.
+- GLB reconstruído offline por voxelização/suavização/decimação e transferência baricêntrica dos pesos. Superfície final: **3.528 vértices, 7.052 triângulos, todas as arestas compartilhadas por exatamente dois triângulos**. Mantidos os 27 ossos e os 81 canais da animação Walk.
+- Pelagem castanha/preta contínua calculada uma vez sobre a pose neutra, com Float32 linear. O atlas UV danificado deixou de carregar. Sem processamento de vértices por quadro e com uma malha/material compartilhados.
+- Escala independente para marcha, neutro e repouso. Idle final `[0.6640, 1.5617, 2.4102]`, com pés no chão. Menu mantém escala `.85`; S1 mantém `1`. Capacete retorna às dimensões/posição do procedural.
+- GLB passou de 448.480 para **162.516 bytes**. O reparo é reproduzível por `scripts/reparar_pastor.py` a partir do asset em `8d5ee5a`.
+
+### Arquivos e verificação
+
+Alterados: `assets/models/pastor-alemao-animado.glb`, `js/24a-dog-meshy.js`, `index.html`, `js/00a-diagnostics.js`, suíte/fixture do pastor, workflows QA e este checkpoint. O patch UV antigo continua no histórico/arquivo, mas não é carregado pelo HTML.
+
+Regressões novas: porte idle, porte repouso/chão, independência UV, precisão/contraste da pelagem, morphs sem recálculo por quadro, superfície fechada e capacete. Nove testes locais passaram. A regressão de escala/pelagem falhou antes do reparo; a do capacete também foi observada falhando e depois passou.
+
+Renderizações offline: fraturas reproduzidas antes e ausentes depois. Chromium/WebGL, matriz de campanha e publicação: **pendentes**; atualizar após evidência real. Android físico e percurso humano continuam não testados.
+
+
+Revisão independente encontrou as patas dianteiras suspensas na primeira pose reconstruída. A regressão específica por osso falhou com 19–21 cm de afastamento; corrigidos os ângulos dianteiros/tornozelos, agora os quatro pontos medidos ficam entre 1,3 e 2,4 cm do piso (tolerância 3,5 cm; a medição considera vértices dominados pelo último osso da pata). O teste usa o GLB real, não somente o mínimo da caixa inteira. Corrigidas também amostras diagnósticas fora da faixa após a redução de vértices e descrição do teste de arestas para não alegar detecção de auto-interseção. Total local: **91 isolados**, sintaxe e seis estruturais aprovados.
+
+
+A inspeção lateral no WebGL encontrou espículas sob a barriga na pose feita com rotações extremas dos ossos. A nova regressão de extensão de arestas falhou com fator **32,5** entre neutro e repouso. Essa pose foi descartada antes da publicação. O repouso final parte da malha neutra reparada: mantém tronco/cabeça proporcionais e reduz a altura nas pernas por um campo vertical suave e monótono, com referência do procedural. Nenhuma aresta aumenta mais de 5%; patas continuam próximas do piso. Não é uma nova animação autoral de deitar: prioriza pose estável e sem fraturas. Walk, mordida e alerta permanecem nos demais morphs.
+
+Nova validação dedicada em `.github/workflows/qa-pastor.yml` executa Chromium/WebGL e guarda as seis vistas e o menu independentemente da matriz de campanha. Total final: nove regressões do pastor e **91 isolados**. Conferência visual final ainda pendente.
