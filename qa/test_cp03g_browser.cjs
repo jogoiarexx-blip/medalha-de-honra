@@ -21,8 +21,8 @@ withGame(async({page,logs,boot})=>{
   build();G.player.pos.set(-60,0,0);const e=G.enemies.find(e=>e.id==='fp1');let right=false,returned=false,maxStuck=0,steps=0;
   for(;steps<4500;steps++){simTime+=1/30;e.update(1/30);maxStuck=Math.max(maxStuck,e.stuck||0);if(e.pos.x>22)right=true;if(right&&e.pos.x<-48){returned=true;break;}}
   const patrol={right,returned,maxStuck,steps,state:e.state,position:e.pos.toArray()};
-  build();const capClosed=!segClear2D(35,-43,35,-45.4,.32,true);use('hkdoor');use('kfrontdoor');use('depdoor');for(let i=0;i<50;i++)updateDoors(1/60);
-  const passages={capitania:segClear2D(35,-43,35,-45.4,.32,true),kommandantur:segClear2D(-34,-21,-34,-18.6,.32,true),deposito:segClear2D(30,-5.4,30,-2.8,.32,true)};
+  build();const capClosed=!segClear2D(35,-43,35,-45.4,.32,false);use('hkdoor');use('kfrontdoor');use('depdoor');for(let i=0;i<50;i++)updateDoors(1/60);
+  const passages={capitania:segClear2D(35,-43,35,-45.4,.32,false),kommandantur:segClear2D(-34,-21,-34,-18.6,.32,false),deposito:segClear2D(30,-5.4,30,-2.8,.32,false)};
   use('sched');closeDoc();use('board9');const blocked={ending:G.ending,pass:obj('pass').state,map:obj('map').state,locked:W.interactables.find(i=>i.id==='board9').locked()};
   use('seller');use('tenente');startPlaying(readStoredCheckpoint().cp);const visa={flag:G.flags.visto,text:obj('pass').text,cred:G.cred};
   use('clerk');use('board9');const mapBlocked=!G.ending&&obj('map').state==='active'&&G.cred===2;
@@ -30,7 +30,7 @@ withGame(async({page,logs,boot})=>{
   const restoredPhotos=W.photo.every(t=>t.taken)&&G.stats.photos===2,documents=G.cred===2&&G.flags.pass&&obj('pass').state==='done'&&!G.refs.clip.visible;
   // Alternativa do suborno e carimbo, sem substituir o caminho com visto/escrivão.
   build();use('seller');use('itsentry');const mid=readStoredCheckpoint().cp;const opening={live:W.doors.itgate.state,saved:mid.doors.itgate};startPlaying(mid);
-  const bribe={flag:G.flags.bribed,guard:G.enemies.find(e=>e.id==='it3').bribed,gate:W.doors.itgate.state,clear:segClear2D(29,11.5,32,11.5,.32,true)};
+  const bribe={flag:G.flags.bribed,guard:G.enemies.find(e=>e.id==='it3').bribed,gate:W.doors.itgate.state,clear:segClear2D(29,11.5,32,11.5,.32,false)};
   use('stamp9');const forged=G.flags.forged&&G.flags.pass&&G.cred===2&&obj('pass').state==='done';
   startPlaying(investigation);blowDisguise(null,'tiro');update09(0);cp09();const finalCP=readStoredCheckpoint().cp;
   const cache=Object.values(CHANIA_SCENERY),textures=[...new Set(cache.map(m=>m.map).filter(Boolean))];let disposed=0;for(const r of [...cache,...textures])r.addEventListener('dispose',()=>disposed++);
