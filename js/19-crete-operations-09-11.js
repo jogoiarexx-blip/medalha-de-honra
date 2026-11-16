@@ -27,7 +27,7 @@ const ENEMY_DEFS_09=[
   {id:'di',x:46,z:-10,weapon:'smg',patrol:[[46,-10],[34,-10],[34,-15],[46,-15]]},
   {id:'pg',x:42,z:2.4,yaw:Math.PI,weapon:'rifle',helmet:true},
   {id:'pm',x:33,z:6,weapon:'rifle',patrol:[[33,6],[54,6],[54,22],[33,22]]},
-  {id:'fp1',x:-50,z:-27,weapon:'rifle',helmet:true,patrol:[[-50,-27],[20,-27],[24,-28.4],[-50,-27]]},
+  {id:'fp1',x:-50,z:-29.2,weapon:'rifle',helmet:true,patrol:[[-50,-29.2],[24,-29.2]]},
   {id:'fp2',x:-10,z:-2,weapon:'smg',patrol:[[-58,-2],[50,-2]]},
   {id:'it1',x:.4,z:-25.4,yaw:Math.PI,weapon:'pistol',officer:true,faction:'it',fixed:true},
   {id:'it2',x:-2.2,z:-26.8,yaw:2.4,weapon:'rifle',faction:'it'},
@@ -241,7 +241,7 @@ function buildLevel09(){
   house(-68,-50,2,20,6,M.cream,M.shutterB); house(-46,-34,4,20,7,M.rose,M.shutter); house(-30,-18,4,20,6.4,M.ochre,M.shutterB); house(-14,-4,4,20,6.8,M.white,M.shutter); house(0,12,4,20,6,M.blue,M.shutter); house(14,22.6,4,20,7.4,M.cream,M.shutterB);
   // beco do mercado negro (entre -12.4 e -4) e café
   addBlock(-4,4,-22,-8,6.2,{mat:M.white,surf:'stone',top:M.tile,seg:3});
-  { const a=new T.Mesh(BOX(7,.06,4),M.awn); a.position.set(0,2.7,-24.1); a.rotation.x=.25; scene.add(a); for(const x of [-3.4,3.4]) addMesh(BOX(.07,2.6,.07),M.dark,x,1.3,-26,'metal'); }
+  { const a=new T.Mesh(BOX(7,.06,4),M.awn); a.position.set(0,2.7,-24.1); a.rotation.x=.25; scene.add(a); for(const x of [-3.4,3.4]){ addMesh(BOX(.07,2.6,.07),M.dark,x,1.3,-26,'metal'); addSolidOnly(x-.035,x+.035,-26.035,-25.965,2.6); } }
   for(const [x,z] of [[-2.6,-25],[1.6,-25.8],[3,-24.2],[-1.2,-28]]){ addMesh(new T.CylinderGeometry(.45,.45,.05,12),M.white,x,.74,z,'wood'); addMesh(new T.CylinderGeometry(.05,.05,.72,6),M.dark,x,.37,z,'metal'); addSolidOnly(x-.4,x+.4,z-.4,z+.4,.76,0,true); }
   poster(0,3.3,-22.06,Math.PI,3.4,.6,(g,w,h)=>{ g.fillStyle='#2a5a8a'; g.fillRect(0,0,w,h); g.fillStyle='#f0e8d0'; g.font='bold 26px serif'; g.textAlign='center'; g.fillText('ΚΑΦΕΝΕΙΟΝ  Ο  ΛΙΜΗΝ',w/2,40); });
   // Kommandantur (palazzo veneziano)
@@ -274,7 +274,7 @@ function buildLevel09(){
   addMesh(BOX(.08,1.6,.08),M.wood,44.6,.8,12.2,'wood'); poster(44.6,1.5,12.16,Math.PI,1.4,.45,(g,w,h)=>{ g.fillStyle='#e8dcc0'; g.fillRect(0,0,w,h); g.fillStyle='#1a1a1a'; g.font='bold 24px sans-serif'; g.textAlign='center'; g.fillText('LKW 3 — KNOSSOS',w/2,32); });
   crate(52,8,1.2,1.1); crate(52,9.3,1,1); sandbags(40.4,43.6,2.6,3.4);
   // feira e figurantes
-  const stall=(x,z,c)=>{ addBlock(x-1,x+1,z-.5,z+.5,.85,{mat:M.wood,surf:'wood',cover:true,seg:1}); const a=new T.Mesh(BOX(2.2,.05,1.4),c); a.position.set(x,2.2,z); scene.add(a); for(const s of [-1,1]) addMesh(BOX(.06,2.2,.06),M.wood,x+s,1.1,z+.5,'wood'); };
+  const stall=(x,z,c)=>{ addBlock(x-1,x+1,z-.5,z+.5,.85,{mat:M.wood,surf:'wood',cover:true,seg:1}); const a=new T.Mesh(BOX(2.2,.05,1.4),c); a.position.set(x,2.2,z); scene.add(a); for(const s of [-1,1]){ const px=x+s,pz=z+.5; addMesh(BOX(.06,2.2,.06),M.wood,px,1.1,pz,'wood'); addSolidOnly(px-.03,px+.03,pz-.03,pz+.03,2.2); } };
   stall(-24,-27.6,M.awnS); stall(-30,-27.6,M.awn); stall(-8.2,-14.4,M.awn);
   const civs=[]; for(const [id,x,z,yaw,lk] of [['c_sell',-8.2,-13.4,Math.PI,{uniform:0x3a3a40,pants:0x2a2a2a,skin:0xb88a64,hair:0xdcdcdc,cap:'field',capColor:0x1a1a1a}],['c_f1',-24,-26.8,Math.PI,{uniform:0x5a4a3a,pants:0x2a2a2a,skin:0xc49a74,hair:0x1a1410,cap:null}],['c_f2',-30,-26.8,Math.PI,{uniform:0x2a2a2a,pants:0x2a2a2a,skin:0xc49a74,hair:0x3a2a1a,cap:null}],['c_fish',-46,-31,0.2,{uniform:0x2a3a5a,pants:0x3a3a3a,skin:0xa87a54,hair:0x1a1a1a,cap:'beret'}]]){
     const a=new Actor({id,x,z,yaw},Object.assign({weapon:null,boots:true},lk)); removeShootables(a.h.hitMeshes); civs.push(a); }
@@ -303,6 +303,13 @@ function objectives09(){ return [
   {id:'eboat',text:'Opcional: fotografe a lancha torpedeira atracada no molhe',state:'active',optional:true},
   {id:'cover9',text:'Opcional: termine sem perder o disfarce',state:'active',optional:true,autoDone:true},
 ]; }
+function boardingBlock09(){
+  if(obj('board').state!=='active') return 'Leia a programação dos caminhões antes de embarcar';
+  for(const [id,text] of [['pass','Obtenha o Passierschein antes de embarcar'],['map','Fotografe o mapa de rotas antes de embarcar'],['sched','Leia a programação dos caminhões antes de embarcar']]){
+    if(obj(id).state!=='done') return text;
+  }
+  return null;
+}
 function interact09(R){
   const I=W.interactables, F=()=>G.flags;
   for(const [id,x,z] of [['kfront',-34,-19.9],['kback',-38,-6.1],['dep',30,-4.1],['hk',35,-44.1]]) I.push(doorInteract(id,V3(x,1.2,z)));
@@ -321,8 +328,8 @@ function interact09(R){
       F().cigs=false; F().cigUsed='it'; F().bribed=true; e.bribed=true; const d=W.doors.itgate; d.state='CLOSED'; openDoor(d,null); AudioSys.play('unlock'); G.radioMsg('SENTINELA ITALIANO','“Papastratos! Eu não vi nada, eh. Os alemães lá dentro também não precisam ver.”'); cp09(); }});
   I.push({id:'sched',pt:()=>V3(45.3,.9,-7.2),r:2.2,hold:()=>1.4,sus:1.2,susWhy:'credencial',label:()=>F().sched?null:'Ler a programação dos caminhões (segure)',
     use:()=>{ F().sched=true; R.clip.visible=false; AudioSys.play('pickup'); complete('sched'); openDoc('sched09'); activate('board'); F().departT=0; G.radioMsg('ÉLISE','LKW 3 — Knossos, saída às 11h30. Caixotes “arqueológicos”. Preciso estar naquela carroceria.','warn'); cp09(); }});
-  I.push({id:'board9',pt:()=>V3(45.6,1.5,15),r:2.6,hold:()=>2,label:()=>obj('board').state==='active'?'Esconder-se entre os caixotes do caminhão 3 (segure)':null,sus:2,susWhy:'suspeita',
-    use:()=>missionComplete()});
+  I.push({id:'board9',pt:()=>V3(45.6,1.5,15),r:2.6,hold:()=>2,label:()=>obj('board').state==='active'?(boardingBlock09()||'Esconder-se entre os caixotes do caminhão 3 (segure)'):null,locked:()=>!!boardingBlock09(),sus:2,susWhy:'suspeita',
+    use:()=>{ if(!boardingBlock09()) missionComplete(); }});
 }
 function photos09(){
   W.photo.push({id:'map9',label:'Mapa de rotas e baterias costeiras',pos:V3(35,1.8,-51.7),normal:V3(0,0,1),max:5,obj:'map',size:1.2,msg:'Baterias costeiras de Chania a Heraklion e a estrada de abastecimento até Cnossos. Londres vai querer isto inteiro.'});
@@ -361,7 +368,13 @@ function update09(dt){
   if(G.disguise.blown&&obj('cover9').state==='active') failObjective('cover9');
 }
 function cp09(){ checkpoint(); }
-function restore09(s){ const F=G.flags, R=G.refs; G.cred=F.pass?2:1; G.disguise={blown:!!F.blown}; if(F.sched) R.clip.visible=false; if(F.bribed){ const e=G.enemies.find(x=>x.id==='it3'); if(e) e.bribed=true; } }
+function restore09(s){
+  const F=G.flags, R=G.refs; G.cred=F.pass?2:1; G.disguise={blown:!!F.blown};
+  if(F.visto&&!F.pass&&obj('pass').state==='active') obj('pass').text='Leve o visto ao escrivão da Kommandantur e peça o Passierschein';
+  if(F.sched) R.clip.visible=false;
+  for(const t of W.photo) if(F['photo_'+t.id]) t.taken=true;
+  if(F.bribed){ const e=G.enemies.find(x=>x.id==='it3'); if(e) e.bribed=true; }
+}
 LEVELS['09']={id:'09',num:9,op:'Operação 9',name:'A Matéria do Porto',place:'Chania, Creta ocupada',prev:'08',
   loadout:{weapons:['silenced','pistol'],ammo:{silenced:{mag:6,reserve:12},pistol:{mag:8,reserve:16}},cur:'silenced',camera:true},baseLight:.9,lightFn:light09,shadows:true,bloomTh:.9,zoneAt:zone09,camPublic:true,
   credNames:['','imprensa','imprensa + Passierschein'],

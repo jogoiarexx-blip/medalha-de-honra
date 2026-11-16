@@ -56,6 +56,10 @@ Os testes de navegador usam o Chromium do Playwright (`npm install --no-save pla
 
 **Status honesto:** nenhum teste automático declara uma fase "zerada". Jogar os objetivos até a extração, FPS em Android/PC reais e memória por 60 minutos continuam `NÃO TESTADO` até haver registro humano.
 
+## Cenários CP-03G — porto de Chania
+
+Embarque exige passe, mapa fotografado e programação lida; não conclui automaticamente uma investigação incompleta. Oito apoios existentes do café/feira recebem colisão coerente. Visto recupera orientação ao carregar; entradas da Kommandantur, capitania e arsenal identificadas, preservando a S-Boot e os quatro barcos.
+
 ## Cenários CP-03F — Bir Zitoun
 
 Grade da cisterna acompanha a porta; primeiro acendimento de fumaça salva o avanço e o carregamento restaura texto/marcador. Navegação recalculada após posicionar caminhões do embarque. Cisterna e pista identificadas, sem novos obstáculos/luzes.

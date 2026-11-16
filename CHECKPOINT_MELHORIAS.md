@@ -629,3 +629,23 @@ Acréscimos máximos de 3 chamadas/64 triângulos, dentro de +16/+5.000. SwiftSh
 - Limites: interações por callbacks e posições/estados controlados; combate neutralizado no percurso local da aliada. Não foram comprovados alcance/segurar interação pelo jogador, defesa completa, embarque obtido jogando, ondas/veículos em movimento restaurados, Android físico, memória de 60 minutos ou missão inteira. A captura Alto confirma a grade aberta; a imagem adicional parcialmente encoberta não é prova única. Nenhuma fase declarada zerada.
 
 **Retomar em CP-03G:** analisar a operação 09 — A Matéria do Porto, Chania, Creta ocupada. Consultar cenário/objetivos/veículos existentes, preservar a lancha refinada, barcos/cais e CP-03A/B/C/D/E/F; escolher problemas a partir de evidências. CP-02C (recarga/arma) continua pendente enquanto cenários forem prioridade.
+
+
+### CP-03G — plano em execução — 16/11/2026
+
+Base `c42b8554b16579f08040677df1b95d06e3f8316c`. Operação 09 — A Matéria do Porto, Chania. GDD §campanha 3 e §33.3 exige passe, mapa e programação antes do transporte para Cnossos.
+
+Diagnóstico: ler a programação ativa `board`; `board9.use()` chama `missionComplete()` sem verificar passe/mapa, e o encerramento comum marca objetivos ativos como concluídos. É possível pular a investigação exigida. Os dois apoios do café e seis das barracas são malhas sólidas sem colisores correspondentes; o personagem pode atravessá-los. Ao carregar o visto antes do passe, a orientação textual volta ao enunciado inicial.
+
+Decisão: guarda de requisitos específica da 09 no próprio callback, aviso de pendências no embarque e restauração da dica do visto. Vincular colisores exatamente aos oito apoios existentes; conferir o trecho de patrulha do cais e as passagens próximas. Acrescentar sinalização/molduras leves da capitania, Kommandantur e arsenal usando atlas/agrupamento existentes, sem novas luzes ou alvos. Não alterar lancha, quatro barcos, fotos, relógio, disfarce ou regras das outras fases.
+
+- [x] RED/GREEN: dez regressões de defeitos/kit falharam antes e passaram depois; inclui fotos já tiradas e patrulha. 82 testes isolados (11 novos), sintaxe e seis estruturais aprovados.
+- [x] Correções e acabamento isolado na 09 implementados, com recursos fixados e IDs/cache preservados. Integração Chromium aguarda CI.
+- [ ] Chromium: fotos reais (mapa/lancha), rotas/portas, colisão dos postes, embarque recusado/aceito, visto/passe/suborno/save e recarga Alto. Capturas antes/depois e orçamento +16 chamadas/+5.000 triângulos por vista.
+- [ ] Regressões gerais, revisão independente, publicação e resultado final.
+
+Revisar: passe emitido ou falsificado; mapa/schedule ausentes; callback chamado com board oculto; disfarce perdido continua permitindo saída após requisitos; restauração de visto e portão subornado; mobília não oculta fotografias nem barra acessos. Percurso completo, Android físico e sessão de 60 minutos permanecem pendentes.
+
+Diagnóstico adicional CP-03G: `restore09()` não reaplica os flags `photo_map9`/`photo_eboat` aos alvos. Após carregar, fotos já tiradas tornam-se fotografáveis e podem contar novamente. Regressão nova reproduziu esse estado; usar o padrão existente de `restore03()` para preservar o filme registrado na 09, sem mudar o sistema compartilhado.
+
+A patrulha `fp1` percorria Z=-27, interceptando as bancas em (-30,-27,6)/(-24,-27,6); o retorno diagonal também se aproximava da mesa do café. Teste com `segRect` real e volumes da feira falhou; deslocar a patrulha para a faixa Z=-29,2 com dois extremos, sem mudar facção/arma/ID. Conferir deslocamento real no Chromium, sem `recover()`.
