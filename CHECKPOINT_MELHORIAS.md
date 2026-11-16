@@ -1,6 +1,6 @@
 # Medalha de Honra — análise, melhorias e checkpoint
 
-Atualizado em **15/11/2026 (Brasil)**. Documento de continuidade: ler antes de cada nova alteração e atualizar ao encerrar o trabalho.
+Atualizado em **16/11/2026 (Brasil)**. Documento de continuidade: ler antes de cada nova alteração e atualizar ao encerrar o trabalho.
 
 ## 1. Onde paramos
 
@@ -8,16 +8,16 @@ Atualizado em **15/11/2026 (Brasil)**. Documento de continuidade: ler antes de c
 |---|---|
 | Repositório correto | https://github.com/jogoiarexx-blip/medalha-de-honra |
 | Base analisada | `edca70c8f74a736921939ca149e9e83e9decea50` (`main`) |
-| Build atual | `cp03f-2026-11-15` |
-| Entrega atual | CP-03F: grade da cisterna, fumaças/save, rotas do embarque e identificação da 08 |
-| Mudança de gameplay nesta revisão | Primeira fumaça salva; carregar restaura orientação e recalcula grafo após caminhões do embarque |
-| Etapa atual | CP-03F ENTREGUE; CP-02C, percurso humano/Android pendentes |
-| Próximo trabalho | CP-03G: analisar cenário da operação 09 — A Matéria do Porto, Chania |
+| Build atual | `cp03g-2026-11-16` |
+| Entrega atual | CP-03G: investigação/embarque, fotos/save, postes/patrulha e entradas do porto 09 |
+| Mudança de gameplay nesta revisão | Embarque exige passe/mapa/programação; fotos e visto restaurados; apoios físicos e patrulha corrigidos |
+| Etapa atual | CP-03G ENTREGUE; CP-02C, percurso humano/Android pendentes |
+| Próximo trabalho | CP-03H: analisar cenário da operação 10 — O Que Há em Cnossos |
 | Campanha | 24 operações principais + 3 secretas registradas |
 | Fases com percurso humano comprovado | Nenhuma |
 | Integração da operação 01 | Objetivos, save/load e extração aprovados no Chromium com posições controladas; percurso normal pendente |
 
-**Ponto de retomada:** CP-03F entregue e integrado; evidências ao fim deste documento. Grade da cisterna acompanha abertura/load; primeira fumaça salva; texto/marcador e navegação do embarque restaurados; cisterna/pista identificadas. Próximo cenário: operação 09 — A Matéria do Porto, Chania (CP-03G). Preservar CP-03A/B/C/D/E/F e os sistemas existentes. CP-02C (recarga/arma), teste de save durante OPENING, NPCs nos apoios da 07, percurso humano e Android físico continuam pendentes.
+**Ponto de retomada:** CP-03G entregue e integrado; evidências ao fim deste documento. Porto 09 com embarque condicionado à investigação, fotos/visto restaurados, oito apoios físicos, patrulha por faixa livre e prédios identificados; lancha e quatro barcos preservados. Próximo cenário: operação 10 — O Que Há em Cnossos (CP-03H). Preservar CP-03A/B/C/D/E/F/G. CP-02C (recarga/arma), save na grade específica da 08 durante OPENING, NPCs nos apoios da 07, percurso humano e Android físico continuam pendentes.
 
 ## 2. O que já existe e deve ser preservado
 
@@ -641,11 +641,48 @@ Decisão: guarda de requisitos específica da 09 no próprio callback, aviso de 
 
 - [x] RED/GREEN: dez regressões de defeitos/kit falharam antes e passaram depois; inclui fotos já tiradas e patrulha. 82 testes isolados (11 novos), sintaxe e seis estruturais aprovados.
 - [x] Correções e acabamento isolado na 09 implementados, com recursos fixados e IDs/cache preservados. Integração Chromium aguarda CI.
-- [ ] Chromium: fotos reais (mapa/lancha), rotas/portas, colisão dos postes, embarque recusado/aceito, visto/passe/suborno/save e recarga Alto. Capturas antes/depois e orçamento +16 chamadas/+5.000 triângulos por vista.
-- [ ] Regressões gerais, revisão independente, publicação e resultado final.
+- [x] Chromium: fotos reais (mapa/lancha), portas em modo jogador, movimento nos postes, patrulha ida/volta, embarque recusado/aceito, visto/passe/suborno/save e recarga Alto aprovados. Capturas conferidas; orçamento respeitado.
+- [x] Regressões gerais, revisão independente, publicação e resultado final.
 
 Revisar: passe emitido ou falsificado; mapa/schedule ausentes; callback chamado com board oculto; disfarce perdido continua permitindo saída após requisitos; restauração de visto e portão subornado; mobília não oculta fotografias nem barra acessos. Percurso completo, Android físico e sessão de 60 minutos permanecem pendentes.
 
 Diagnóstico adicional CP-03G: `restore09()` não reaplica os flags `photo_map9`/`photo_eboat` aos alvos. Após carregar, fotos já tiradas tornam-se fotografáveis e podem contar novamente. Regressão nova reproduziu esse estado; usar o padrão existente de `restore03()` para preservar o filme registrado na 09, sem mudar o sistema compartilhado.
 
 A patrulha `fp1` percorria Z=-27, interceptando as bancas em (-30,-27,6)/(-24,-27,6); o retorno diagonal também se aproximava da mesa do café. Teste com `segRect` real e volumes da feira falhou; deslocar a patrulha para a faixa Z=-29,2 com dois extremos, sem mudar facção/arma/ID. Conferir deslocamento real no Chromium, sem `recover()`.
+
+Revisão independente CP-03G: nenhum defeito de produção crítico/importante, mas um defeito importante na fixture: as sondas de portas usavam `segClear2D(...,npc=true)`, que ignora portas abertas por NPCs e não comprova bloqueio físico. Com `slab`/`segRect`/`segClear2D` reais, reproduzido true no modo NPC e false no modo jogador para porta fechada. Sondas de capitania, Kommandantur, depósito e portão subornado corrigidas para `npc=false`; código de produção inalterado. Validar novo candidato. Sem menores deferidos nesta revisão.
+
+Primeiro candidato `4a3fa53735b86f881906999e2445d517cbf9d380` falhou no grupo de estado somente na checagem `capClosed` com modo NPC incorreto. O relatório já registrou patrulha ida/volta em 3.371 passos, zero stuck, documentos/fotos/embarque e recursos aprovados na fixture, mas essa execução não valida o candidato final. Correção só de teste: `ff9dccdb1c11d2370335e45663d31000311db4ce`; árvore local/remota idêntica. Reexecutar todo o CI antes de integrar.
+
+
+### Evidências CP-03G — cenário 09
+
+Candidato final `ff9dccdb1c11d2370335e45663d31000311db4ce`, CI https://github.com/jogoiarexx-blip/medalha-de-honra/actions/runs/43843719571: grupo de estado APROVADO. Capturas antes/depois de Kommandantur, capitania e arsenal e recarga Alto conferidas. Ambas as montagens já contêm as correções de gameplay; a comparação mede somente acabamento.
+
+- Assinaturas físicas, nós, portas, objetivos, fotos, luzes e grupos/posições dos cinco barcos idênticos antes/depois do kit. IDs e geometria refinada da lancha preservados; fotos reais de mapa e S-Boot passam por `photoCandidate()`/`takePhoto()`.
+- Oito apoios conferidos nas posições/alturas reais. `updatePlayer()` para em X=-3,775 ao tentar atravessar o poste do café e chega a X=-1,244 na passagem ao lado. A patrulha `fp1` executa `Enemy.update()` por 3.371 passos de 1/30 s: vai ao extremo leste e retorna a X=-48,02/Z=-29,201, estado PATROL e zero stuck. Outros atores estáticos/jogador fora de vista; não comprova a patrulha durante combate.
+- Capitania bloqueada com porta fechada no modo físico do jogador; capitania, entrada da Kommandantur e porta traseira do depósito passam abertas. Suborno real por callback salva o portão durante OPENING e carrega OPEN, com passagem física livre e guarda ainda subornado. Não equivale a testar a grade específica da operação 08 durante abertura.
+- Ler programação sem passe/mapa ativa embarque, mas o callback recusa encerrar e mantém esses objetivos ativos. Vendedor→tenente→checkpoint restaura visto, orientação ao escrivão e credencial 1; escrivão emite passe/credencial 2, e embarque continua recusado até fotografar o mapa. Alternativa do carimbo também emite passe. As interações são callbacks reais em posições controladas, sem testar mira/tempo de segurar pela interface.
+- As duas fotografias ficam taken após load, com contador 2, passe/credencial 2, prancheta recolhida e porta da capitania OPEN. A etapa final carrega o disfarce comprometido e permite embarcar após completar os requisitos; callback de embarque real leva ao relatório RESULTS. Isso valida a cadeia em fixture, sem afirmar percurso humano contínuo da missão.
+- Troca 09→10→09/Alto sem aplicação do kit na 10; dois materiais/texturas do kit continuam em RES.live e zero eventos dispose. Recarga real da página mantém CP-03G, Alto, fotos taken/contador 2, passe, disfarce comprometido e embarque desbloqueado.
+
+| Câmera / Baixo | Chamadas antes → depois | Triângulos antes → depois |
+|---|---:|---:|
+| Kommandantur | 337 → 339 | 82.492 → 82.602 |
+| Capitania | 223 → 225 | 32.331 → 32.441 |
+| Arsenal | 259 → 261 | 66.644 → 66.754 |
+
+Acréscimo de 2 chamadas/110 triângulos por vista, dentro de +16/+5.000. Câmeras fixas/SwiftShader não comprovam FPS de Android. Percurso completo, alcance/tempo das interações pelo jogador e memória de 60 minutos continuam pendentes. Revisão independente: um defeito importante de teste foi reproduzido/corrigido e a suíte foi reexecutada; nenhum menor deferido.
+
+
+### Resultado final — CP-03G — 16/11/2026
+
+- Código/testes validados: `ff9dccdb1c11d2370335e45663d31000311db4ce`.
+- CI completo aprovado: https://github.com/jogoiarexx-blip/medalha-de-honra/actions/runs/43843719571 — estrutural, estado, recursos e campanha. QA separado do pastor também aprovado.
+- 82 testes isolados (11 novos), sintaxe/seis estruturais, cenários CP-03A/B/C/D/E/F/G, entradas/combate/alturas, saves/migração, menus, recursos/perfis/áudio/IA e captura geral de cinco cenas aprovados. Matriz técnica das 27 operações passou início, simulação, movimento, checkpoint/load, morte, transição forçada e menu. Não comprova objetivos/extracão jogados em todas as fases.
+- Revisão independente: nenhum defeito de produção crítico/importante; defeito importante da fixture reproduzido e corrigido para usar colisão do jogador, com 82 isolados novamente verdes e CI final aprovado. Nenhum menor deferido. Código de produção não mudou após a primeira revisão; a correção posterior alterou somente o teste de navegador.
+- PR https://github.com/jogoiarexx-blip/medalha-de-honra/pull/10 integrado em `1e44e2503bf4f250e54e5869c0eb45dab2f986c7`. Esta atualização final altera somente documentação.
+- Arquivos modificados: `js/19-crete-operations-09-11.js`, `js/23g-chania-scenery.js`, `js/06-actors.js`, `js/00a-diagnostics.js`, `index.html`, `qa/test_chania.cjs`, `qa/test_cp03g_browser.cjs`, `qa/run_all.cjs`, `.github/workflows/qa-campanha.yml`, `README.md` e este checkpoint.
+- Limites: cadeia de investigação/embarque executada por callbacks reais e posições controladas, patrulha com demais atores estáticos/jogador fora de vista, câmeras fixas/SwiftShader. Alcance/tempo de segurar pela interface, missão humana contínua, patrulha sob combate, Android físico e memória de 60 minutos continuam pendentes. Nenhuma fase declarada zerada.
+
+**Retomar em CP-03H:** analisar a operação 10 — O Que Há em Cnossos, Palácio de Cnossos, Creta. Consultar cenário, objetivos/evidências, plataformas/escadas e sistemas existentes antes de escolher correções. Preservar CP-03A/B/C/D/E/F/G e a lancha/barcos do porto. CP-02C (recarga/arma) continua pendente enquanto cenários forem prioridade.
